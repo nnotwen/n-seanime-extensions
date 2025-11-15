@@ -13,7 +13,7 @@
 	"payload": "",
 	"payloadURI": "https://raw.githubusercontent.com/nnotwen/seanime-extensions/main/plugins/anilist-notes/code.ts",
 	"plugin": {
-		"version": "1.0.0",
+		"version": "1",
 		"permissions": {
 			"scopes": ["storage", "anilist", "database", "anilist-token"]
 		}
