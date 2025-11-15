@@ -20,7 +20,7 @@ function init() {
 
 		const tray = ctx.newTray({
 			iconUrl:
-				"https://raw.githubusercontent.com/nnotwen/seanime-extensions/main/plugins/anilist-notes/icon.png",
+				"https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/anilist-notes/icon.png",
 			withContent: true,
 		});
 
