@@ -1,0 +1,21 @@
+{
+	"id": "anilist-private",
+	"name": "Anilist Private",
+	"version": "1.0.0",
+	"manifestURI": "https://raw.githubusercontent.com/nnotwen/seanime-extensions/main/plugins/anilist-notes/anilist-notes.json",
+	"language": "typescript",
+	"type": "plugin",
+	"description": "Add functionality to private anime in AniList inside Seanime.",
+	"author": "nnotwen",
+	"icon": "",
+	"website": "https://github.com/nnotwen/seanime-extensions",
+	"lang": "multi",
+	"payload": "",
+	"payloadURI": "https://raw.githubusercontent.com/nnotwen/seanime-extensions/main/plugins/anilist-notes/code.ts",
+	"plugin": {
+		"version": "1.0.0",
+		"permissions": {
+			"scopes": ["anilist", "database", "anilist-token"]
+		}
+	}
+}
