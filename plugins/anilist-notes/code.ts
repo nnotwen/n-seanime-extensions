@@ -4,10 +4,14 @@
 
 function init() {
 	$ui.register((ctx) => {
+		const iconUrl =
+			"https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/anilist-notes/icon.png";
+
 		const currentMediaId = ctx.state<number | null>(null);
 		const titleFieldRef = ctx.fieldRef("initial title");
 		const noteFieldRef = ctx.fieldRef("initial note");
 
+		// Cache the notes from the anime collection
 		$anilist
 			.getAnimeCollection(false)
 			.MediaListCollection?.lists?.forEach((list) =>
@@ -18,37 +22,22 @@ function init() {
 				})
 			);
 
-		const tray = ctx.newTray({
-			iconUrl:
-				"https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/anilist-notes/icon.png",
-			withContent: true,
-		});
+		const tray = ctx.newTray({ iconUrl, withContent: true });
 
 		function updateTray(anime: $app.AL_BaseAnime) {
 			currentMediaId.set(anime.id);
 			titleFieldRef.setValue(anime.title?.userPreferred || "Untitled");
-
 			noteFieldRef.setValue($store.get("anilist-notes." + anime.id) || "");
-			tray.open();
 		}
 
-		const handleButtonPress = (event: any) => {
-			const anime = event.media;
-			currentMediaId.set(anime.id);
-			updateTray(anime);
+		const handleButtonPress = (event: { media: $app.AL_BaseAnime }) => {
+			currentMediaId.set(event.media.id);
+			updateTray(event.media);
+			tray.open();
 		};
 
 		async function getCurrentAnime(): Promise<$app.AL_BaseAnime | undefined> {
 			return (await ctx.anime.getAnimeEntry(currentMediaId.get() || 0)).media;
-		}
-
-		async function getWidth() {
-			const body = await ctx.dom.queryOne("body");
-			if (body) {
-				const width = await body.getComputedStyle("width");
-				return width;
-			}
-			return null;
 		}
 
 		tray.render(() => {
@@ -69,56 +58,99 @@ function init() {
 				]);
 
 			if (!currentMediaId.get())
-				return tray.div([
-					tray.div([
+				return tray.flex(
+					[
+						tray.div([], {
+							style: {
+								width: "2.5em",
+								height: "2.5em",
+								backgroundImage: `url(${iconUrl})`,
+								backgroundSize: "contain",
+								backgroundRepeat: "no-repeat",
+								backgroundPosition: "center",
+							},
+						}),
 						tray.stack(
 							[
-								tray.text("Anilist Notes"),
-								tray.text("Open an anime page to start adding/editing note.", {
-									style: { color: "#666", fontSize: "13px" },
+								tray.text("AniList Notes", {
+									style: { fontSize: "1.2em", "font-weight": "700" },
 								}),
+								// tray.text("Open an anime page to start editing notes", {
+								// 	style: { fontSize: "14px", color: "#666" },
+								// }),
+								// Temporary solution:::
+								tray.text(
+									'To edit a note, click the "Edit Note" button on the anime’s page, or right‑click the anime and choose "Edit Note" from the menu.',
+									{
+										style: { fontSize: "14px", color: "#666" },
+									}
+								),
 							],
 							{ gap: 1 }
 						),
-					]),
-				]);
+					],
+					{ direction: "row", gap: 3, style: { padding: "10px" } }
+				);
 
 			return tray.stack(
 				[
-					tray.text("Edit Note"),
-					tray.text(titleFieldRef.current, {
-						style: { color: "#666", fontSize: "16px" },
-					}),
-					tray.input({
-						fieldRef: noteFieldRef,
-						textarea: true,
-						style: {
-							"margin-top": "10px",
-						},
-					}),
-					tray.text(
-						"Note will be automatically saved to Anilist when you click save.",
-						{
-							style: {
-								color: "#666",
-								fontSize: "13px",
-								"margin-bottom": "25px",
-							},
-						}
+					// Header
+					tray.flex(
+						[
+							tray.div([], {
+								style: {
+									width: "2.5em",
+									height: "2.5em",
+									backgroundImage: `url(${iconUrl})`,
+									backgroundSize: "contain",
+									backgroundRepeat: "no-repeat",
+									backgroundPosition: "center",
+								},
+							}),
+							tray.stack(
+								[
+									tray.text("Edit Note", {
+										style: { fontSize: "1.5em", "font-weight": "700" },
+									}),
+									tray.text(titleFieldRef.current, {
+										style: { fontSize: "14px", color: "#666" },
+									}),
+								],
+								{ gap: 1 }
+							),
+						],
+						{ direction: "row", gap: 3 }
 					),
+					// Body
+					tray.stack([
+						tray.input({
+							fieldRef: noteFieldRef,
+							textarea: true,
+						}),
+						tray.text(
+							"Note will be automatically saved to Anilist when you click save.",
+							{
+								style: {
+									color: "#666",
+									fontSize: "13px",
+								},
+							}
+						),
+					]),
+					// Footer
 					tray.button("Save", {
+						size: "md",
 						intent: "primary",
 						onClick: "save",
 					}),
 				],
-				{
-					gap: 1,
-				}
+				{ gap: 5, style: { padding: "10px" } }
 			);
 		});
 
 		// Currently doesn't work
 		tray.onClick(() => {
+			console.log("Tray clicked!");
 			getCurrentAnime().then((anime) => {
 				if (anime) updateTray(anime);
 			});
@@ -129,7 +161,7 @@ function init() {
 		});
 
 		// Handle save function
-		ctx.registerEventHandler("save", async () => {
+		ctx.registerEventHandler("save", async function () {
 			if (currentMediaId.get()) {
 				// Sync with anilist
 				const query = `mutation SaveMediaListEntry($mediaId: Int!, $notes: String!) {
@@ -159,6 +191,7 @@ function init() {
 				};
 
 				ctx.toast.info("Saving...");
+
 				const res: AnilistResponse | AnilistError = await $anilist.customQuery(
 					{
 						query,
@@ -185,49 +218,40 @@ function init() {
 			}
 		});
 
+		// Register Button
 		const animePageButton = ctx.action.newAnimePageButton({
 			label: "Edit Note",
 			intent: "gray-subtle",
 		});
-
+		animePageButton.mount();
 		animePageButton.onClick(handleButtonPress);
 
-		const animePageDropdown = ctx.action.newAnimePageDropdownItem({
-			label: "Edit Note",
-		});
-
-		animePageDropdown.onClick((event) => {
-			ctx.setTimeout(() => {
-				handleButtonPress(event);
-			}, 400);
-		});
-
+		// Register media context menu
 		const mediaCardEntry = ctx.action.newMediaCardContextMenuItem({
 			label: "Edit Note",
 			for: "anime",
 		});
-
 		mediaCardEntry.mount();
 		mediaCardEntry.onClick(handleButtonPress);
 
 		// Reset currentMediaId on navigation
-		ctx.screen.onNavigate((e) => {
+		ctx.screen.onNavigate(async (e) => {
+			// This path is for anime page
 			if (e.pathname === "/entry" && !!e.searchParams.id) {
 				const id = parseInt(e.searchParams.id);
-				currentMediaId.set(id);
+				// currentMediaId.set(id);
+
+				// This relies on DOM content (Unreliable, race condition)
+				// This works as long as the attributes remains unchanged on subsequent
+				// app updates. fix on tray.onClick should fix this
+				// const mediaEl = await ctx.dom.queryOne("[data-media]");
+				// if (mediaEl) {
+				// 	const media = await mediaEl.getDataAttribute("media");
+				// 	if (media) {
+				// 		updateTray(JSON.parse(media));
+				// 	}
+				// }
 			} else currentMediaId.set(null);
-
-			getWidth().then((width) => {
-				if (!width) return;
-
-				if (parseInt(width) > 526) {
-					animePageButton.mount();
-					animePageDropdown.unmount();
-				} else {
-					animePageButton.unmount();
-					animePageDropdown.mount();
-				}
-			});
 		});
 
 		ctx.screen.loadCurrent();
