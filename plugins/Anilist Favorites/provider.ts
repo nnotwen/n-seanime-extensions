@@ -254,6 +254,7 @@ function init() {
 							padding: "0 5px 10px 5px",
 							lineHeight: "1.2",
 							fontWeight: "600",
+							wordBreak: "unset",
 						},
 					});
 
@@ -469,8 +470,6 @@ function init() {
 				const map = new Map<StoreEntry[0], StoreEntry[1]>($store.get(storeId));
 				updateFavoriteTag(map.has(id));
 			}
-
-			console.log($store.get(storeId));
 		});
 
 		// --- Initial cache population ---
