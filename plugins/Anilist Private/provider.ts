@@ -144,7 +144,7 @@ function init() {
 			const response = await updateAnilistPrivateEntry(event.media.id, next);
 
 			// Wait for several seconds (helps avoid hitting ratelimit)
-			await $_wait(3_000);
+			await $_wait(2_000);
 
 			if (!response.data) {
 				isUpdating.set(false);
