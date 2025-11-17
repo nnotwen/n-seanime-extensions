@@ -1,0 +1,19 @@
+{
+  "id": "anilist-favorites",
+  "name": "Anilist Favorites",
+  "version": "1.0.0",
+  "manifestURI": "",
+  "language": "typescript",
+  "type": "plugin",
+  "description": "An example plugin",
+  "author": "nnotwen",
+  "icon": "",
+  "website": "",
+  "lang": "multi",
+  "payloadURI": "C:\\Users\\wenbo\\Dev\\seanime-extensions\\plugins\\Anilist Favorites\\provider.ts",
+  "plugin": {
+    "version": "1",
+    "permissions": []
+  },
+  "isDevelopment": true
+}

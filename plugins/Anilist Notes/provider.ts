@@ -32,7 +32,7 @@ function init() {
 
 		// CONSTANTS
 		// prettier-ignore
-		const iconUrl = "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/anilist-notes/icon.png";
+		const iconUrl = "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Anilist%20Notes/icon.png";
 		const storeNoteId = "anilist-notes";
 
 		// STATES
