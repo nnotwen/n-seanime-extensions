@@ -261,13 +261,12 @@ function init() {
 					const coverImage = tray.div([], {
 						style: {
 							width: "100%",
-							height: "15rem",
+							height: "12rem",
 							flexShrink: "0",
 							flexGrow: "0",
 							backgroundImage: `url(${entry.coverImage})`,
 							backgroundSize: "cover",
 							backgroundRepeat: "no-repeat",
-							backgroundPosition: "top",
 							borderRadius: "0.75em 0.75em 0 0",
 						},
 					});
