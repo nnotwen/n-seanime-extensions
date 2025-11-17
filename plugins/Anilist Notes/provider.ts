@@ -1,18 +1,28 @@
-/// <reference path="./../../plugin.d.ts" />
-/// <reference path="./../../system.d.ts" />
-/// <reference path="./../../app.d.ts" />
+/// <reference path="./plugin.d.ts" />
+/// <reference path="./system.d.ts" />
+/// <reference path="./app.d.ts" />
+/// <reference path="./core.d.ts" />
 
 function init() {
 	$ui.register((ctx) => {
-		const iconUrl =
-			"https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/anilist-notes/icon.png";
+		// TYPES AND INTERFACES
+		type SaveNoteResponse = {
+			SaveMediaListEntry: {
+				notes: string;
+				media: {
+					id: number;
+					title: {
+						userPreferred?: string;
+					};
+					coverImage?: {
+						medium?: string;
+					};
+				};
+				updatedAt: number;
+			};
+		};
 
-		const currentMediaId = ctx.state<number | null>(null);
-		const titleFieldRef = ctx.fieldRef("initial title");
-		const noteFieldRef = ctx.fieldRef("initial note");
-		const btnIsSaving = ctx.state(false);
-
-		$store.set("anilist-notes", new Map());
+		type SaveNoteError = { errors: { message: string }[] };
 
 		interface AnimeNote {
 			coverImage: string | undefined;
@@ -20,16 +30,34 @@ function init() {
 			notes: string;
 		}
 
-		function setAnimeNote(id: string, entry: AnimeNote) {
-			const notes = $store.get("anilist-notes");
-			$store.set(
-				"anilist-notes",
-				new Map(notes).set(id, {
-					coverImage: entry.coverImage,
-					title: entry.title,
-					notes: entry.notes,
-				})
-			);
+		// CONSTANTS
+		// prettier-ignore
+		const iconUrl = "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/anilist-notes/icon.png";
+		const storeNoteId = "anilist-notes";
+
+		// STATES
+		const currentMediaId = ctx.state<number | null>(null);
+		const titleFieldRef = ctx.fieldRef("initial title");
+		const noteFieldRef = ctx.fieldRef("initial note");
+		const isSaving = ctx.state(false);
+		const editInvokedFromTray = ctx.state(false);
+
+		// Ensure that there is a map on $store every init that stores notes
+		// so it is `$store.get(storeNoteId)` is guaranteed to exist
+		$store.set(storeNoteId, new Map<string, AnimeNote>());
+
+		/**
+		 * Wait for specified amount of time
+		 * @param ms Time to wait in milliseconds
+		 * @returns
+		 */
+		function $_wait(ms: number): Promise<void> {
+			return new Promise((resolve) => ctx.setTimeout(resolve, ms));
+		}
+
+		function updateNoteStore(id: string, entry: AnimeNote) {
+			const notes = $store.get(storeNoteId);
+			$store.set(storeNoteId, new Map(notes).set(id, entry));
 		}
 
 		function formatNotes() {
@@ -40,6 +68,12 @@ function init() {
 					(a.title ?? "").localeCompare(b.title ?? "")
 				)
 				.map(([key, value]: [string, AnimeNote]) => {
+					const buttonStyle = {
+						wordBreak: "unset",
+						width: "fit-content",
+						fontSize: "12px",
+					};
+
 					const content = tray.stack(
 						[
 							tray.div(
@@ -66,20 +100,39 @@ function init() {
 								],
 								{ style: { lineHeight: "normal" } }
 							),
-							tray.button("Go to Page", {
-								onClick: ctx.eventHandler(`navigate-to-${key}`, () => {
-									ctx.screen.navigateTo("/entry", { id: key });
-									tray.close();
-								}),
-								size: "xs",
-								intent: "gray-subtle",
-								style: {
-									wordBreak: "unset",
-									justifyContent: "flex-start",
-									width: "fit-content",
-									fontSize: "12px",
-								},
-							}),
+							tray.flex(
+								[
+									tray.button("Go to Page", {
+										onClick: ctx.eventHandler(`note-navigate-${key}`, () => {
+											ctx.screen.navigateTo("/entry", { id: key });
+											tray.close();
+										}),
+										size: "xs",
+										intent: "gray-subtle",
+										style: buttonStyle,
+									}),
+									tray.button("Edit", {
+										size: "xs",
+										intent: "gray-subtle",
+										style: buttonStyle,
+										onClick: ctx.eventHandler(`note-edit-${key}`, async () => {
+											// prettier-ignore
+											editInvokedFromTray.set(true);
+											const entry = await ctx.anime.getAnimeEntry(
+												parseInt(key)
+											);
+											const media = entry?.media || null;
+											if (media) {
+												tray.update();
+												updateTray(media);
+											} else {
+												ctx.toast.error("Unknown Error");
+											}
+										}),
+									}),
+								],
+								{ direction: "row", gap: 1 }
+							),
 						],
 						{ style: { justifyContent: "space-between" } }
 					);
@@ -129,7 +182,7 @@ function init() {
 			.MediaListCollection?.lists?.forEach((list) =>
 				list.entries?.forEach((entry) => {
 					if (entry.media && entry.notes) {
-						setAnimeNote(entry.media.id.toString(), {
+						updateNoteStore(entry.media.id.toString(), {
 							coverImage: entry.media.coverImage?.medium,
 							title: entry.media.title?.userPreferred,
 							notes: entry.notes,
@@ -157,20 +210,47 @@ function init() {
 
 		tray.render(() => {
 			if (!$database.anilist.getToken())
-				return tray.div([
-					tray.stack(
-						[
-							tray.text("Anilist Notes"),
-							tray.text(
-								"You need to be logged in to Anilist to use this plugin.",
-								{
-									style: { color: "#e26f6fff", fontSize: "13px" },
-								}
-							),
-						],
-						{ gap: 1 }
-					),
-				]);
+				return tray.flex(
+					[
+						tray.div([], {
+							style: {
+								width: "2.5em",
+								height: "2.5em",
+								backgroundImage: `url(${iconUrl})`,
+								backgroundSize: "contain",
+								backgroundRepeat: "no-repeat",
+								backgroundPosition: "center",
+								flexGrow: "0",
+								flexShrink: "0",
+							},
+						}),
+						tray.stack(
+							[
+								tray.text("AniList Notes", {
+									style: {
+										fontSize: "1.2em",
+										"font-weight": "700",
+										"user-select": "none",
+									},
+								}),
+								tray.text(
+									"You need to be logged in to Anilist to use this plugin.",
+									{
+										style: {
+											fontSize: "13px",
+											color: "#e26f6fff",
+											lineHeight: "normal",
+											wordBreak: "unset",
+											"user-select": "none",
+										},
+									}
+								),
+							],
+							{ gap: 1 }
+						),
+					],
+					{ direction: "row", gap: 3, style: { padding: "10px" } }
+				);
 
 			if (!currentMediaId.get())
 				return tray.stack(
@@ -238,6 +318,22 @@ function init() {
 					{ gap: 1 }
 				);
 
+			const cancelComponent = [];
+			if (editInvokedFromTray.get()) {
+				cancelComponent.push(
+					tray.button("Go Back", {
+						size: "md",
+						style: { flex: "1" },
+						onClick: ctx.eventHandler("note-edit-cancel", () => {
+							currentMediaId.set(null);
+							tray.update();
+						}),
+					})
+				);
+			}
+
+			editInvokedFromTray.set(false);
+
 			return tray.stack(
 				[
 					// Header
@@ -262,7 +358,7 @@ function init() {
 											"user-select": "none",
 										},
 									}),
-									tray.text(titleFieldRef.current, {
+									tray.text(String(titleFieldRef.current), {
 										style: {
 											fontSize: "14px",
 											color: "#666",
@@ -293,96 +389,74 @@ function init() {
 						),
 					]),
 					// Footer
-					tray.button("Save", {
-						size: "md",
-						intent: "primary",
-						onClick: "save",
-						loading: btnIsSaving.get(),
-					}),
+					tray.flex(
+						[
+							...cancelComponent,
+							tray.button("Save", {
+								size: "md",
+								intent: "primary",
+								onClick: "save",
+								loading: isSaving.get(),
+								style: { flex: "1" },
+							}),
+						],
+						{ direction: "row", style: { justifyContent: "end" } }
+					),
 				],
 				{ gap: 5, style: { padding: "10px" } }
 			);
 		});
 
-		tray.onClose(() => {
-			currentMediaId.set(null);
-		});
+		// Reset Media Id everytime the tray is closed
+		tray.onClose(() => currentMediaId.set(null));
 
 		// Handle save function
 		ctx.registerEventHandler("save", async function () {
-			if (currentMediaId.get()) {
-				btnIsSaving.set(true);
-				// Sync with anilist
-				const query = `mutation SaveMediaListEntry($mediaId: Int!, $notes: String!) {
-                        SaveMediaListEntry(mediaId: $mediaId, notes: $notes) {
-                            notes
-                            media {
-                                id
-								title {
-									userPreferred
-								}
-								coverImage {
-									medium
-								}
-                            }
-                            updatedAt
-                        }
-                    }`;
+			if (!currentMediaId.get()) return;
 
-				type AnilistResponse = {
-					SaveMediaListEntry: {
-						notes: string;
-						media: {
-							id: number;
-							title: {
-								userPreferred?: string;
-							};
-							coverImage?: {
-								medium?: string;
-							};
-						};
-						updatedAt: number;
-					};
-				};
+			// Disable the button to prevent multiple API Calls
+			isSaving.set(true);
 
-				type AnilistError = {
-					errors: {
-						message: string;
-					}[];
-				};
+			// Notify user that you are saving...
+			ctx.toast.info(`Saving note for ${titleFieldRef.current}...`);
 
-				ctx.toast.info("Saving...");
+			const requestBody = {
+				// prettier-ignore
+				query: "mutation SaveMediaListEntry($mediaId: Int!, $notes: String!) { SaveMediaListEntry(mediaId: $mediaId, notes: $notes) { notes media { id title { userPreferred } coverImage { medium } } updatedAt } }",
+				variables: {
+					mediaId: currentMediaId.get(),
+					notes: noteFieldRef.current,
+				},
+			};
 
-				const res: AnilistResponse | AnilistError = await $anilist.customQuery(
-					{
-						query,
-						variables: {
-							mediaId: currentMediaId.get(),
-							notes: noteFieldRef.current,
-						},
-					},
-					$database.anilist.getToken()
-				);
+			const res: SaveNoteResponse | SaveNoteError = await $anilist.customQuery(
+				requestBody,
+				$database.anilist.getToken()
+			);
 
-				ctx.setTimeout(() => {
-					if ("errors" in res) {
-						ctx.toast.error(
-							"Failed to save the note to Anilist: " + res.errors[0].message
-						);
-					} else {
-						ctx.toast.success("Note saved successfully!");
-						setAnimeNote(currentMediaId.get()!.toString(), {
-							title: res.SaveMediaListEntry.media.title.userPreferred,
-							coverImage: res.SaveMediaListEntry.media.coverImage?.medium,
-							notes: res.SaveMediaListEntry.notes,
-						});
+			// Artificially delay the process by 2 seconds to give breather
+			// for API calls
+			await $_wait(2_000);
 
-						btnIsSaving.set(false);
-						tray.close();
-					}
-					currentMediaId.set(null);
-				}, 3000);
+			if ("errors" in res) {
+				ctx.toast.error(`Failed to save note: ${res.errors[0].message}`);
+			} else {
+				ctx.toast.success("Note saved successfully!");
+				updateNoteStore(currentMediaId.get()!.toString(), {
+					title: res.SaveMediaListEntry.media.title.userPreferred,
+					coverImage: res.SaveMediaListEntry.media.coverImage?.medium,
+					notes: res.SaveMediaListEntry.notes,
+				});
+
+				console.log();
+
+				// Update buttons
+				ctx.screen.loadCurrent();
 			}
+
+			isSaving.set(false);
+			currentMediaId.set(null);
+			tray.close();
 		});
 
 		// Register Button
@@ -390,7 +464,6 @@ function init() {
 			label: "Edit Note",
 			intent: "gray-subtle",
 		});
-		animePageButton.mount();
 		animePageButton.onClick(handleButtonPress);
 
 		// Register media context menu
@@ -398,15 +471,29 @@ function init() {
 			label: "Edit Note",
 			for: "anime",
 		});
-		mediaCardEntry.mount();
 		mediaCardEntry.onClick(handleButtonPress);
 
-		ctx.screen.loadCurrent();
+		ctx.screen.onNavigate((e) => {
+			if (e.pathname === "/entry" && !!e.searchParams.id) {
+				const id = parseInt(e.searchParams.id);
 
-		function truncateText(text: string, maxLength: number) {
-			if (typeof text !== "string") return "";
-			if (text.length <= maxLength) return text;
-			return text.slice(0, maxLength) + "...";
-		}
+				const cache: [string, AnimeNote][] = $store.get(storeNoteId);
+				const mappedCache = new Map(cache);
+				const entry = mappedCache.get(id.toString());
+
+				if (entry != null && entry.notes) {
+					animePageButton.setLabel("Edit Note");
+					mediaCardEntry.setLabel("Edit Note");
+				} else {
+					animePageButton.setLabel("Add Note");
+					mediaCardEntry.setLabel("Add Note");
+				}
+
+				mediaCardEntry.mount();
+				animePageButton.mount();
+			}
+		});
+
+		ctx.screen.loadCurrent();
 	});
 }
