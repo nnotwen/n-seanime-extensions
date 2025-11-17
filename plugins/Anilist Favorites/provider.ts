@@ -14,7 +14,7 @@ function init() {
 							nodes: {
 								id: number;
 								title: { userPreferred: string };
-								coverImage: { medium: string | null };
+								coverImage: { large: string | null };
 							}[];
 							pageInfo: { currentPage: number; hasNextPage: boolean };
 						};
@@ -34,7 +34,7 @@ function init() {
 					nodes: {
 						id: number;
 						title: { userPreferred: string };
-						coverImage: { medium: string | null };
+						coverImage: { large: string | null };
 						isFavourite: boolean;
 					}[];
 				};
@@ -72,7 +72,7 @@ function init() {
 		// --- Fetch all favorites with pagination (uses ctx.state for persistence) ---
 		async function fetchFavoriteAnime(): Promise<FetchedFavorites> {
 			// prettier-ignore
-			const query = "query ($page: Int!, $perPage: Int!) { Viewer { favourites { anime(page: $page, perPage: $perPage) { nodes { id title { userPreferred } coverImage { medium } } pageInfo { currentPage hasNextPage } } } } }";
+			const query = "query ($page: Int!, $perPage: Int!) { Viewer { favourites { anime(page: $page, perPage: $perPage) { nodes { id title { userPreferred } coverImage { large } } pageInfo { currentPage hasNextPage } } } } }";
 			const perPage = 50;
 
 			// reset persisted states
@@ -108,7 +108,7 @@ function init() {
 				const newIds = animePage.nodes.map((n) => ({
 					mediaId: n.id,
 					title: n.title.userPreferred,
-					coverImage: n.coverImage.medium,
+					coverImage: n.coverImage.large,
 				}));
 
 				ids.set([...ids.get(), ...newIds]);
@@ -160,7 +160,7 @@ function init() {
 			coverImage: string | null;
 		}> {
 			// prettier-ignore
-			const query = "query ($mediaId: Int!) { Media(id: $mediaId) { id isFavourite title { userPreferred } coverImage { medium } } }";
+			const query = "query ($mediaId: Int!) { Media(id: $mediaId) { id isFavourite title { userPreferred } coverImage { large } } }";
 
 			const res = await ctx.fetch("https://graphql.anilist.co", {
 				method: "POST",
@@ -178,7 +178,7 @@ function init() {
 			return {
 				isFavourite: Boolean(media?.isFavourite),
 				title: media?.title?.userPreferred || "",
-				coverImage: media?.coverImage?.medium || null,
+				coverImage: media?.coverImage?.large || null,
 			};
 		}
 
