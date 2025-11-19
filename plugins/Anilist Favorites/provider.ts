@@ -55,7 +55,7 @@ function init() {
 		const iconUrl = "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Anilist%20Favorites/icon.png";
 		const isUpdating = ctx.state<boolean>(false);
 		const isPopulatingCache = ctx.state<boolean>(false);
-		const storeId = "anilist-favorite";
+		const favoriteStoreId = "anilist-favorite";
 
 		// Persisted pagination states
 		const page = ctx.state<number>(1);
@@ -123,12 +123,8 @@ function init() {
 
 		// --- Toggle favorite entry (mutation only, no reliance on returned nodes) ---
 		async function updateAnilistFavoriteEntry(mediaId: number) {
-			const query = `
-        mutation ($mediaId: Int!) {
-          ToggleFavourite(animeId: $mediaId) {
-            anime { nodes { id } }
-          }
-        }`;
+			// prettier-ignore
+			const query = "mutation ($mediaId: Int!) { ToggleFavourite(animeId: $mediaId) { anime { nodes { id } } } }";
 
 			const res = await ctx.fetch("https://graphql.anilist.co", {
 				method: "POST",
@@ -186,20 +182,19 @@ function init() {
 		async function populateCache() {
 			isPopulatingCache.set(true);
 			const res = await fetchFavoriteAnime();
+
 			if (!res.data) {
-				ctx.toast.error(
-					"Error populating cache [Anilist Favorites]: " + res.error
-				);
+				const errmsg = "Error populating cache [Anilist Favorites]";
+				ctx.toast.error(errmsg + " " + res.error);
 				return;
 			}
 
-			$store.set(
-				storeId,
-				res.data.map<StoreEntry>((m) => [
-					m.mediaId.toString(),
-					{ title: m.title, coverImage: m.coverImage },
-				])
-			);
+			const data: StoreEntry[] = res.data.map((m) => [
+				m.mediaId.toString(),
+				{ title: m.title, coverImage: m.coverImage },
+			]);
+
+			$store.set(favoriteStoreId, data);
 			isPopulatingCache.set(false);
 		}
 
@@ -210,7 +205,9 @@ function init() {
 			coverImage: string | null,
 			isFavourite: boolean
 		) {
-			const cache = new Map<StoreEntry[0], StoreEntry[1]>($store.get(storeId));
+			const cache = new Map<StoreEntry[0], StoreEntry[1]>(
+				$store.get(favoriteStoreId)
+			);
 			const key = mediaId.toString();
 
 			if (isFavourite) {
@@ -219,7 +216,7 @@ function init() {
 				cache.delete(key);
 			}
 
-			$store.set(storeId, Array.from(cache.entries()));
+			$store.set(favoriteStoreId, Array.from(cache.entries()));
 		}
 
 		// --- UI helpers ---
@@ -233,82 +230,79 @@ function init() {
 			type K = StoreEntry[0];
 			type V = StoreEntry[1];
 
-			const data = $store
-				.get(storeId)
-				.sort(([, a]: [K, V], [, b]: [K, V]) =>
-					(a.title ?? "").localeCompare(b.title ?? "")
-				)
-				.map(([id, entry]: [K, V]) => {
-					const buttonStyle = {
-						wordBreak: "unset",
+			// prettier-ignore
+			const favoriteMediaEntries:[K, V][] = $store.getOrSet(favoriteStoreId, () => []);
+			const noEntries = tray.text("No Entries", {
+				// prettier-ignore
+				className: "bg-gray-900 border border-[rgb(255_255_255_/_5%)] rounded-xl text-center",
+				style: {
+					padding: "25px 0",
+					fontSize: "1.5em",
+					fontWeight: "500",
+					color: "#666",
+				},
+			});
+
+			if (!favoriteMediaEntries.length) return [noEntries];
+
+			const sortedFavorites = favoriteMediaEntries.sort(([, a], [, b]) =>
+				(a.title ?? "").localeCompare(b.title ?? "")
+			);
+
+			return sortedFavorites.map(([id, media]) => {
+				const buttonStyle = {
+					wordBreak: "unset",
+					width: "100%",
+					fontSize: "12px",
+					alignSelf: "bottom",
+					"border-top-left-radius": "0",
+					"border-top-right-radius": "0",
+				};
+
+				const coverImage = tray.div([], {
+					style: {
 						width: "100%",
-						fontSize: "12px",
-						alignSelf: "bottom",
-						"border-top-left-radius": "0",
-						"border-top-right-radius": "0",
-					};
-
-					const title = tray.text(String(entry.title) || "\u200b", {
-						style: {
-							"user-select": "none",
-							padding: "0 5px 10px 5px",
-							lineHeight: "1.2",
-							fontWeight: "600",
-							wordBreak: "unset",
-						},
-					});
-
-					const coverImage = tray.div([], {
-						style: {
-							width: "100%",
-							height: "12rem",
-							flexShrink: "0",
-							flexGrow: "0",
-							backgroundImage: `url(${entry.coverImage})`,
-							backgroundSize: "cover",
-							backgroundRepeat: "no-repeat",
-							borderRadius: "0.75em 0.75em 0 0",
-						},
-					});
-
-					const button = tray.button("Go to Page", {
-						onClick: ctx.eventHandler(`note-navigate-${id}`, () => {
-							ctx.toast.info("Navigating to " + entry.title);
-							ctx.screen.navigateTo("/entry", { id });
-							tray.close();
-						}),
-						intent: "gray-subtle",
-						style: { ...buttonStyle },
-					});
-
-					const gap = tray.div([], { style: { "flex-grow": "1" } });
-
-					return tray.flex([coverImage, title, gap, button], {
-						className:
-							"bg-gray-900 border border-[rgb(255_255_255_/_5%)] rounded-xl",
-						direction: "column",
-						style: {
-							width: "10rem",
-						},
-					});
+						height: "12rem",
+						flexShrink: "0",
+						flexGrow: "0",
+						backgroundImage: `url(${media.coverImage})`,
+						backgroundSize: "cover",
+						backgroundRepeat: "no-repeat",
+						borderRadius: "0.75em 0.75em 0 0",
+					},
 				});
 
-			if (data.length <= 0) {
-				return [
-					tray.text("No Entries", {
-						className:
-							"bg-gray-900 border border-[rgb(255_255_255_/_5%)] rounded-xl",
-						style: {
-							textAlign: "center",
-							padding: "25px 0",
-							fontSize: "1.5em",
-							fontWeight: "500",
-							color: "#666",
-						},
+				const title = tray.text(String(media.title) || "\u200b", {
+					style: {
+						"user-select": "none",
+						padding: "0 5px 10px 5px",
+						lineHeight: "1.2",
+						fontWeight: "600",
+						wordBreak: "unset",
+					},
+				});
+
+				const goToPageBtn = tray.button("Go to Page", {
+					onClick: ctx.eventHandler(`note-navigate-${id}`, () => {
+						ctx.toast.info("Navigating to " + media.title);
+						ctx.screen.navigateTo("/entry", { id });
+						tray.close();
 					}),
-				];
-			}
-			return data;
+					intent: "gray-subtle",
+					style: { ...buttonStyle },
+				});
+
+				const gap = tray.div([], { style: { "flex-grow": "1" } });
+
+				return tray.flex([coverImage, title, gap, goToPageBtn], {
+					className:
+						"bg-gray-900 border border-[rgb(255_255_255_/_5%)] rounded-xl",
+					direction: "column",
+					style: {
+						width: "10rem",
+					},
+				});
+			});
 		}
 
 		const favoriteBtn = ctx.action.newAnimePageButton({
@@ -319,89 +313,67 @@ function init() {
 		// --- Tray render (Viewer for anilist) ---
 		const tray = ctx.newTray({ iconUrl, withContent: true, width: "45rem" });
 		tray.render(() => {
-			if (!$database.anilist.getToken())
+			const pluginIcon = tray.div([], {
+				style: {
+					width: "2.5em",
+					height: "2.5em",
+					backgroundImage: `url(${iconUrl})`,
+					backgroundSize: "contain",
+					backgroundRepeat: "no-repeat",
+					backgroundPosition: "center",
+					flexGrow: "0",
+					flexShrink: "0",
+				},
+			});
+
+			const header_text = tray.text("AniList Favorites", {
+				style: {
+					fontSize: "1.2em",
+					"font-weight": "700",
+					"user-select": "none",
+				},
+			});
+
+			const text_notSignedIn = tray.text(
+				"You need to be logged in to Anilist to use this plugin.",
+				{
+					style: {
+						fontSize: "13px",
+						color: "#e26f6fff",
+						lineHeight: "normal",
+						wordBreak: "unset",
+						"user-select": "none",
+					},
+				}
+			);
+
+			const text_SignedIn = tray.text("Browse your Favorite Anime", {
+				style: {
+					fontSize: "13px",
+					color: "#666",
+					lineHeight: "normal",
+					wordBreak: "unset",
+					"user-select": "none",
+					fontWeight: "500",
+				},
+			});
+
+			if (!$database.anilist.getToken()) {
 				return tray.flex(
-					[
-						tray.div([], {
-							style: {
-								width: "2.5em",
-								height: "2.5em",
-								backgroundImage: `url(${iconUrl})`,
-								backgroundSize: "contain",
-								backgroundRepeat: "no-repeat",
-								backgroundPosition: "center",
-								flexGrow: "0",
-								flexShrink: "0",
-							},
-						}),
-						tray.stack(
-							[
-								tray.text("AniList Favorites", {
-									style: {
-										fontSize: "1.2em",
-										"font-weight": "700",
-										"user-select": "none",
-									},
-								}),
-								tray.text(
-									"You need to be logged in to Anilist to use this plugin.",
-									{
-										style: {
-											fontSize: "13px",
-											color: "#e26f6fff",
-											lineHeight: "normal",
-											wordBreak: "unset",
-											"user-select": "none",
-										},
-									}
-								),
-							],
-							{ gap: 1 }
-						),
-					],
+					[pluginIcon, tray.stack([header_text, text_notSignedIn], { gap: 1 })],
 					{ direction: "row", gap: 3, style: { padding: "10px" } }
 				);
+			}
 
 			return tray.stack(
 				[
 					tray.flex(
-						[
-							tray.div([], {
-								style: {
-									width: "2.5em",
-									height: "2.5em",
-									backgroundImage: `url(${iconUrl})`,
-									backgroundSize: "contain",
-									backgroundRepeat: "no-repeat",
-									backgroundPosition: "center",
-									flexGrow: "0",
-									flexShrink: "0",
-								},
-							}),
-							tray.stack(
-								[
-									tray.text("AniList Favorites", {
-										style: {
-											fontSize: "1.2em",
-											"font-weight": "700",
-											"user-select": "none",
-										},
-									}),
-									tray.text("Browse your Favorite Anime", {
-										style: {
-											fontSize: "13px",
-											color: "#666",
-											lineHeight: "normal",
-											wordBreak: "unset",
-											"user-select": "none",
-											fontWeight: "500",
-										},
-									}),
-								],
-								{ gap: 1 }
-							),
-						],
-						{ direction: "row", gap: 3, style: { padding: "10px" } }
+						[pluginIcon, tray.stack([header_text, text_SignedIn], { gap: 1 })],
+						{
+							direction: "row",
+							gap: 3,
+							style: { padding: "10px" },
+						}
 					),
 					tray.div([
 						tray.flex(isPopulatingCache.get() ? [] : formatFavorites(), {
@@ -466,7 +438,9 @@ function init() {
 		ctx.screen.onNavigate((e) => {
 			if (e.pathname === "/entry" && !!e.searchParams.id) {
 				const id = e.searchParams.id;
-				const map = new Map<StoreEntry[0], StoreEntry[1]>($store.get(storeId));
+				const map = new Map<StoreEntry[0], StoreEntry[1]>(
+					$store.get(favoriteStoreId)
+				);
 				updateFavoriteTag(map.has(id));
 			}
 		});
