@@ -74,7 +74,7 @@ function init() {
 				},
 			});
 
-			if (!noteMediaEntries) return [noEntries];
+			if (!noteMediaEntries.length) return [noEntries];
 
 			const withNote = noteMediaEntries.filter(([, v]) => v.notes);
 			if (!withNote.length) return [noEntries];
