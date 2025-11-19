@@ -41,10 +41,7 @@ function init() {
 		const noteFieldRef = ctx.fieldRef("initial note");
 		const isSaving = ctx.state(false);
 		const editInvokedFromTray = ctx.state(false);
-
-		// Ensure that there is a map on $store every init that stores notes
-		// so it is `$store.get(storeNoteId)` is guaranteed to exist
-		$store.set(storeNoteId, new Map<string, AnimeNote>());
+		const tray = ctx.newTray({ iconUrl, withContent: true });
 
 		/**
 		 * Wait for specified amount of time
@@ -56,142 +53,143 @@ function init() {
 		}
 
 		function updateNoteStore(id: string, entry: AnimeNote) {
-			const notes = $store.get(storeNoteId);
+			// prettier-ignore
+			// getOrSet ensures storeNoteId exists on $store
+			const notes = $store.getOrSet(storeNoteId, () => new Map<string, AnimeNote>());
 			$store.set(storeNoteId, new Map(notes).set(id, entry));
 		}
 
 		function formatNotes() {
-			const data = $store
-				.get("anilist-notes")
-				.filter(([, value]: [string, AnimeNote]) => value.notes)
-				.sort(([, a]: [any, AnimeNote], [, b]: [any, AnimeNote]) =>
-					(a.title ?? "").localeCompare(b.title ?? "")
-				)
-				.map(([key, value]: [string, AnimeNote]) => {
-					const buttonStyle = {
-						wordBreak: "unset",
-						width: "fit-content",
-						fontSize: "12px",
-					};
+			// prettier-ignore
+			const noteMediaEntries: [string, AnimeNote][] = $store.getOrSet(storeNoteId, () => []);
 
-					const content = tray.stack(
-						[
-							tray.div(
-								[
-									tray.text(String(value.title) || "\u200b", {
-										style: {
-											whiteSpace: "nowrap",
-											overflow: "hidden",
-											textOverflow: "ellipsis",
-											"user-select": "none",
-										},
-									}),
-									tray.text(String(value.notes) || "\u200b", {
-										style: {
-											fontSize: "14px",
-											color: "#666",
-											wordBreak: "unset",
-											whiteSpace: "nowrap",
-											overflow: "hidden",
-											textOverflow: "ellipsis",
-											"user-select": "none",
-										},
-									}),
-								],
-								{ style: { lineHeight: "normal" } }
-							),
-							tray.flex(
-								[
-									tray.button("Go to Page", {
-										onClick: ctx.eventHandler(`note-navigate-${key}`, () => {
-											ctx.screen.navigateTo("/entry", { id: key });
-											tray.close();
-										}),
-										size: "xs",
-										intent: "gray-subtle",
-										style: buttonStyle,
-									}),
-									tray.button("Edit", {
-										size: "xs",
-										intent: "gray-subtle",
-										style: buttonStyle,
-										onClick: ctx.eventHandler(`note-edit-${key}`, async () => {
-											// prettier-ignore
-											editInvokedFromTray.set(true);
-											const entry = await ctx.anime.getAnimeEntry(
-												parseInt(key)
-											);
-											const media = entry?.media || null;
-											if (media) {
-												tray.update();
-												updateTray(media);
-											} else {
-												ctx.toast.error("Unknown Error");
-											}
-										}),
-									}),
-								],
-								{ direction: "row", gap: 1 }
-							),
-						],
-						{ style: { justifyContent: "space-between" } }
-					);
+			const noEntries = tray.text("No Entries", {
+				// prettier-ignore
+				className: "bg-gray-900 border border-[rgb(255_255_255_/_5%)] rounded-xl text-center",
+				style: {
+					padding: "25px 0",
+					fontSize: "1.5em",
+					fontWeight: "500",
+					color: "#666",
+				},
+			});
 
-					const coverImage = tray.div([], {
-						style: {
-							width: "50px",
-							flexShrink: "0",
-							flexGrow: "0",
-							backgroundImage: `url(${value.coverImage})`,
-							backgroundSize: "contain",
-							backgroundRepeat: "no-repeat",
-							backgroundPosition: "center",
-						},
-					});
+			if (!noteMediaEntries) return [noEntries];
 
-					return tray.flex([coverImage, content], {
-						gap: 3,
-						direction: "row",
-						className:
-							"bg-gray-900 border border-[rgb(255_255_255_/_5%)] rounded-xl",
-						style: { padding: "10px", margin: "10px 0" },
-					});
-				});
+			const withNote = noteMediaEntries.filter(([, v]) => v.notes);
+			if (!withNote.length) return [noEntries];
 
-			if (data.length <= 0) {
-				return [
-					tray.text("No Entries", {
-						className:
-							"bg-gray-900 border border-[rgb(255_255_255_/_5%)] rounded-xl",
-						style: {
-							textAlign: "center",
-							padding: "25px 0",
-							fontSize: "1.5em",
-							fontWeight: "500",
-							color: "#666",
-						},
-					}),
-				];
-			}
-			return data;
-		}
-
-		// Cache the notes from the anime collection
-		$anilist
-			.getAnimeCollection(false)
-			.MediaListCollection?.lists?.forEach((list) =>
-				list.entries?.forEach((entry) => {
-					if (entry.media && entry.notes) {
-						updateNoteStore(entry.media.id.toString(), {
-							coverImage: entry.media.coverImage?.medium,
-							title: entry.media.title?.userPreferred,
-							notes: entry.notes,
-						});
-					}
-				})
+			// sort by title
+			const sortedNote = [...withNote].sort(([, a], [, b]) =>
+				(a.title ?? "").localeCompare(b.title ?? "")
 			);
 
-		const tray = ctx.newTray({ iconUrl, withContent: true });
+			return sortedNote.map(([id, media]) => {
+				const buttonStyle = {
+					wordBreak: "unset",
+					width: "fit-content",
+					fontSize: "12px",
+				};
+
+				const coverImage = tray.div([], {
+					style: {
+						width: "50px",
+						flexShrink: "0",
+						flexGrow: "0",
+						backgroundImage: `url(${media.coverImage})`,
+						backgroundSize: "contain",
+						backgroundRepeat: "no-repeat",
+						backgroundPosition: "center",
+					},
+				});
+
+				const title = tray.text(String(media.title) || "\u200b", {
+					style: {
+						whiteSpace: "nowrap",
+						overflow: "hidden",
+						textOverflow: "ellipsis",
+						"user-select": "none",
+					},
+				});
+
+				const notes = tray.text(String(media.notes) || "\u200b", {
+					style: {
+						fontSize: "14px",
+						color: "#666",
+						wordBreak: "unset",
+						whiteSpace: "nowrap",
+						overflow: "hidden",
+						textOverflow: "ellipsis",
+						"user-select": "none",
+					},
+				});
+
+				const goToPageBtn = tray.button("Go to Page", {
+					onClick: ctx.eventHandler(`note-navigate-${id}`, () => {
+						ctx.screen.navigateTo("/entry", { id });
+						tray.close();
+					}),
+					size: "xs",
+					intent: "gray-subtle",
+					style: buttonStyle,
+				});
+
+				const editBtn = tray.button("Edit", {
+					size: "xs",
+					intent: "gray-subtle",
+					style: buttonStyle,
+					onClick: ctx.eventHandler(`note-edit-${id}`, async () => {
+						// prettier-ignore
+						editInvokedFromTray.set(true);
+						const entry = await ctx.anime.getAnimeEntry(parseInt(id));
+
+						if (entry?.media) {
+							updateTray(entry.media);
+							tray.update();
+						} else {
+							ctx.toast.error("Unknown Error");
+						}
+					}),
+				});
+
+				const content = tray.stack(
+					[
+						tray.div([title, notes], { style: { lineHeight: "normal" } }),
+						tray.flex([goToPageBtn, editBtn], { direction: "row", gap: 1 }),
+					],
+					{ style: { justifyContent: "space-between" } }
+				);
+
+				return tray.flex([coverImage, content], {
+					gap: 3,
+					direction: "row",
+					className:
+						"bg-gray-900 border border-[rgb(255_255_255_/_5%)] rounded-xl",
+					style: { padding: "10px", margin: "10px 0" },
+				});
+			});
+		}
+
+		function cacheNotesFromCollection(bypassCache: boolean) {
+			const MLC = $anilist.getAnimeCollection(bypassCache).MediaListCollection;
+			if (!MLC || !MLC.lists) return;
+
+			for (const list of MLC.lists) {
+				const entries = list.entries;
+				if (!entries?.length) continue;
+
+				for (const entry of entries) {
+					const media = entry.media;
+					const notes = entry.notes;
+
+					if (!media || !notes) continue;
+					const coverImage = media.coverImage?.medium ?? "";
+					const title = media.title?.userPreferred ?? "";
+
+					updateNoteStore(media.id.toString(), { coverImage, title, notes });
+				}
+			}
+		}
 
 		function updateTray(anime: $app.AL_BaseAnime) {
 			const map: Map<string, AnimeNote> = new Map($store.get("anilist-notes"));
@@ -209,202 +207,158 @@ function init() {
 		};
 
 		tray.render(() => {
-			if (!$database.anilist.getToken())
+			const pluginIcon = tray.div([], {
+				style: {
+					width: "2.5em",
+					height: "2.5em",
+					backgroundImage: `url(${iconUrl})`,
+					backgroundSize: "contain",
+					backgroundRepeat: "no-repeat",
+					backgroundPosition: "center",
+					flexGrow: "0",
+					flexShrink: "0",
+				},
+			});
+
+			const header_general = tray.text("AniList Notes", {
+				style: {
+					fontSize: "1.2em",
+					"font-weight": "700",
+					"user-select": "none",
+				},
+			});
+
+			const header_specific = tray.text("Edit Note", {
+				style: {
+					fontSize: "1.5em",
+					"font-weight": "700",
+					"user-select": "none",
+				},
+			});
+
+			const text_notSignedIn = tray.text(
+				"You need to be logged in to Anilist to use this plugin.",
+				{
+					style: {
+						fontSize: "13px",
+						color: "#e26f6fff",
+						lineHeight: "normal",
+						wordBreak: "unset",
+						"user-select": "none",
+					},
+				}
+			);
+
+			const text_helper = tray.text(
+				'To edit a note, click the "Edit Note" button on the anime’s page, or right‑click the anime and choose "Edit Note" from the menu.',
+				{
+					style: {
+						fontSize: "13px",
+						color: "#666",
+						lineHeight: "normal",
+						wordBreak: "unset",
+						"user-select": "none",
+						fontWeight: "500",
+					},
+				}
+			);
+
+			const text_MyNotes = tray.text("My Notes", {
+				style: {
+					textAlign: "center",
+					fontWeight: "700",
+					paddingBottom: "10px",
+					"user-select": "none",
+				},
+			});
+
+			const formattedNotes = tray.div(formatNotes(), {
+				style: {
+					"overflow-y": "auto",
+					"overflow-x": "hidden",
+					maxHeight: "24.5rem" /*Based on parent max height*/,
+				},
+			});
+
+			const saveBtn = tray.button("Save", {
+				size: "md",
+				intent: "primary",
+				onClick: "save",
+				loading: isSaving.get(),
+				style: { flex: "1" },
+			});
+
+			const backBtn = tray.button("Go Back", {
+				size: "md",
+				style: { flex: "1" },
+				onClick: ctx.eventHandler("note-edit-cancel", () => {
+					currentMediaId.set(null);
+					tray.update();
+				}),
+			});
+
+			if (!$database.anilist.getToken()) {
 				return tray.flex(
 					[
-						tray.div([], {
-							style: {
-								width: "2.5em",
-								height: "2.5em",
-								backgroundImage: `url(${iconUrl})`,
-								backgroundSize: "contain",
-								backgroundRepeat: "no-repeat",
-								backgroundPosition: "center",
-								flexGrow: "0",
-								flexShrink: "0",
-							},
-						}),
-						tray.stack(
-							[
-								tray.text("AniList Notes", {
-									style: {
-										fontSize: "1.2em",
-										"font-weight": "700",
-										"user-select": "none",
-									},
-								}),
-								tray.text(
-									"You need to be logged in to Anilist to use this plugin.",
-									{
-										style: {
-											fontSize: "13px",
-											color: "#e26f6fff",
-											lineHeight: "normal",
-											wordBreak: "unset",
-											"user-select": "none",
-										},
-									}
-								),
-							],
-							{ gap: 1 }
-						),
+						pluginIcon,
+						tray.stack([header_general, text_notSignedIn], { gap: 1 }),
 					],
 					{ direction: "row", gap: 3, style: { padding: "10px" } }
 				);
-
-			if (!currentMediaId.get())
-				return tray.stack(
-					[
-						tray.flex(
-							[
-								tray.div([], {
-									style: {
-										width: "2.5em",
-										height: "2.5em",
-										backgroundImage: `url(${iconUrl})`,
-										backgroundSize: "contain",
-										backgroundRepeat: "no-repeat",
-										backgroundPosition: "center",
-										flexGrow: "0",
-										flexShrink: "0",
-									},
-								}),
-								tray.stack(
-									[
-										tray.text("AniList Notes", {
-											style: {
-												fontSize: "1.2em",
-												"font-weight": "700",
-												"user-select": "none",
-											},
-										}),
-										tray.text(
-											'To edit a note, click the "Edit Note" button on the anime’s page, or right‑click the anime and choose "Edit Note" from the menu.',
-											{
-												style: {
-													fontSize: "13px",
-													color: "#666",
-													lineHeight: "normal",
-													wordBreak: "unset",
-													"user-select": "none",
-													fontWeight: "500",
-												},
-											}
-										),
-									],
-									{ gap: 1 }
-								),
-							],
-							{ direction: "row", gap: 3, style: { padding: "10px" } }
-						),
-						tray.div([
-							tray.text("My Notes", {
-								style: {
-									textAlign: "center",
-									fontWeight: "700",
-									paddingBottom: "10px",
-									"user-select": "none",
-								},
-							}),
-							tray.div(formatNotes(), {
-								style: {
-									"overflow-y": "auto",
-									"overflow-x": "hidden",
-									maxHeight: "24.5rem" /*Based on parent max height*/,
-								},
-							}),
-						]),
-					],
-					{ gap: 1 }
-				);
-
-			const cancelComponent = [];
-			if (editInvokedFromTray.get()) {
-				cancelComponent.push(
-					tray.button("Go Back", {
-						size: "md",
-						style: { flex: "1" },
-						onClick: ctx.eventHandler("note-edit-cancel", () => {
-							currentMediaId.set(null);
-							tray.update();
-						}),
-					})
-				);
 			}
 
-			editInvokedFromTray.set(false);
+			if (!currentMediaId.get()) {
+				const header = tray.flex(
+					[pluginIcon, tray.stack([header_general, text_helper], { gap: 1 })],
+					{ direction: "row", gap: 3, style: { padding: "10px" } }
+				);
 
-			return tray.stack(
-				[
-					// Header
-					tray.flex(
-						[
-							tray.div([], {
-								style: {
-									width: "2.5em",
-									height: "2.5em",
-									backgroundImage: `url(${iconUrl})`,
-									backgroundSize: "contain",
-									backgroundRepeat: "no-repeat",
-									backgroundPosition: "center",
-								},
-							}),
-							tray.stack(
-								[
-									tray.text("Edit Note", {
-										style: {
-											fontSize: "1.5em",
-											"font-weight": "700",
-											"user-select": "none",
-										},
-									}),
-									tray.text(String(titleFieldRef.current), {
-										style: {
-											fontSize: "14px",
-											color: "#666",
-											"user-select": "none",
-										},
-									}),
-								],
-								{ gap: 1 }
-							),
-						],
-						{ direction: "row", gap: 3 }
-					),
-					// Body
-					tray.stack([
-						tray.input({
-							fieldRef: noteFieldRef,
-							textarea: true,
-						}),
-						tray.text(
-							"Note will be automatically saved to Anilist when you click save.",
-							{
-								style: {
-									color: "#666",
-									fontSize: "13px",
-									"user-select": "none",
-								},
-							}
-						),
-					]),
-					// Footer
-					tray.flex(
-						[
-							...cancelComponent,
-							tray.button("Save", {
-								size: "md",
-								intent: "primary",
-								onClick: "save",
-								loading: isSaving.get(),
-								style: { flex: "1" },
-							}),
-						],
-						{ direction: "row", style: { justifyContent: "end" } }
-					),
-				],
-				{ gap: 5, style: { padding: "10px" } }
+				return tray.stack([header, tray.div([text_MyNotes, formattedNotes])], {
+					gap: 1,
+				});
+			}
+
+			const titleField = tray.text(String(titleFieldRef.current), {
+				style: {
+					fontSize: "14px",
+					color: "#666",
+					"user-select": "none",
+				},
+			});
+
+			const noteField = tray.input({
+				fieldRef: noteFieldRef,
+				textarea: true,
+			});
+
+			const subtext = tray.text(
+				"Note will be automatically saved to Anilist when you click save.",
+				{
+					style: {
+						color: "#666",
+						fontSize: "13px",
+						"user-select": "none",
+					},
+				}
 			);
+
+			const mainHeader = tray.flex(
+				[pluginIcon, tray.stack([header_specific, titleField], { gap: 1 })],
+				{ direction: "row", gap: 3 }
+			);
+
+			const mainBody = tray.stack([noteField, subtext]);
+
+			const mainFooter = tray.flex(
+				[...(editInvokedFromTray.get() ? [backBtn] : []), saveBtn],
+				{ direction: "row", style: { justifyContent: "end" } }
+			);
+
+			editInvokedFromTray.set(false);
+			return tray.stack([mainHeader, mainBody, mainFooter], {
+				gap: 5,
+				style: { padding: "10px" },
+			});
 		});
 
 		// Reset Media Id everytime the tray is closed
@@ -455,7 +409,7 @@ function init() {
 			}
 
 			isSaving.set(false);
-			currentMediaId.set(null);
+			// Media Id is already reset everytime the tray is closed
 			tray.close();
 		});
 
@@ -474,25 +428,22 @@ function init() {
 		mediaCardEntry.onClick(handleButtonPress);
 
 		ctx.screen.onNavigate((e) => {
-			if (e.pathname === "/entry" && !!e.searchParams.id) {
-				const id = parseInt(e.searchParams.id);
+			if (e.pathname !== "/entry" || !e.searchParams.id) return;
 
-				const cache: [string, AnimeNote][] = $store.get(storeNoteId);
-				const mappedCache = new Map(cache);
-				const entry = mappedCache.get(id.toString());
+			const id = e.searchParams.id;
+			const cache: [string, AnimeNote][] = $store.get(storeNoteId) ?? [];
+			const entry = new Map(cache).get(id);
 
-				if (entry != null && entry.notes) {
-					animePageButton.setLabel("Edit Note");
-					mediaCardEntry.setLabel("Edit Note");
-				} else {
-					animePageButton.setLabel("Add Note");
-					mediaCardEntry.setLabel("Add Note");
-				}
+			const label = entry?.notes ? "Edit Note" : "Add Note";
 
-				mediaCardEntry.mount();
-				animePageButton.mount();
-			}
+			[animePageButton, mediaCardEntry].forEach((btn) => {
+				btn.setLabel(label);
+				btn.mount();
+			});
 		});
+
+		// Cache the notes from the anime collection
+		cacheNotesFromCollection(false);
 
 		ctx.screen.loadCurrent();
 	});
