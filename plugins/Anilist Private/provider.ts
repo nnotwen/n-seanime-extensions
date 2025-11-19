@@ -82,19 +82,22 @@ function init() {
 		 * Retrieves media info on private anime and cache them, which
 		 * can then be found on `$store.get(storeId.mediaId)`.
 		 */
-		function updateLocalStore() {
-			$anilist
-				.getAnimeCollection(false)
-				.MediaListCollection?.lists?.forEach((list) =>
-					list.entries?.forEach((entry) => {
-						if (entry.media?.id) {
-							$store.set(
-								`${storeId}.${entry.media.id}`,
-								entry.private?.valueOf()
-							);
-						}
-					})
-				);
+		function updateLocalStore(bypassCache: boolean) {
+			const MLC = $anilist.getAnimeCollection(bypassCache).MediaListCollection;
+			if (!MLC || !MLC.lists) return;
+
+			for (const list of MLC.lists) {
+				const entries = list.entries;
+				if (!entries?.length) continue;
+
+				for (const entry of entries) {
+					const media = entry.media;
+					const isPrivate = entry.private?.valueOf();
+
+					if (!media) continue;
+					$store.set(`${storeId}.${media.id}`, isPrivate);
+				}
+			}
 		}
 
 		/**
@@ -182,7 +185,7 @@ function init() {
 			}
 		});
 
-		updateLocalStore();
+		updateLocalStore(false);
 		ctx.screen.loadCurrent();
 
 		// If enabled by the user, hide private entries from appearing on collection
