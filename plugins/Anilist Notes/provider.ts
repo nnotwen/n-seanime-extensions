@@ -430,6 +430,9 @@ function init() {
 		ctx.screen.onNavigate((e) => {
 			if (e.pathname !== "/entry" || !e.searchParams.id) return;
 
+			// Process only if user is connected to Anilist
+			if (!$database.anilist.getToken()) return;
+
 			const id = e.searchParams.id;
 			const cache: [string, AnimeNote][] = $store.get(storeNoteId) ?? [];
 			const entry = new Map(cache).get(id);
@@ -442,9 +445,10 @@ function init() {
 			});
 		});
 
-		// Cache the notes from the anime collection
-		cacheNotesFromCollection(false);
-
-		ctx.screen.loadCurrent();
+		// Cache the notes from the anime collection (only f user is connected to anilist)
+		if ($database.anilist.getToken()) {
+			cacheNotesFromCollection(false);
+			ctx.screen.loadCurrent();
+		}
 	});
 }
