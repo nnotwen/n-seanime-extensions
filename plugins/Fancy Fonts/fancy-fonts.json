@@ -1,7 +1,7 @@
 {
 	"id": "fancy-fonts",
 	"name": "Fancy Fonts",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Fancy%20Fonts/fancy-fonts.json",
 	"language": "typescript",
 	"type": "plugin",

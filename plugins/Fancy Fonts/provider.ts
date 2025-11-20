@@ -458,6 +458,7 @@ function init() {
 						const error = "The URL provided does not point to a valid font file.";
 						await $_wait(2000);
 						isBusy.set(false);
+						validateBtnLabel.set("Validate");
 						return ctx.toast.error(error);
 					}
 
