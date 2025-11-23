@@ -11,9 +11,17 @@ function init() {
 			return;
 		}
 
-		const isAdult = $anilist.getAnime(animeActivity.id).isAdult ?? false;
-		if (isAdult) {
+		const media = $anilist.getAnime(animeActivity.id);
+		if (media.isAdult?.valueOf()) {
 			console.log("Adult media detected... cancelling Discord RPC Update");
+			e.preventDefault();
+			return;
+		}
+
+		const ecchi = $getUserPreference("ecchi") === "true";
+		// prettier-ignore
+		if (ecchi && media.genres?.some(g => g.trim().toLowerCase() === "ecchi")){
+			console.log("Ecchi media detected... cancelling Discord RPC Update");
 			e.preventDefault();
 			return;
 		}
@@ -28,9 +36,17 @@ function init() {
 			return;
 		}
 
-		const isAdult = $anilist.getManga(mangaActivity.id).isAdult ?? false;
-		if (isAdult) {
+		const media = $anilist.getManga(mangaActivity.id);
+		if (media.isAdult?.valueOf()) {
 			console.log("Adult media detected... cancelling Discord RPC Update");
+			e.preventDefault();
+			return;
+		}
+
+		const ecchi = $getUserPreference("ecchi") === "true";
+		// prettier-ignore
+		if (ecchi && media.genres?.some(g => g.trim().toLowerCase() === "ecchi")){
+			console.log("Ecchi media detected... cancelling Discord RPC Update");
 			e.preventDefault();
 			return;
 		}
