@@ -36,7 +36,7 @@ function init() {
 
 		type StoredFont = AppFont | SystemFont | PluginCustomFont | ExternalFont;
 
-		const FONT_DEFAULT = "unset";
+		const FONT_DEFAULT = "Inter, sans-serif";
 		const FONT_SYSTEM = "sans-serif";
 
 		// States
