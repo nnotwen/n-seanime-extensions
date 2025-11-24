@@ -3,6 +3,7 @@
 /// <reference path="./app.d.ts" />
 /// <reference path="./core.d.ts" />
 
+// @ts-ignore
 function init() {
 	$app.onDiscordPresenceAnimeActivityRequested((e) => {
 		const animeActivity = e.animeActivity;

@@ -192,4 +192,30 @@ function init() {
 		// $app.onGetAnimeCollection((event) => {});
 		// Comment out since missing permissions for that hook
 	});
+
+	// $app.onAnimeLibraryCollectionRequested((e) => {
+	// 	const hidePrivateEntries = $getUserPreference("isMediaEntriesHidden");
+	// 	const storeId = "anilist-private";
+	// 	if (hidePrivateEntries?.toLowerCase() !== "true") {
+	// 		e.next();
+	// 		return;
+	// 	}
+
+	// 	const mediaList = e.animeCollection?.MediaListCollection?.lists;
+	// 	if (!mediaList || !mediaList.length) {
+	// 		e.next();
+	// 		return;
+	// 	}
+
+	// 	for (const list of mediaList) {
+	// 		if (!list.entries || !list.entries.length) continue;
+	// 		console.log({ name: list.name, beforeCount: list.entries.length });
+	// 		list.entries = list.entries.filter(
+	// 			(e) => !$store.get(`${storeId}.${e.media?.id}`)
+	// 		);
+	// 		console.log({ name: list.name, afterCount: list.entries.length });
+	// 	}
+
+	// 	e.next();
+	// });
 }
