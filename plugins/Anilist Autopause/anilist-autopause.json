@@ -5,7 +5,7 @@
 	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Anilist%20Autopause/anilist-autopause.json",
 	"language": "typescript",
 	"type": "plugin",
-	"description": "An example plugin",
+	"description": "Automatically pause your AniList entries when you stop watching for a set time.",
 	"author": "nnotwen",
 	"icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Anilist%20Autopause/icon.png",
 	"website": "https://github.com/nnotwen/n-seanime-extensions",
