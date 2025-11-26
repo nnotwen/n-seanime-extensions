@@ -6,14 +6,21 @@
 
 function init() {
 	$ui.register(async (ctx) => {
+		// BUTTON-STYLES
 		// prettier-ignore
-		const heartIconOff = "url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0iI2NhY2FjYSIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik04IDEuMzE0QzEyLjQzOC0zLjI0OCAyMy41MzQgNC43MzUgOCAxNS03LjUzNCA0LjczNiAzLjU2Mi0zLjI0OCA4IDEuMzE0Ii8+PC9zdmc+)";
-		// prettier-ignore
-		const heartIconOn = "url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0iI2VmNDQ0NGQ5IiB2aWV3Qm94PSIwIDAgMTYgMTYiPjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgZD0iTTggMS4zMTRDMTIuNDM4LTMuMjQ4IDIzLjUzNCA0LjczNSA4IDE1LTcuNTM0IDQuNzM2IDMuNTYyLTMuMjQ4IDggMS4zMTQiLz48L3N2Zz4=)";
+		const heartIcon = "url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0iI2NhY2FjYSIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik04IDEuMzE0QzEyLjQzOC0zLjI0OCAyMy41MzQgNC43MzUgOCAxNS03LjUzNCA0LjczNiAzLjU2Mi0zLjI0OCA4IDEuMzE0Ii8+PC9zdmc+)";
+		const btnIconStyles: IconButtonStyles = {
+			backgroundImage: heartIcon,
+			backgroundRepeat: "no-repeat",
+			backgroundPosition: "center",
+			backgroundSize: "21.5px 21.5px",
+			width: "40px",
+		};
 
-		// --- State ---
 		// prettier-ignore
 		const iconUrl = "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Anilist%20Favorites/icon.png";
+
+		// --- State ---
 		const isPopulatingCache = ctx.state<boolean>(false);
 		const isCurentMediaFavorite = ctx.state<boolean>(false);
 		const favoriteStoreId = "anilist-favorite";
@@ -169,34 +176,19 @@ function init() {
 		}
 
 		// --- UI helpers ---
-		function updateFavoriteTag(isFavorite: boolean) {
-			favoriteBtn.setStyle({
-				backgroundImage: isFavorite ? heartIconOn : heartIconOff,
-				backgroundRepeat: "no-repeat",
-				backgroundPosition: "center",
-				backgroundSize: "21.5px 21.5px",
-				width: "40px",
-			});
-			if ($database.anilist.getToken()) favoriteBtn.mount();
-		}
 
-		function disableFavoriteTag(disabled: boolean) {
-			const styles: IconButtonStyles = {
-				backgroundImage: isCurentMediaFavorite.get() ? heartIconOn : heartIconOff,
-				backgroundRepeat: "no-repeat",
-				backgroundPosition: "center",
-				backgroundSize: "21.5px 21.5px",
-				width: "40px",
-				opacity: "0.5",
-				pointerEvents: "none",
-			};
-
-			if (!disabled) {
-				delete styles.opacity;
-				delete styles.pointerEvents;
+		/**
+		 * Update the button based on `isCurrentMediaFavorite`
+		 * @param disabled Whether to enable or disable the button
+		 */
+		function updateFavoriteTag(disabled: boolean) {
+			const styles = { ...btnIconStyles };
+			if (disabled) {
+				styles.opacity = "0.5";
+				styles.pointerEvents = "none";
 			}
-
 			favoriteBtn.setStyle(styles);
+			favoriteBtn.setIntent(isCurentMediaFavorite.get() ? "alert" : "gray-subtle");
 		}
 
 		function formatFavorites() {
@@ -278,6 +270,7 @@ function init() {
 		const favoriteBtn = ctx.action.newAnimePageButton({
 			label: "\u200b",
 			intent: "gray-subtle",
+			style: btnIconStyles,
 		});
 
 		// --- Tray render (Viewer for anilist) ---
@@ -358,31 +351,26 @@ function init() {
 
 		// --- Button click handler (toggle → verify → cache → UI) ---
 		favoriteBtn.onClick(async (event) => {
-			disableFavoriteTag(true);
+			updateFavoriteTag(true);
 
-			const mediaId = event.media.id;
-			const mediaTitle = event.media.title?.userPreferred || "current entry";
-			ctx.toast.info(`Updating ${mediaTitle}...`);
-
-			const response = await updateAnilistFavoriteEntry(mediaId);
+			const response = await updateAnilistFavoriteEntry(event.media.id);
 			await $_wait(2000); // short pause to avoid rate limits
 
-			if (!response.data) return disableFavoriteTag(false);
+			if (!response.data) return updateFavoriteTag(false);
 
 			// Verify actual state with single query
-			const verified = await checkIsFavourite(mediaId);
+			const verified = await checkIsFavourite(event.media.id);
 
 			// Update cache based on verified state
-			updateCache(mediaId, verified.title, verified.coverImage, verified.isFavourite);
+			updateCache(event.media.id, verified.title, verified.coverImage, verified.isFavourite);
 
 			// Update UI
 			ctx.toast.success(
 				verified.isFavourite ? `Added ${verified.title} to Favorites!` : `Removed ${verified.title} from Favorites!`
 			);
 
-			disableFavoriteTag(false);
-			updateFavoriteTag(verified.isFavourite);
 			isCurentMediaFavorite.set(verified.isFavourite);
+			updateFavoriteTag(false);
 		});
 
 		// --- Navigation handler (reflect cache on entry pages) ---
@@ -392,15 +380,15 @@ function init() {
 				const map = new Map<StoreEntry[0], StoreEntry[1]>($store.get(favoriteStoreId));
 
 				isCurentMediaFavorite.set(map.has(id));
-				updateFavoriteTag(map.has(id));
+				updateFavoriteTag(false);
 			}
 		});
 
 		// --- Initial cache population ---
 		if ($database.anilist.getToken()) {
-			populateCache();
+			await populateCache();
+			favoriteBtn.mount();
+			ctx.screen.loadCurrent();
 		}
-
-		ctx.screen.loadCurrent();
 	});
 }
