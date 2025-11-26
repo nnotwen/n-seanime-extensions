@@ -23,12 +23,15 @@ function init() {
 		// --- State ---
 		const isPopulatingCache = ctx.state<boolean>(false);
 		const isCurentMediaFavorite = ctx.state<boolean>(false);
+		const searchQuery = ctx.state<string>("");
 		const favoriteStoreId = "anilist-favorite";
 
 		// Persisted pagination states
 		const page = ctx.state<number>(1);
 		const hasNextPage = ctx.state<boolean>(false);
-		const ids = ctx.state<{ mediaId: number; title: string; coverImage: string | null }[]>([]);
+		const ids = ctx.state<{ mediaId: number; title: string; coverImage: string | null; alternativeTitles?: string[] }[]>(
+			[]
+		);
 
 		// --- Utility ---
 		function $_wait(ms: number): Promise<void> {
@@ -38,7 +41,7 @@ function init() {
 		// --- Fetch all favorites with pagination (uses ctx.state for persistence) ---
 		async function fetchFavoriteAnime(): Promise<FetchedFavorites> {
 			// prettier-ignore
-			const query = "query ($page: Int!, $perPage: Int!) { Viewer { favourites { anime(page: $page, perPage: $perPage) { nodes { id title { userPreferred } coverImage { large } } pageInfo { currentPage hasNextPage } } } } }";
+			const query = "query ($page: Int!, $perPage: Int!) { Viewer { favourites { anime(page: $page, perPage: $perPage) { nodes { id title { userPreferred romaji english native  } synonyms coverImage { large } } pageInfo { currentPage hasNextPage } } } } }";
 			const perPage = 50;
 
 			// reset persisted states
@@ -75,6 +78,9 @@ function init() {
 					mediaId: n.id,
 					title: n.title.userPreferred,
 					coverImage: n.coverImage.large,
+					alternativeTitles: [...n.synonyms, n.title.native, n.title.english, n.title.romaji, n.title.userPreferred].filter(
+						Boolean
+					) as string[],
 				}));
 
 				ids.set([...ids.get(), ...newIds]);
@@ -120,9 +126,10 @@ function init() {
 			isFavourite: boolean;
 			title: string;
 			coverImage: string | null;
+			alternativeTitles?: string[];
 		}> {
 			// prettier-ignore
-			const query = "query ($mediaId: Int!) { Media(id: $mediaId) { id isFavourite title { userPreferred } coverImage { large } } }";
+			const query = "query ($mediaId: Int!) { Media(id: $mediaId) { id isFavourite title { userPreferred english romaji native } synonyms coverImage { large } } }";
 
 			const res = await ctx.fetch("https://graphql.anilist.co", {
 				method: "POST",
@@ -135,12 +142,18 @@ function init() {
 			});
 
 			if (!res.ok) return { isFavourite: false, title: "", coverImage: null };
-			const json = await res.json();
-			const media = json?.data?.Media;
+
+			const json: AnilistFavoiteCheckingResponse = await res.json();
+			const media = json.data.Media;
+			const alternativeTitles = [media.title.romaji, media.title.native, media.title.english, ...media?.synonyms].filter(
+				Boolean
+			) as string[];
+
 			return {
 				isFavourite: Boolean(media?.isFavourite),
 				title: media?.title?.userPreferred || "",
 				coverImage: media?.coverImage?.large || null,
+				alternativeTitles,
 			};
 		}
 
@@ -155,19 +168,28 @@ function init() {
 				return;
 			}
 
-			const data: StoreEntry[] = res.data.map((m) => [m.mediaId.toString(), { title: m.title, coverImage: m.coverImage }]);
+			const data: StoreEntry[] = res.data.map((m) => [
+				m.mediaId.toString(),
+				{ title: m.title, coverImage: m.coverImage, alternativeTitles: m.alternativeTitles },
+			]);
 
 			$store.set(favoriteStoreId, data);
 			isPopulatingCache.set(false);
 		}
 
 		// --- Update cache locally using verified state ---
-		function updateCache(mediaId: number, title: string, coverImage: string | null, isFavourite: boolean) {
+		function updateCache(
+			mediaId: number,
+			title: string,
+			coverImage: string | null,
+			isFavourite: boolean,
+			alternativeTitles?: string[]
+		) {
 			const cache = new Map<StoreEntry[0], StoreEntry[1]>($store.get(favoriteStoreId));
 			const key = mediaId.toString();
 
 			if (isFavourite) {
-				cache.set(key, { title, coverImage });
+				cache.set(key, { title, coverImage, alternativeTitles });
 			} else {
 				cache.delete(key);
 			}
@@ -210,44 +232,80 @@ function init() {
 
 			if (!favoriteMediaEntries.length) return [noEntries];
 
-			const sortedFavorites = favoriteMediaEntries.sort(([, a], [, b]) => (a.title ?? "").localeCompare(b.title ?? ""));
+			const query = searchQuery.get().trim().toLowerCase();
+			const filteredFavorites = favoriteMediaEntries.filter(([, f]) =>
+				query.length > 0
+					? f.title.toLowerCase().includes(query) || f.alternativeTitles?.some((s) => s.toLowerCase().includes(query))
+					: true
+			);
+
+			if (!filteredFavorites.length) return [noEntries];
+
+			const sortedFavorites = filteredFavorites.sort(([, a], [, b]) => (a.title ?? "").localeCompare(b.title ?? ""));
 
 			return sortedFavorites.map(([id, media]) => {
 				const buttonStyle = {
-					wordBreak: "unset",
+					background: "transparent",
+					border: "none",
+					color: "transparent",
+					cursor: "pointer",
+					height: "100%",
+					left: "0px",
+					position: "absolute",
+					top: "0px",
 					width: "100%",
-					fontSize: "12px",
-					alignSelf: "bottom",
-					"border-top-left-radius": "0",
-					"border-top-right-radius": "0",
 				};
 
 				const coverImage = tray.div([], {
+					className: "coverImage",
 					style: {
 						width: "100%",
-						height: "12rem",
+						height: "15rem",
 						flexShrink: "0",
 						flexGrow: "0",
 						backgroundImage: `url(${media.coverImage})`,
 						backgroundSize: "cover",
 						backgroundRepeat: "no-repeat",
-						borderRadius: "0.75em 0.75em 0 0",
+					},
+				});
+
+				const backdrop = tray.div([], {
+					className: "backdrop",
+					style: {
+						background: "linear-gradient(to top, rgba(0,0,0,1)0%, rgba(0,0,0,1)15%, rgba(0,0,0,0)100%)",
+						width: "100%",
+						height: "100%",
+						position: "absolute",
+						top: "0",
+						left: "0",
 					},
 				});
 
 				const title = tray.text(String(media.title) || "\u200b", {
 					style: {
-						"user-select": "none",
-						padding: "0 5px 10px 5px",
+						userSelect: "none",
+						padding: "0 10px",
 						lineHeight: "1.2",
 						fontWeight: "600",
-						wordBreak: "unset",
+						fontSize: "14px",
+						whiteSpace: "normal",
+						wordBreak: "break-word",
+
+						display: "-webkit-box",
+						WebkitBoxOrient: "vertical",
+						WebkitLineClamp: "3",
+						overflow: "hidden",
+
+						maxHeight: "calc(1.2em * 3)",
+						position: "absolute",
+						bottom: "10px",
+						left: "0",
+						width: "100%",
 					},
 				});
 
-				const goToPageBtn = tray.button("Go to Page", {
+				const goToPageBtn = tray.button("", {
 					onClick: ctx.eventHandler(`note-navigate-${id}`, () => {
-						ctx.toast.info("Navigating to " + media.title);
 						ctx.screen.navigateTo("/entry", { id });
 						tray.close();
 					}),
@@ -255,13 +313,14 @@ function init() {
 					style: { ...buttonStyle },
 				});
 
-				const gap = tray.div([], { style: { "flex-grow": "1" } });
-
-				return tray.flex([coverImage, title, gap, goToPageBtn], {
-					className: "bg-gray-900 border border-[rgb(255_255_255_/_5%)] rounded-xl",
+				return tray.flex([coverImage, backdrop, title, goToPageBtn], {
+					className: "bg-gray-900 border border-[rgb(255_255_255_/_5%)] rounded-xl anilist-favorite-hover",
 					direction: "column",
 					style: {
+						overflow: "hidden",
+						position: "relative",
 						width: "10rem",
+						borderRadius: "0.75em",
 					},
 				});
 			});
@@ -318,6 +377,19 @@ function init() {
 				},
 			});
 
+			const searchInput = tray.input({
+				placeholder: "Search Favorites",
+				size: "sm",
+				value: searchQuery.get(),
+				style: {
+					width: "100%",
+					margin: "0 0 0 50px",
+				},
+				onChange: ctx.eventHandler("search", ({ value }: { value: string }) => {
+					searchQuery.set(String(value || ""));
+				}),
+			});
+
 			if (!$database.anilist.getToken()) {
 				return tray.flex([pluginIcon, tray.stack([header_text, text_notSignedIn], { gap: 1 })], {
 					direction: "row",
@@ -328,19 +400,32 @@ function init() {
 
 			return tray.stack(
 				[
-					tray.flex([pluginIcon, tray.stack([header_text, text_SignedIn], { gap: 1 })], {
-						direction: "row",
-						gap: 3,
-						style: { padding: "10px" },
-					}),
+					tray.flex(
+						[
+							pluginIcon,
+							tray.stack([header_text, text_SignedIn], {
+								gap: 1,
+								style: {
+									minWidth: "fit-content",
+								},
+							}),
+							searchInput,
+						],
+						{
+							direction: "row",
+							gap: 3,
+							style: { padding: "10px", flexWrap: "wrap" },
+						}
+					),
 					tray.div([
-						tray.flex(isPopulatingCache.get() ? [] : formatFavorites(), {
+						tray.flex(isPopulatingCache.get() ? [] : [...formatFavorites(), tray.div([], { style: { flex: "1" } })], {
 							gap: 4,
 							style: {
 								flexWrap: "wrap",
 								"overflow-y": "auto",
 								"overflow-x": "hidden",
-								maxHeight: "29rem" /*Based on parent max height*/,
+								justifyContent: "center",
+								maxHeight: "26rem" /*Based on parent max height*/,
 							},
 						}),
 					]),
@@ -348,6 +433,8 @@ function init() {
 				{ gap: 1 }
 			);
 		});
+
+		tray.onClose(() => searchQuery.set(""));
 
 		// --- Button click handler (toggle → verify → cache → UI) ---
 		favoriteBtn.onClick(async (event) => {
@@ -386,9 +473,24 @@ function init() {
 
 		// --- Initial cache population ---
 		if ($database.anilist.getToken()) {
-			await populateCache();
+			ctx.dom.onReady(async () => {
+				const style = await ctx.dom.createElement("style");
+				style.setInnerHTML(
+					".anilist-favorite-hover:hover .coverImage { transform: scale(1.05); transition: transform 0.3s ease; } .anilist-favorite-hover:hover .backdrop { background: linear-gradient(to top, rgba(0,0,0,1)0%, rgba(0,0,0,0.8)15%, rgba(0,0,0,0)50%)!important; }"
+				);
+			});
+
+			try {
+				await populateCache();
+				console.log("Cache populated");
+			} catch (e) {
+				console.log("Failed to populate cache: " + e);
+			}
+
 			favoriteBtn.mount();
 			ctx.screen.loadCurrent();
+		} else {
+			console.log("No token found, caching skipped.");
 		}
 	});
 }
