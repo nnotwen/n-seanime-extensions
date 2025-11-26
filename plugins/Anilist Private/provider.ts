@@ -2,43 +2,21 @@
 /// <reference path="./system.d.ts" />
 /// <reference path="./app.d.ts" />
 /// <reference path="./core.d.ts" />
+/// <reference path="./anilist-private.d.ts" />
 
 function init() {
 	$ui.register((ctx) => {
 		const storeId = "anilist-private";
-		const isUpdating = ctx.state<boolean>(false);
-
-		// INTERFACE and TYPES
-		interface AnilistData {
-			data: {
-				SaveMediaListEntry: {
-					private: boolean;
-					media: {
-						id: number;
-						title: {
-							userPreferred: string;
-						};
-						updatedAt: number;
-					};
-				};
-			};
-		}
-
-		interface AnilistError {
-			data: null;
-			errors: {
-				message: string;
-				status: number;
-				locations: {
-					line: number;
-					column: number;
-				}[];
-			}[];
-		}
-
-		type PrivateEntryResponse =
-			| { data: AnilistData["data"]; error: undefined }
-			| { data: null; error: string };
+		const isCurrentMediaPrivate = ctx.state<boolean>(false);
+		// prettier-ignore
+		const privateIcon = "url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0iI2NhY2FjYSIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBkPSJtMTAuNzkgMTIuOTEyLTEuNjE0LTEuNjE1YTMuNSAzLjUgMCAwIDEtNC40NzQtNC40NzRsLTIuMDYtMi4wNkMuOTM4IDYuMjc4IDAgOCAwIDhzMyA1LjUgOCA1LjVhNyA3IDAgMCAwIDIuNzktLjU4OE01LjIxIDMuMDg4QTcgNyAwIDAgMSA4IDIuNWM1IDAgOCA1LjUgOCA1LjVzLS45MzkgMS43MjEtMi42NDEgMy4yMzhsLTIuMDYyLTIuMDYyYTMuNSAzLjUgMCAwIDAtNC40NzQtNC40NzR6Ii8+PHBhdGggZD0iTTUuNTI1IDcuNjQ2YTIuNSAyLjUgMCAwIDAgMi44MjkgMi44Mjl6bTQuOTUuNzA4LTIuODI5LTIuODNhMi41IDIuNSAwIDAgMSAyLjgyOSAyLjgyOXptMy4xNzEgNi0xMi0xMiAuNzA4LS43MDggMTIgMTJ6Ii8+PC9zdmc+)";
+		const btnIconStyles: IconButtonStyles = {
+			backgroundImage: privateIcon,
+			backgroundRepeat: "no-repeat",
+			backgroundPosition: "center",
+			backgroundSize: "21.5px 21.5px",
+			width: "40px",
+		};
 
 		// FUNCTIONS
 		/**
@@ -104,14 +82,14 @@ function init() {
 		 * Updates the button on the anime page whether it was set to private
 		 * or not (Red background if private, regular if not private)
 		 */
-		function updatePrivateTag(isPrivate: boolean) {
-			pivateButton.setLabel(isPrivate ? "Private" : "Set to Private");
-			pivateButton.setIntent(isPrivate ? "alert" : "gray-subtle");
-
-			// Only mount the button if user is connected to anilist
-			if ($database.anilist.getToken()) {
-				pivateButton.mount();
+		function updatePrivateTag(disabled: boolean) {
+			const styles = { ...btnIconStyles };
+			if (disabled) {
+				styles.opacity = "0.5";
+				styles.pointerEvents = "none";
 			}
+			pivateButton.setStyle(styles);
+			pivateButton.setIntent(isCurrentMediaPrivate.get() ? "alert" : "gray-subtle");
 		}
 
 		/**
@@ -124,18 +102,13 @@ function init() {
 		}
 
 		const pivateButton = ctx.action.newAnimePageButton({
-			label: "Private",
+			label: "\u200b\u200b",
 			intent: "gray-subtle",
+			style: btnIconStyles,
 		});
 
 		pivateButton.onClick(async (event) => {
-			// Prevent simultaneous API request
-			if (isUpdating.get()) {
-				return ctx.toast.warning("Currently updating data... Please wait");
-			}
-
-			// Toggle updating state
-			isUpdating.set(true);
+			updatePrivateTag(true);
 
 			const key = `${storeId}.${event.media.id}`;
 			const current = $store.get(key) ?? false;
@@ -150,19 +123,16 @@ function init() {
 			await $_wait(2_000);
 
 			if (!response.data) {
-				isUpdating.set(false);
-				return ctx.toast.error(
-					`Failed to update ${mediaTitle}!\n\n${response.error}`
-				);
+				updatePrivateTag(false);
+				return ctx.toast.error(`Failed to update ${mediaTitle}!\n\n${response.error}`);
 			}
 
 			// Updates the button on the current anime page
-			updatePrivateTag(response.data.SaveMediaListEntry.private);
+			isCurrentMediaPrivate.set(response.data.SaveMediaListEntry.private);
+			updatePrivateTag(false);
 
 			ctx.toast.success(
-				response.data.SaveMediaListEntry.private
-					? `Set ${mediaTitle} to private!`
-					: `Removed ${mediaTitle} from private!`
+				response.data.SaveMediaListEntry.private ? `Set ${mediaTitle} to private!` : `Removed ${mediaTitle} from private!`
 			);
 
 			// Warning: If you use `updateLocalStore` again after you saved this data
@@ -172,50 +142,21 @@ function init() {
 			// in the app, the other solution would be to always update the entire
 			// local collection everytime we save the changes.
 			$store.set(key, response.data.SaveMediaListEntry.private);
-			isUpdating.set(false);
-
 			return;
 		});
 
 		ctx.screen.onNavigate((e) => {
 			if (e.pathname === "/entry" && !!e.searchParams.id) {
 				const id = parseInt(e.searchParams.id);
-				const isCurrentMediaPrivate = $store.get(`${storeId}.${id}`);
-				updatePrivateTag(Boolean(isCurrentMediaPrivate));
+				isCurrentMediaPrivate.set($store.get(`${storeId}.${id}`));
+				updatePrivateTag(false);
 			}
 		});
 
-		updateLocalStore(false);
-		ctx.screen.loadCurrent();
-
-		// If enabled by the user, hide private entries from appearing on collection
-		// $app.onGetAnimeCollection((event) => {});
-		// Comment out since missing permissions for that hook
+		if ($database.anilist.getToken()) {
+			updateLocalStore(false);
+			pivateButton.mount();
+			ctx.screen.loadCurrent();
+		}
 	});
-
-	// $app.onAnimeLibraryCollectionRequested((e) => {
-	// 	const hidePrivateEntries = $getUserPreference("isMediaEntriesHidden");
-	// 	const storeId = "anilist-private";
-	// 	if (hidePrivateEntries?.toLowerCase() !== "true") {
-	// 		e.next();
-	// 		return;
-	// 	}
-
-	// 	const mediaList = e.animeCollection?.MediaListCollection?.lists;
-	// 	if (!mediaList || !mediaList.length) {
-	// 		e.next();
-	// 		return;
-	// 	}
-
-	// 	for (const list of mediaList) {
-	// 		if (!list.entries || !list.entries.length) continue;
-	// 		console.log({ name: list.name, beforeCount: list.entries.length });
-	// 		list.entries = list.entries.filter(
-	// 			(e) => !$store.get(`${storeId}.${e.media?.id}`)
-	// 		);
-	// 		console.log({ name: list.name, afterCount: list.entries.length });
-	// 	}
-
-	// 	e.next();
-	// });
 }
