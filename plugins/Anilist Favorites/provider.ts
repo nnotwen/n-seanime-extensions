@@ -2,67 +2,26 @@
 /// <reference path="./system.d.ts" />
 /// <reference path="./app.d.ts" />
 /// <reference path="./core.d.ts" />
+/// <reference path="./anilist-favorites.d.ts" />
 
 function init() {
 	$ui.register(async (ctx) => {
-		// --- Types ---
-		interface AnilistViewer {
-			data: {
-				Viewer: {
-					favourites: {
-						anime: {
-							nodes: {
-								id: number;
-								title: { userPreferred: string };
-								coverImage: { large: string | null };
-							}[];
-							pageInfo: { currentPage: number; hasNextPage: boolean };
-						};
-					};
-				};
-			};
-		}
-
-		interface AnilistError {
-			data: null;
-			errors: { message: string; status: number }[];
-		}
-
-		interface AnilistFavoriteData {
-			data: {
-				anime: {
-					nodes: {
-						id: number;
-						title: { userPreferred: string };
-						coverImage: { large: string | null };
-						isFavourite: boolean;
-					}[];
-				};
-			};
-		}
-
-		type StoreEntry = [string, { title: string; coverImage: string | null }];
-
-		type FetchedFavorites =
-			| {
-					data: { mediaId: number; title: string; coverImage: string | null }[];
-					error: undefined;
-			  }
-			| { data: null; error: string };
+		// prettier-ignore
+		const heartIconOff = "url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0iI2NhY2FjYSIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik04IDEuMzE0QzEyLjQzOC0zLjI0OCAyMy41MzQgNC43MzUgOCAxNS03LjUzNCA0LjczNiAzLjU2Mi0zLjI0OCA4IDEuMzE0Ii8+PC9zdmc+)";
+		// prettier-ignore
+		const heartIconOn = "url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0iI2VmNDQ0NGQ5IiB2aWV3Qm94PSIwIDAgMTYgMTYiPjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgZD0iTTggMS4zMTRDMTIuNDM4LTMuMjQ4IDIzLjUzNCA0LjczNSA4IDE1LTcuNTM0IDQuNzM2IDMuNTYyLTMuMjQ4IDggMS4zMTQiLz48L3N2Zz4=)";
 
 		// --- State ---
 		// prettier-ignore
 		const iconUrl = "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Anilist%20Favorites/icon.png";
-		const isUpdating = ctx.state<boolean>(false);
 		const isPopulatingCache = ctx.state<boolean>(false);
+		const isCurentMediaFavorite = ctx.state<boolean>(false);
 		const favoriteStoreId = "anilist-favorite";
 
 		// Persisted pagination states
 		const page = ctx.state<number>(1);
 		const hasNextPage = ctx.state<boolean>(false);
-		const ids = ctx.state<
-			{ mediaId: number; title: string; coverImage: string | null }[]
-		>([]);
+		const ids = ctx.state<{ mediaId: number; title: string; coverImage: string | null }[]>([]);
 
 		// --- Utility ---
 		function $_wait(ms: number): Promise<void> {
@@ -189,25 +148,15 @@ function init() {
 				return;
 			}
 
-			const data: StoreEntry[] = res.data.map((m) => [
-				m.mediaId.toString(),
-				{ title: m.title, coverImage: m.coverImage },
-			]);
+			const data: StoreEntry[] = res.data.map((m) => [m.mediaId.toString(), { title: m.title, coverImage: m.coverImage }]);
 
 			$store.set(favoriteStoreId, data);
 			isPopulatingCache.set(false);
 		}
 
 		// --- Update cache locally using verified state ---
-		function updateCache(
-			mediaId: number,
-			title: string,
-			coverImage: string | null,
-			isFavourite: boolean
-		) {
-			const cache = new Map<StoreEntry[0], StoreEntry[1]>(
-				$store.get(favoriteStoreId)
-			);
+		function updateCache(mediaId: number, title: string, coverImage: string | null, isFavourite: boolean) {
+			const cache = new Map<StoreEntry[0], StoreEntry[1]>($store.get(favoriteStoreId));
 			const key = mediaId.toString();
 
 			if (isFavourite) {
@@ -221,9 +170,33 @@ function init() {
 
 		// --- UI helpers ---
 		function updateFavoriteTag(isFavorite: boolean) {
-			favoriteBtn.setLabel(isFavorite ? "Favorite" : "Set as favorite");
-			favoriteBtn.setIntent(isFavorite ? "alert" : "gray-subtle");
+			favoriteBtn.setStyle({
+				backgroundImage: isFavorite ? heartIconOn : heartIconOff,
+				backgroundRepeat: "no-repeat",
+				backgroundPosition: "center",
+				backgroundSize: "21.5px 21.5px",
+				width: "40px",
+			});
 			if ($database.anilist.getToken()) favoriteBtn.mount();
+		}
+
+		function disableFavoriteTag(disabled: boolean) {
+			const styles: IconButtonStyles = {
+				backgroundImage: isCurentMediaFavorite.get() ? heartIconOn : heartIconOff,
+				backgroundRepeat: "no-repeat",
+				backgroundPosition: "center",
+				backgroundSize: "21.5px 21.5px",
+				width: "40px",
+				opacity: "0.5",
+				pointerEvents: "none",
+			};
+
+			if (!disabled) {
+				delete styles.opacity;
+				delete styles.pointerEvents;
+			}
+
+			favoriteBtn.setStyle(styles);
 		}
 
 		function formatFavorites() {
@@ -245,9 +218,7 @@ function init() {
 
 			if (!favoriteMediaEntries.length) return [noEntries];
 
-			const sortedFavorites = favoriteMediaEntries.sort(([, a], [, b]) =>
-				(a.title ?? "").localeCompare(b.title ?? "")
-			);
+			const sortedFavorites = favoriteMediaEntries.sort(([, a], [, b]) => (a.title ?? "").localeCompare(b.title ?? ""));
 
 			return sortedFavorites.map(([id, media]) => {
 				const buttonStyle = {
@@ -295,8 +266,7 @@ function init() {
 				const gap = tray.div([], { style: { "flex-grow": "1" } });
 
 				return tray.flex([coverImage, title, gap, goToPageBtn], {
-					className:
-						"bg-gray-900 border border-[rgb(255_255_255_/_5%)] rounded-xl",
+					className: "bg-gray-900 border border-[rgb(255_255_255_/_5%)] rounded-xl",
 					direction: "column",
 					style: {
 						width: "10rem",
@@ -306,7 +276,7 @@ function init() {
 		}
 
 		const favoriteBtn = ctx.action.newAnimePageButton({
-			label: "Private",
+			label: "\u200b",
 			intent: "gray-subtle",
 		});
 
@@ -334,18 +304,15 @@ function init() {
 				},
 			});
 
-			const text_notSignedIn = tray.text(
-				"You need to be logged in to Anilist to use this plugin.",
-				{
-					style: {
-						fontSize: "13px",
-						color: "#e26f6fff",
-						lineHeight: "normal",
-						wordBreak: "unset",
-						"user-select": "none",
-					},
-				}
-			);
+			const text_notSignedIn = tray.text("You need to be logged in to Anilist to use this plugin.", {
+				style: {
+					fontSize: "13px",
+					color: "#e26f6fff",
+					lineHeight: "normal",
+					wordBreak: "unset",
+					"user-select": "none",
+				},
+			});
 
 			const text_SignedIn = tray.text("Browse your Favorite Anime", {
 				style: {
@@ -359,22 +326,20 @@ function init() {
 			});
 
 			if (!$database.anilist.getToken()) {
-				return tray.flex(
-					[pluginIcon, tray.stack([header_text, text_notSignedIn], { gap: 1 })],
-					{ direction: "row", gap: 3, style: { padding: "10px" } }
-				);
+				return tray.flex([pluginIcon, tray.stack([header_text, text_notSignedIn], { gap: 1 })], {
+					direction: "row",
+					gap: 3,
+					style: { padding: "10px" },
+				});
 			}
 
 			return tray.stack(
 				[
-					tray.flex(
-						[pluginIcon, tray.stack([header_text, text_SignedIn], { gap: 1 })],
-						{
-							direction: "row",
-							gap: 3,
-							style: { padding: "10px" },
-						}
-					),
+					tray.flex([pluginIcon, tray.stack([header_text, text_SignedIn], { gap: 1 })], {
+						direction: "row",
+						gap: 3,
+						style: { padding: "10px" },
+					}),
 					tray.div([
 						tray.flex(isPopulatingCache.get() ? [] : formatFavorites(), {
 							gap: 4,
@@ -393,54 +358,40 @@ function init() {
 
 		// --- Button click handler (toggle → verify → cache → UI) ---
 		favoriteBtn.onClick(async (event) => {
-			if (isUpdating.get()) {
-				return ctx.toast.warning("Currently updating data... Please wait");
-			}
+			disableFavoriteTag(true);
 
 			const mediaId = event.media.id;
 			const mediaTitle = event.media.title?.userPreferred || "current entry";
 			ctx.toast.info(`Updating ${mediaTitle}...`);
-			isUpdating.set(true);
 
 			const response = await updateAnilistFavoriteEntry(mediaId);
 			await $_wait(2000); // short pause to avoid rate limits
 
-			if (!response.data) {
-				isUpdating.set(false);
-				return ctx.toast.error(
-					`Failed to update ${mediaTitle}!\n\n${response.error}`
-				);
-			}
+			if (!response.data) return disableFavoriteTag(false);
 
 			// Verify actual state with single query
 			const verified = await checkIsFavourite(mediaId);
 
 			// Update cache based on verified state
-			updateCache(
-				mediaId,
-				verified.title,
-				verified.coverImage,
-				verified.isFavourite
-			);
+			updateCache(mediaId, verified.title, verified.coverImage, verified.isFavourite);
 
 			// Update UI
-			updateFavoriteTag(verified.isFavourite);
 			ctx.toast.success(
-				verified.isFavourite
-					? `Added ${verified.title} to Favorites!`
-					: `Removed ${verified.title} from Favorites!`
+				verified.isFavourite ? `Added ${verified.title} to Favorites!` : `Removed ${verified.title} from Favorites!`
 			);
 
-			isUpdating.set(false);
+			disableFavoriteTag(false);
+			updateFavoriteTag(verified.isFavourite);
+			isCurentMediaFavorite.set(verified.isFavourite);
 		});
 
 		// --- Navigation handler (reflect cache on entry pages) ---
 		ctx.screen.onNavigate((e) => {
 			if (e.pathname === "/entry" && !!e.searchParams.id) {
 				const id = e.searchParams.id;
-				const map = new Map<StoreEntry[0], StoreEntry[1]>(
-					$store.get(favoriteStoreId)
-				);
+				const map = new Map<StoreEntry[0], StoreEntry[1]>($store.get(favoriteStoreId));
+
+				isCurentMediaFavorite.set(map.has(id));
 				updateFavoriteTag(map.has(id));
 			}
 		});
