@@ -1,0 +1,21 @@
+{
+	"id": "vault",
+	"name": "Vault",
+	"version": "1.0.0",
+	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Vault/vault.json",
+	"language": "typescript",
+	"type": "plugin",
+	"description": "Create, Edit, and View your personal curated lists.",
+	"author": "nnotwen",
+	"icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Vault/icon.png",
+	"website": "https://github.com/nnotwen/n-seanime-extensions",
+	"lang": "en",
+	"payloadURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Vault/provider.ts",
+	"plugin": {
+		"version": "1",
+		"permissions": {
+			"scopes": ["storage"]
+		}
+	},
+	"isDevelopment": true
+}
