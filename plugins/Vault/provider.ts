@@ -176,7 +176,7 @@ function init() {
 							gap: 1,
 						}),
 					],
-					{ direction: "row", gap: 1 }
+					{ direction: "row", gap: 3 }
 				);
 
 				const body = tray.stack(
