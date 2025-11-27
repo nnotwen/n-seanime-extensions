@@ -1,0 +1,38 @@
+{
+	"id": "untracked",
+	"name": "Untracked",
+	"version": "1.0.0",
+	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Untracked/untracked.json",
+	"language": "typescript",
+	"type": "plugin",
+	"description": "A utility to selectively untrack progress on specific anime while \"Automatically Update Progress\" is enabled.",
+	"author": "nnotwen",
+	"icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Untracked/icon.png",
+	"website": "https://github.com/nnotwen/n-seanime-extensions",
+	"lang": "en",
+	"payloadURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Untracked/provider.ts",
+	"plugin": {
+		"version": "1",
+		"permissions": {
+			"scopes": ["anilist", "storage"]
+		}
+	},
+	"userConfig": {
+		"requiresConfig": true,
+		"version": 1,
+		"fields": [
+			{
+				"name": "hentai",
+				"label": "Disable tracking progress for all Hentai",
+				"type": "switch",
+				"default": "false"
+			},
+			{
+				"name": "ecchi",
+				"label": "Disable tracking progress for all Ecchi",
+				"type": "switch",
+				"default": "false"
+			}
+		]
+	}
+}
