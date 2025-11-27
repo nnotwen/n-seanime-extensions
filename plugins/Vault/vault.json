@@ -16,6 +16,5 @@
 		"permissions": {
 			"scopes": ["storage"]
 		}
-	},
-	"isDevelopment": true
+	}
 }
