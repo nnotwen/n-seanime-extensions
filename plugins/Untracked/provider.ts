@@ -96,13 +96,16 @@ function init() {
 			}
 
 			if (!isCurrentMediaUntracked.get()) {
-				const tag = await container.queryOne(`[data-untracked-${mediaId}]`);
-				if (!tag) return console.log("Error: This entry's DOM was not tagged correctly");
-				tag.remove();
+				const tag = await container.queryOne(`[data-untracked]`);
+				if (tag) tag.remove();
 			} else {
+				// Check the page if tag already exists (early return if it is)
+				const existing = await container.queryOne(`[data-untracked]`);
+				if (existing) return;
+
 				const tag = await ctx.dom.createElement("span");
 				tag.setInnerHTML("Untracked");
-				tag.setAttribute(`data-untracked-${mediaId}`, "true");
+				tag.setAttribute(`data-untracked`, mediaId.toString());
 				tag.setStyle("background-color", "#ef4444d9");
 				tag.setStyle("padding", "0 10px");
 				tag.setStyle("border-radius", "9999px");
