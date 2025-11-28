@@ -94,16 +94,26 @@ function init() {
 			$storage.set(storageId, Array.from(localStore.entries()));
 		}
 
-		$store.watch("entry-preupdate", (e: $app.PreUpdateEntryEvent) => {
-			if (e.status?.toLowerCase() === "current" && e.mediaId) {
-				updateLastWatchedStore(e.mediaId);
-				return;
+		async function isAnime(mediaId: number) {
+			try {
+				await ctx.anime.getAnimeEntry(mediaId);
+				return true;
+			} catch {
+				return false;
 			}
+		}
+
+		// prettier-ignore
+		$store.watch("entry-preupdate", async (e: $app.PreUpdateEntryEvent) => {
+			if (e.status?.toLowerCase() === "current" && e.mediaId && (await isAnime(e.mediaId))){
+                updateLastWatchedStore(e.mediaId);
+                return;
+            }
 		});
 
 		// prettier-ignore
-		$store.watch("entry-preupdate-progress", (e: $app.PreUpdateEntryProgressEvent) => {
-            if (e.status?.toLowerCase() === "current" && e.mediaId){
+		$store.watch("entry-preupdate-progress",async (e: $app.PreUpdateEntryProgressEvent) => {
+            if (e.status?.toLowerCase() === "current" && e.mediaId && (await isAnime(e.mediaId))){
                 updateLastWatchedStore(e.mediaId);
                 return;
             }
