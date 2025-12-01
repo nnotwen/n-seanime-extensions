@@ -421,6 +421,7 @@ function init() {
 								document.body.appendChild(marker);
 							}
 							marker.setAttribute("data-id", id);
+							marker.setAttribute("data-clicked", "true");
 						}
 					});
 				})();
@@ -473,7 +474,11 @@ function init() {
 		ctx.dom.observe("#franchise-navigate-marker", (elements) => {
 			if (!currentMediaId.get()) return;
 			const id = elements[0]?.attributes["data-id"];
-			if (id) ctx.screen.navigateTo("/entry", { id });
+			const clicked = elements[0]?.attributes["data-clicked"];
+			if (id && clicked === "true") {
+				ctx.screen.navigateTo("/entry", { id });
+				elements[0]?.setAttribute("data-clicked", "false");
+			}
 		});
 
 		ctx.screen.loadCurrent();
