@@ -5,7 +5,7 @@
 	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Anilist%20Watch%20Order/anilist-watch-order.json",
 	"language": "typescript",
 	"type": "plugin",
-	"description": "Provides the Anilist-recommended watch order within the anime's page.",
+	"description": "Get the Anilist-recommended watch order within the anime's page.",
 	"author": "nnotwen",
 	"icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Anilist%20Watch%20Order/icon.png",
 	"website": "https://github.com/nnotwen/n-seanime-extensions",
