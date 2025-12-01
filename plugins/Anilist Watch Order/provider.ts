@@ -270,6 +270,17 @@ function init() {
 			nodes.set([]);
 			edges.set([]);
 
+			const oldscript = [
+				...(await ctx.dom.query("[data-relations-graph]")),
+				...(await ctx.dom.query("[data-relations-graph-data]")),
+			];
+
+			if (oldscript.length) {
+				for (const script of oldscript) {
+					script.remove();
+				}
+			}
+
 			const script = await ctx.dom.createElement("script");
 			script.setAttribute("data-relations-graph", "true");
 			script.setText(`
