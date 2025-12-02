@@ -16,6 +16,7 @@ function init() {
 			"PARENT",
 			"SIDE_STORY",
 			"ALTERNATIVE",
+			"OTHER",
 		];
 
 		const currentMediaId = ctx.state<number | null>(null);
@@ -54,11 +55,30 @@ function init() {
 		}
 
 		function normalizeString(type: string): string {
-			return type
-				.toLowerCase()
-				.split("_")
-				.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-				.join(" ");
+			return type.split("_").join(" ");
+		}
+
+		function wrapString(text: string, maxCharsPerLine = 20): string {
+			if (!text) return "";
+
+			const words = text.split(" ");
+			const lines: string[] = [];
+			let currentLine = "";
+
+			words.forEach((word) => {
+				if ((currentLine + word).length > maxCharsPerLine) {
+					lines.push(currentLine.trim());
+					currentLine = word + " ";
+				} else {
+					currentLine += word + " ";
+				}
+			});
+
+			if (currentLine.trim().length > 0) {
+				lines.push(currentLine.trim());
+			}
+
+			return lines.join("\n");
 		}
 
 		async function fetchMediaBulk(ids: number[]): Promise<MediaQueryResponse[]> {
@@ -89,12 +109,12 @@ function init() {
 
 			const node = {
 				id: media.id,
-				label: `${media.title?.userPreferred}\n${media.format ? media.format + " " : ""}(${
-					media.startDate?.year ?? "UPCOMING"
-				})`,
+				label: `${wrapString(media.title?.userPreferred ?? "")}\n\n${
+					media.format ? normalizeString(media.format) + " " : ""
+				}(${media.startDate?.year ?? "UPCOMING"})`,
 				shape: "box",
-				borderWidth: 2,
-				borderWidthSelected: 4,
+				borderWidth: 1,
+				borderWidthSelected: 2,
 				margin: 10,
 				font: {
 					multi: true,
@@ -134,7 +154,7 @@ function init() {
 
 			// Normalize PREQUEL → SEQUEL
 			if (relationType === "PREQUEL") {
-				edge = { from: toId, to: fromId, label: "Sequel", arrows: "to" };
+				edge = { from: toId, to: fromId, label: normalizeString("SEQUEL"), arrows: "to" };
 			} else {
 				edge = { from: fromId, to: toId, label: normalizeString(relationType), arrows: "to" };
 			}
@@ -142,28 +162,35 @@ function init() {
 			// Skip adding parent
 			if (relationType === "PARENT") return;
 
-			// 🔎 Add dashed styling for non-sequels
-			if (edge.label !== "Sequel") {
-				(edge as any).label = ` ${edge.label} `.toUpperCase();
-				(edge as any).dashes = true;
-				(edge as any).color = { color: "#808080" };
-				(edge as any).font = {
-					color: "#808080",
-					strokeWidth: 0,
-				};
-			} else {
-				(edge as any).label = ` ${edge.label} `.toUpperCase();
-				(edge as any).width = 5;
-				(edge as any).font = {
-					color: "#fff",
-					strokeWidth: 0,
-				};
-			}
+			// Dash styles
+			(edge as any).dashes = true;
+			(edge as any).color = { color: "#3d3d3d" };
+			(edge as any).font = {
+				color: "#848484",
+				background: "#111111",
+				strokeWidth: 0,
+			};
 
 			const currentEdges = edges.get();
 
-			// Prevent exact duplicates
-			const exists = currentEdges.some((e) => e.from === edge.from && e.to === edge.to && e.label === edge.label);
+			let key: string;
+			if (edge.label.trim() === "ALTERNATIVE") {
+				const minId = Math.min(edge.from, edge.to);
+				const maxId = Math.max(edge.from, edge.to);
+				key = `${minId}-${maxId}-${edge.label}`;
+			} else {
+				key = `${edge.from}-${edge.to}-${edge.label}`;
+			}
+
+			const exists = currentEdges.some((e) => {
+				if (edge.label.trim() === "ALTERNATIVE") {
+					const minId = Math.min(e.from, e.to ?? 1e9);
+					const maxId = Math.max(e.from, e.to ?? 1e9);
+					return `${minId}-${maxId}-${e.label}` === key;
+				}
+				return e.from === edge.from && e.to === edge.to && e.label === edge.label;
+			});
+
 			if (!exists) {
 				edges.set([...currentEdges, edge]);
 			}
@@ -383,6 +410,27 @@ function init() {
 					const graphArea = document.getElementById("graph-area");
 					if (!graphArea) return;
 
+					const g = new dagre.graphlib.Graph();
+					g.setGraph({ rankdir: "LR" });
+					g.setDefaultEdgeLabel(() => ({}));
+
+					nodesData.forEach(n => {
+						g.setNode(n.id, { width: 250, height: 100 });
+					});
+
+					edgesData.forEach(e => {
+						g.setEdge(e.from, e.to)
+					});
+
+					dagre.layout(g)
+
+					nodesData.forEach(n => {
+						const pos = g.node(n.id);
+						n.x = pos.x;
+						n.y = pos.y;
+						n.fixed = { x: true, y: true };
+					});
+
 					graphArea.innerHTML = ""; // clear loading
 
 					const nodes = new vis.DataSet(nodesData);
@@ -390,26 +438,26 @@ function init() {
 					const data = { nodes, edges };
 
 					const options = {
-						physics: {
-							enabled: true,
-							solver: "repulsion",
-							repulsion: {
-								nodeDistance: 250,
-								springLength: 300,
-								springConstant: 0.05,
-							},
-						},
+						physics: false,
+						edges: {
+							smooth: {
+								type: "cubicBezier",   
+								forceDirection: "horizontal", 
+								roundness: 0.4
+							}
+						}
 					};
 
 					const network = new vis.Network(graphArea, data, options);
 					network.selectNodes([${e.media.id}]);
 
-					network.once("stabilizationIterationsDone", () => {
+					network.once("afterDrawing", () => {
 						network.focus(${e.media.id}, {
 							scale: 1,
 							animation: { duration: 500, easingFunction: "easeInOutQuad" }
 						});
 					});
+
 
 					network.on("click", (params) => {
 						if (params.nodes.length > 0) {
@@ -453,20 +501,23 @@ function init() {
 
 		// load vis module
 		ctx.dom.onReady(async () => {
-			const script = await ctx.dom.createElement("script");
-			const styles = await ctx.dom.createElement("style");
+			const dagreScript = await ctx.dom.createElement("script");
+			const visScript = await ctx.dom.createElement("script");
+			const visStyles = await ctx.dom.createElement("style");
 			const head = await ctx.dom.queryOne("head");
-			script.setAttribute("src", "https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis-network.min.js");
-			styles.setAttribute("href", "https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis-network.min.css");
-			styles.setAttribute("rel", "stylesheet");
-			styles.setAttribute("type", "text/css");
+			dagreScript.setAttribute("src", "https://unpkg.com/dagre/dist/dagre.min.js");
+			visScript.setAttribute("src", "https://unpkg.com/vis-network/standalone/umd/vis-network.min.js");
+			visStyles.setAttribute("href", "https://unpkg.com/vis-network/styles/vis-network.min.css");
+			visStyles.setAttribute("rel", "stylesheet");
+			visStyles.setAttribute("type", "text/css");
 
 			const customStyle = await ctx.dom.createElement("style");
 			// prettier-ignore
 			customStyle.setText(".franchise-map-spinner-container { display: flex; flex-direction: column; align-items: center; justify-content: center; } .franchise-map-spinner { width: 40px; height: 40px; border: 4px solid #ccc; border-top: 4px solid #4cafef; border-radius: 50%; animation: franchise-map-spin 1s linear infinite; margin-bottom: 0.5rem; } .franchise-map-spinner-text { color: #cacaca; font-size: 14px; } @keyframes franchise-map-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }");
 
-			head?.append(script);
-			head?.append(styles);
+			head?.append(dagreScript);
+			head?.append(visScript);
+			head?.append(visStyles);
 			head?.append(customStyle);
 
 			button.onClick(handleButtonPress);
