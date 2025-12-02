@@ -16,7 +16,6 @@ function init() {
 			"PARENT",
 			"SIDE_STORY",
 			"ALTERNATIVE",
-			"OTHER",
 		];
 
 		const currentMediaId = ctx.state<number | null>(null);
