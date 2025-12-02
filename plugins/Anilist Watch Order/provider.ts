@@ -226,6 +226,7 @@ function init() {
 				calls.set(calls.get() + 1);
 				await delay(2_000);
 				if (typeof list === "string") {
+					button.setStyle(buttonStyle);
 					ctx.toast.error(`An error occured while performing a recursive operation: ${list}`);
 					return console.error(`[EXT<AnilistWatchOrder>]: (err) ${list}`);
 				}
