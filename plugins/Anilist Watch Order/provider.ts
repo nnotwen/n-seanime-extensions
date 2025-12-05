@@ -315,7 +315,7 @@ function init() {
 					let container = document.getElementById("franchise-graph");
 					if (!container) {
 						container = document.createElement("div");
-						container.className = "sm:max-w-5xl lg:m-[10px]";
+						container.className = "sm:max-w-5xl lg:m-[10px] transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-500 data-[state=open]:duration-500 focus:outline-none focus-visible:outline-none select-none data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right rounded-[--radius]";
 						container.id = "franchise-graph";
 						container.style.width = "100%";
 						container.style.height = "500px";
@@ -326,7 +326,6 @@ function init() {
 						container.style.right = "10px";
 						container.style.backgroundColor = "var(--background, #111)";
 						container.style.zIndex = "50";
-						container.style.borderRadius = "15px";
 						container.style.display = "flex";
 						container.style.flexDirection = "column";
 						container.style.padding = "1rem";
@@ -350,7 +349,10 @@ function init() {
 						dismissBtn.style.color = "#fff";
 						dismissBtn.style.fontSize = "1.2rem";
 						dismissBtn.style.cursor = "pointer";
-						dismissBtn.addEventListener("click", () => container.remove());
+						dismissBtn.addEventListener("click", () => {
+							container.setAttribute("data-state", "closed");
+							setTimeout(() => container.remove(), 400); // match duration
+						});
 						header.appendChild(dismissBtn);
 
 						// --- Body ---
@@ -411,6 +413,7 @@ function init() {
 						body.appendChild(extras);
 
 						// Assemble
+						container.setAttribute("data-state", "open");
 						container.appendChild(header);
 						container.appendChild(body);
 						document.body.appendChild(container);
