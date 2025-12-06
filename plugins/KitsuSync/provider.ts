@@ -720,8 +720,12 @@ function init() {
 		tray.render(() => tabs.get());
 
 		$store.watch(log.id, () => {
-			if (tabs.current.get() === Tab.logs) {
-				tray.update();
+			try {
+				if (tabs.current.get() === Tab.logs) {
+					tray.update();
+				}
+			} catch (e) {
+				// do nothing
 			}
 		});
 
