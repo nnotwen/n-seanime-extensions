@@ -259,7 +259,12 @@ function init() {
 
 			stack(content: any[], gap: number = 2) {
 				const container = tray.div([], {
-					style: { width: this.config.width, height: this.config.height },
+					style: {
+						maxWidth: this.config.width,
+						height: this.config.height,
+						boxSizing: "border-box",
+						width: `clamp(10rem, 40vw, ${this.config.width})`,
+					},
 				});
 
 				const stack = tray.stack(content, {
