@@ -149,6 +149,8 @@ function init() {
 				}
 			} catch (err) {}
 		}
+
+		e.next();
 	});
 
 	$app.onPreUpdateEntryRepeat((e) => {
@@ -181,5 +183,7 @@ function init() {
 				}
 			} catch (err) {}
 		}
+
+		e.next();
 	});
 }

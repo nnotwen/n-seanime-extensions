@@ -668,6 +668,7 @@ function init() {
 			log.sendWarning("Login required. Please login.");
 		} else {
 			log.sendSuccess("Access token found!");
+			log.sendInfo("Logging in...");
 			tokenManager.getUserInfo();
 		}
 
