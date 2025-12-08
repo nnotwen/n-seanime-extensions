@@ -724,15 +724,13 @@ function init() {
 
 		tray.render(() => tabs.get());
 
-		$store.watch(log.id, () => {
-			try {
-				if (tabs.current.get() === Tab.logs) {
-					tray.update();
-				}
-			} catch (e) {
-				// do nothing
-			}
-		});
+		// Hopefuly this will fix the panic error on $store.watch
+		// whenever the extension is initialized
+		ctx.setTimeout(() => {
+			$store.watch(log.id, () => {
+				if (tabs.current.get() === Tab.logs) tray.update();
+			});
+		}, 5_000);
 
 		// initialization starts here
 		log.send("Initializing extension...");
