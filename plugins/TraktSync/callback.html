@@ -23,30 +23,46 @@
 				border-radius: 0.5rem;
 				padding: 1rem;
 				margin-top: 1rem;
-				text-align: left;
 			}
 			.snippet-container code {
 				font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 				font-size: 1.25rem;
-				color: #f8f9fa;
-				white-space: pre-wrap;
-				word-break: break-word;
-			}
-			.copy-button {
-				position: absolute;
-				top: 0.5rem;
-				right: 0.5rem;
-				z-index: 10;
+				color: #c29ffa;
+				white-space: nowrap;
+				overflow-x: auto;
+				display: block;
+				padding-bottom: 0.25em;
 			}
 
-			#code {
+			.snippet-container code::-webkit-scrollbar {
+				height: 6px;
+			}
+
+			.snippet-container code::-webkit-scrollbar-track {
+				background: #1e1e1e;
+			}
+
+			.snippet-container code::-webkit-scrollbar-thumb {
+				background-color: #888;
+				border-radius: 3px;
+			}
+
+			.snippet-container code {
+				scrollbar-width: thin;
+				scrollbar-color: #888 #1e1e1e;
+			}
+
+			.copy-button:hover i {
 				color: #c29ffa;
+			}
+
+			.copy-button:active {
+				border-color: transparent !important;
 			}
 		</style>
 	</head>
 	<body class="d-flex align-items-center justify-content-center vh-100">
 		<div class="container text-center" style="max-width: 750px">
-			<!-- Logo -->
 			<div class="d-flex align-items-center justify-content-center gap-3 mb-4">
 				<img src="https://seanime.app/seanime-logo.png" alt="Logo" style="max-height: 80px" />
 
@@ -64,20 +80,18 @@
 					<h1 class="card-title mb-4">TraktSync for Seanime</h1>
 					<div id="status" class="alert alert-secondary">Waiting for authorization code...</div>
 
-					<!-- Snippet block -->
-					<div class="snippet-container text-center border">
+					<div class="snippet-container text-center border d-flex align-items-start">
+						<code id="code"></code>
 						<button
 							id="copyBtn"
 							type="button"
-							class="btn btn-sm copy-button shadow-none"
+							class="btn btn-sm copy-button shadow-none pe-0"
 							style="display: none"
 							data-bs-toggle="tooltip"
 							title="Copy to clipboard"
 						>
 							<i class="bi bi-clipboard"></i>
 						</button>
-
-						<code id="code"></code>
 					</div>
 				</div>
 			</div>
@@ -114,18 +128,25 @@
 				statusEl.textContent = "No code or error found in URL.";
 			}
 
+			let resetTimeout;
+
+			const tooltip = new bootstrap.Tooltip(copyBtn);
+
 			copyBtn.addEventListener("click", () => {
 				navigator.clipboard.writeText(codeEl.textContent).then(() => {
 					copyBtn.innerHTML = '<i class="bi bi-check-lg"></i>';
-					setTimeout(() => {
+
+					copyBtn.setAttribute("data-bs-original-title", "Copied!");
+					tooltip.show();
+
+					if (resetTimeout) clearTimeout(resetTimeout);
+					resetTimeout = setTimeout(() => {
 						copyBtn.innerHTML = '<i class="bi bi-clipboard"></i>';
-					}, 2000);
+						copyBtn.setAttribute("data-bs-original-title", "Copy to clipboard");
+						resetTimeout = null;
+					}, 3000);
 				});
 			});
-
-			// Enable tooltip
-			const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-			tooltipTriggerList.map((el) => new bootstrap.Tooltip(el));
 		</script>
 	</body>
 </html>
