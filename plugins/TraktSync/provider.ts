@@ -9,7 +9,7 @@ function init() {
 	$ui.register((ctx) => {
 		const iconUrl =
 			"https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/refs/heads/master/plugins/TraktSync/icon.png";
-		const traktPin = ctx.fieldRef<string>("");
+		const traktAuthCode = ctx.fieldRef<string>("");
 		const disableSyncing = ctx.fieldRef<boolean>($storage.get("trakt:options-disableSync")?.valueOf() ?? false);
 		const tray = ctx.newTray({
 			iconUrl,
@@ -513,7 +513,7 @@ function init() {
 				const authToken = tray.input({
 					label: "\u200b",
 					placeholder: "Auth Code",
-					fieldRef: traktPin,
+					fieldRef: traktAuthCode,
 					disabled: state.loggingIn.get(),
 					style: {
 						"-webkit-text-security": "disc",
@@ -530,7 +530,7 @@ function init() {
 						width: "100%",
 					},
 					onClick: ctx.eventHandler("traktsync:login", async () => {
-						if (!traktPin.current.length) {
+						if (!traktAuthCode.current.length) {
 							state.loginError.set("Error: Please enter your PIN");
 							return;
 						} else {
@@ -540,10 +540,11 @@ function init() {
 						// start logging in
 						state.loggingIn.set(true);
 						try {
-							await traktTokenManager.exchangeCode(traktPin.current);
+							await traktTokenManager.exchangeCode(traktAuthCode.current);
 							await $_wait(5_000);
 							await traktTokenManager.getUserInfo();
 							log.sendSuccess("Successfully logged in!");
+							traktAuthCode.setValue("");
 						} catch (e) {
 							await $_wait(2_000);
 							state.loginError.set(`Error: ${(e as Error).message}`);
@@ -686,6 +687,7 @@ function init() {
 				const tempDisable = tray.switch("Temporarily disable syncing progress", {
 					size: "sm",
 					fieldRef: disableSyncing,
+					disabled: state.loggingOut.get(),
 					onChange: ctx.eventHandler("trakt:temp-disable", (e) => {
 						$storage.set("trakt:options-disableSync", e.value);
 					}),
