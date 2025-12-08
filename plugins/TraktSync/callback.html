@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Trakt OAuth Callback</title>
+		<style>
+			body {
+				font-family: sans-serif;
+				padding: 2rem;
+			}
+			code {
+				background: #eee;
+				padding: 0.25rem 0.5rem;
+				border-radius: 4px;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>Trakt OAuth Callback</h1>
+		<p id="status">Waiting for authorization code...</p>
+		<p id="code"></p>
+
+		<script>
+			// Parse query string
+			const params = new URLSearchParams(window.location.search);
+			const code = params.get("code");
+			const error = params.get("error");
+
+			if (error) {
+				document.getElementById("status").textContent = "Error during authorization:";
+				document.getElementById("code").textContent = error;
+			} else if (code) {
+				document.getElementById("status").textContent = "Authorization code received:";
+				document.getElementById("code").innerHTML = "<code>" + code + "</code>";
+			} else {
+				document.getElementById("status").textContent = "No code or error found in URL.";
+			}
+		</script>
+	</body>
+</html>
