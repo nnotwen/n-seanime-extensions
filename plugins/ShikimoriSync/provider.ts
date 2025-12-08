@@ -176,6 +176,11 @@ function init() {
 				return $store.get(this.id) ?? [];
 			},
 
+			clearEntries() {
+				$store.set(this.id, []);
+				this.sendInfo("Log cleared!");
+			},
+
 			dateFormat() {
 				return new Date().toISOString().slice(0, 19);
 			},
@@ -568,16 +573,28 @@ function init() {
 								fontWeight: "bolder",
 							},
 						}),
-						tray.button("Назад", {
-							size: "sm",
-							intent: "gray-subtle",
-							style: {
-								width: "fit-content",
-							},
-							onClick: ctx.eventHandler("shikimori:navigate-landing", () => {
-								tabs.current.set(Tab.landing);
+						tray.flex([
+							tray.button("Очистить", {
+								size: "sm",
+								intent: "alert-subtle",
+								style: {
+									width: "fit-content",
+								},
+								onClick: ctx.eventHandler("shikimori:clear-logs", () => {
+									log.clearEntries();
+								}),
 							}),
-						}),
+							tray.button("Назад", {
+								size: "sm",
+								intent: "gray-subtle",
+								style: {
+									width: "fit-content",
+								},
+								onClick: ctx.eventHandler("shikimori:navigate-landing", () => {
+									tabs.current.set(Tab.landing);
+								}),
+							}),
+						]),
 					],
 					{
 						direction: "row",
