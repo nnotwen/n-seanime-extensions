@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>OAuth Callback</title>
+		<style>
+			body {
+				font-family: sans-serif;
+				padding: 2rem;
+				background: #f5f5f5;
+			}
+			.box {
+				background: #fff;
+				border: 1px solid #ccc;
+				padding: 1rem;
+				border-radius: 6px;
+				max-width: 500px;
+			}
+			code {
+				display: block;
+				margin-top: 1rem;
+				font-size: 1.2rem;
+				background: #eee;
+				padding: 0.5rem;
+				border-radius: 4px;
+				word-break: break-all;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="box">
+			<h1>OAuth Callback</h1>
+			<p>Your authorization code is:</p>
+			<code id="auth-code">Loading…</code>
+			<p>Copy this code and paste it into your extension/plugin.</p>
+		</div>
+
+		<script>
+			// Parse query string
+			const params = new URLSearchParams(window.location.search);
+			const code = params.get("code");
+
+			const codeBox = document.getElementById("auth-code");
+			if (code) {
+				codeBox.textContent = code;
+			} else {
+				codeBox.textContent = "No code found in URL.";
+			}
+		</script>
+	</body>
+</html>
