@@ -1,40 +1,131 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 	<head>
 		<meta charset="UTF-8" />
 		<title>Trakt OAuth Callback</title>
+		<link
+			href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+			rel="stylesheet"
+			integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+			crossorigin="anonymous"
+		/>
+		<script
+			src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+			integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+			crossorigin="anonymous"
+		></script>
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+
 		<style>
-			body {
-				font-family: sans-serif;
-				padding: 2rem;
+			.snippet-container {
+				position: relative;
+				background-color: #1e1e1e;
+				border-radius: 0.5rem;
+				padding: 1rem;
+				margin-top: 1rem;
+				text-align: left;
 			}
-			code {
-				background: #eee;
-				padding: 0.25rem 0.5rem;
-				border-radius: 4px;
+			.snippet-container code {
+				font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+				font-size: 1.25rem;
+				color: #f8f9fa;
+				white-space: pre-wrap;
+				word-break: break-word;
+			}
+			.copy-button {
+				position: absolute;
+				top: 0.5rem;
+				right: 0.5rem;
+				z-index: 10;
+			}
+
+			#code {
+				color: #c29ffa;
 			}
 		</style>
 	</head>
-	<body>
-		<h1>Trakt OAuth Callback</h1>
-		<p id="status">Waiting for authorization code...</p>
-		<p id="code"></p>
+	<body class="d-flex align-items-center justify-content-center vh-100">
+		<div class="container text-center" style="max-width: 750px">
+			<!-- Logo -->
+			<div class="d-flex align-items-center justify-content-center gap-3 mb-4">
+				<img src="https://seanime.app/seanime-logo.png" alt="Logo" style="max-height: 80px" />
+
+				<span class="bi-link-45deg" style="font-size: 3em"></span>
+
+				<img
+					src="https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/refs/heads/master/plugins/TraktSync/icon.png"
+					alt="Logo"
+					style="max-height: 80px"
+				/>
+			</div>
+
+			<div class="card shadow-lg">
+				<div class="card-body">
+					<h1 class="card-title mb-4">TraktSync for Seanime</h1>
+					<div id="status" class="alert alert-secondary">Waiting for authorization code...</div>
+
+					<!-- Snippet block -->
+					<div class="snippet-container text-center border">
+						<button
+							id="copyBtn"
+							type="button"
+							class="btn btn-sm copy-button shadow-none"
+							style="display: none"
+							data-bs-toggle="tooltip"
+							title="Copy to clipboard"
+						>
+							<i class="bi bi-clipboard"></i>
+						</button>
+
+						<code id="code"></code>
+					</div>
+				</div>
+			</div>
+			<footer class="mt-4">
+				<p class="text-center text-muted small">
+					<span class="bi-exclamation-triangle-fill me-2"></span> The logo, app name, and application referenced here are the
+					property of their respective developer. This page and the TraktSync plugin have no affiliation, endorsement, or
+					connection with the developer of Seanime.
+				</p>
+			</footer>
+		</div>
 
 		<script>
-			// Parse query string
 			const params = new URLSearchParams(window.location.search);
 			const code = params.get("code");
 			const error = params.get("error");
 
+			const statusEl = document.getElementById("status");
+			const codeEl = document.getElementById("code");
+			const copyBtn = document.getElementById("copyBtn");
+
 			if (error) {
-				document.getElementById("status").textContent = "Error during authorization:";
-				document.getElementById("code").textContent = error;
+				statusEl.className = "alert alert-danger";
+				statusEl.textContent = "Error during authorization:";
+				codeEl.textContent = error;
+				copyBtn.style.display = "block";
 			} else if (code) {
-				document.getElementById("status").textContent = "Authorization code received:";
-				document.getElementById("code").innerHTML = "<code>" + code + "</code>";
+				statusEl.className = "alert alert-success";
+				statusEl.textContent = "Please copy the code below and enter it into the TraktSync plugin within Seanime.";
+				codeEl.textContent = code;
+				copyBtn.style.display = "block";
 			} else {
-				document.getElementById("status").textContent = "No code or error found in URL.";
+				statusEl.className = "alert alert-warning";
+				statusEl.textContent = "No code or error found in URL.";
 			}
+
+			copyBtn.addEventListener("click", () => {
+				navigator.clipboard.writeText(codeEl.textContent).then(() => {
+					copyBtn.innerHTML = '<i class="bi bi-check-lg"></i>';
+					setTimeout(() => {
+						copyBtn.innerHTML = '<i class="bi bi-clipboard"></i>';
+					}, 2000);
+				});
+			});
+
+			// Enable tooltip
+			const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+			tooltipTriggerList.map((el) => new bootstrap.Tooltip(el));
 		</script>
 	</body>
 </html>
