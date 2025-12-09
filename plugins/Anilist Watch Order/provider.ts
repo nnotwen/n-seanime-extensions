@@ -234,6 +234,11 @@ function init() {
 				return; // early return prevents duplicate work + duplicate cache entries
 			}
 
+			if (fetching.get()) {
+				console.log("[Ext<AnilistWatchOrder>]: (log) Avoiding parallel call");
+				return;
+			}
+
 			$store.set("now", Date.now());
 			queued.set([media.id]);
 			seen.set([]);
@@ -243,7 +248,6 @@ function init() {
 
 			// add current media to node
 			addNode(media);
-			fetched.set([media.id]);
 
 			do {
 				const list = await fetchMediaBulk(queued.get()).catch((e: Error) => e.message);
@@ -422,6 +426,11 @@ function init() {
 			`);
 
 			await walkRelations(e.media);
+
+			// Poll until fetching is false
+			while (fetching.get()) {
+				await delay(100); // check every 100ms
+			}
 
 			const dataScript = await ctx.dom.createElement("script");
 			dataScript.setAttribute("data-relations-graph-data", "true");
