@@ -120,7 +120,7 @@ function init() {
 		function handleClick(e: { media: $app.AL_BaseAnime }) {
 			currentMedia.set(e.media);
 			currentTrayPage.set(0);
-			tray.open();
+			ctx.setTimeout(() => tray.open(), 500);
 		}
 
 		const tray = ctx.newTray({
