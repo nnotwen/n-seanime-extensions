@@ -8,7 +8,7 @@
 
 // @ts-ignore
 function init() {
-	$ui.register(async (ctx) => {
+	$ui.register((ctx) => {
 		// prettier-ignore
 		const iconUrl = "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/KitsuSync/icon.png";
 		const fieldRefs = {
@@ -757,8 +757,9 @@ function init() {
 			if (kitsuTokenManager.token.refreshToken.get()) {
 				log.send("Checking availability of refresh token...");
 				try {
-					await kitsuTokenManager.refresh();
-					log.sendSuccess("Successfully refreshed access token!");
+					kitsuTokenManager.refresh().then(() => {
+						log.sendSuccess("Successfully refreshed access token!");
+					});
 					return initKitsu();
 				} catch (err) {
 					log.sendError(`Refresh failed: ${(err as Error).message}`);
