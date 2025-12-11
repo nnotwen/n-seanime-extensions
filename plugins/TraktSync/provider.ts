@@ -7,21 +7,50 @@
 // @ts-ignore
 function init() {
 	$ui.register((ctx) => {
-		const iconUrl =
-			"https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/refs/heads/master/plugins/TraktSync/icon.png";
-		const traktAuthCode = ctx.fieldRef<string>("");
-		const disableSyncing = ctx.fieldRef<boolean>($storage.get("trakt:options-disableSync")?.valueOf() ?? false);
+		// prettier-ignore
+		const iconUrl = "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/refs/heads/master/plugins/TraktSync/icon.png";
 		const tray = ctx.newTray({
 			iconUrl,
 			withContent: true,
 			width: "fit-content",
 		});
 
+		enum Tab {
+			logon = "1",
+			landing = "2",
+			logs = "3",
+			loading = "4",
+			manageList = "5",
+		}
+
+		enum ManageListSyncType {
+			// Patch = "patch",
+			Post = "post",
+			// FullSync = "fullsync"
+		}
+
+		enum ConnectionState {
+			Disconnected = "Disconnected",
+			Connected = "Connected",
+		}
+
+		const fieldRefs = {
+			traktAuthCode: ctx.fieldRef<string>(""),
+			disableSyncing: ctx.fieldRef<boolean>($storage.get("trakt:options-disableSync")?.valueOf() ?? false),
+		};
+
 		const state = {
 			loggingIn: ctx.state<boolean>(false),
 			loginError: ctx.state<string | null>(null),
 			loginLabel: ctx.state<string>("Login"),
 			loggingOut: ctx.state<boolean>(false),
+			manageListSyncTypeDesc: ctx.state<string>("Import only items not already in your list. Existing entries remain unchanged."),
+			syncing: ctx.state<boolean>(false),
+			cancellingSync: ctx.state<boolean>(false),
+			syncProgressCurrent: ctx.state<number>(0),
+			syncProgressTotal: ctx.state<number>(0),
+			syncProgressPercent: ctx.state<number>(0),
+			syncDetail: ctx.state<string>("Waiting..."),
 		};
 
 		// logger
@@ -70,13 +99,6 @@ function init() {
 			},
 		};
 
-		enum Tab {
-			logon = "1",
-			landing = "2",
-			logs = "3",
-			loading = "4",
-		}
-
 		const PKCE = {
 			base64urlEncode(bytes: Uint8Array): string {
 				// Directly base64-encode the raw bytes; do NOT pass through a string
@@ -97,14 +119,12 @@ function init() {
 				for (let i = 0; i < message.length; i++) data[i] = message.charCodeAt(i);
 
 				const K = [
-					0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98,
-					0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786,
-					0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8,
-					0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
-					0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819,
-					0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a,
-					0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7,
-					0xc67178f2,
+					0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
+					0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+					0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
+					0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+					0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
+					0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
 				];
 				function rotr(x: number, n: number) {
 					return (x >>> n) | (x << (32 - n));
@@ -190,7 +210,22 @@ function init() {
 			},
 		};
 
-		// Token manager
+		const traktProfile = {
+			// prettier-ignore
+			defaultAvatar: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY3VycmVudENvbG9yIiB2aWV3Qm94PSIwIDAgMTYgMTYiPjxwYXRoIGQ9Ik0xMSA2YTMgMyAwIDEgMS02IDAgMyAzIDAgMCAxIDYgMCIvPjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgZD0iTTAgOGE4IDggMCAxIDEgMTYgMEE4IDggMCAwIDEgMCA4bTgtN2E3IDcgMCAwIDAtNS40NjggMTEuMzdDMy4yNDIgMTEuMjI2IDQuODA1IDEwIDggMTBzNC43NTcgMS4yMjUgNS40NjggMi4zN0E3IDcgMCAwIDAgOCAxIi8+PC9zdmc+",
+			displayAvatar: ctx.state<string | null>(null),
+			userId: ctx.state<string | null>(null),
+			username: ctx.state<string | null>(null),
+			isVip: ctx.state<boolean>(false),
+			status: ctx.state<ConnectionState | null>(ConnectionState.Disconnected),
+			reset() {
+				this.displayAvatar.set(null);
+				this.userId.set(null);
+				this.username.set(null);
+				this.status.set(ConnectionState.Disconnected);
+			},
+		};
+
 		const traktTokenManager = {
 			token: {
 				accessToken: ctx.state<string | null>($storage.get("traktsync.accessToken") ?? null),
@@ -204,7 +239,6 @@ function init() {
 			userAgent: "Trakt for Seanime",
 
 			rateLimit: ctx.state<RateLimitInfo | null>(null),
-
 			currentAuthUrl: ctx.state<string | null>(null),
 
 			getAccessToken() {
@@ -284,6 +318,7 @@ function init() {
 				this.token.accessToken.set(data.access_token);
 				this.token.refreshToken.set(data.refresh_token);
 				this.token.expiresAt.set(expiresAt);
+				fieldRefs.disableSyncing.setValue(false);
 			},
 
 			async withAuthHeaders(): Promise<Record<string, string>> {
@@ -365,28 +400,7 @@ function init() {
 				this.token.refreshToken.set(null);
 				this.token.expiresAt.set(null);
 				this.rateLimit.set(null);
-				disableSyncing.setValue(false);
-			},
-		};
-
-		enum ConnectionState {
-			Disconnected = "Disconnected",
-			Connected = "Connected",
-		}
-
-		const traktProfile = {
-			// prettier-ignore
-			defaultAvatar: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY3VycmVudENvbG9yIiB2aWV3Qm94PSIwIDAgMTYgMTYiPjxwYXRoIGQ9Ik0xMSA2YTMgMyAwIDEgMS02IDAgMyAzIDAgMCAxIDYgMCIvPjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgZD0iTTAgOGE4IDggMCAxIDEgMTYgMEE4IDggMCAwIDEgMCA4bTgtN2E3IDcgMCAwIDAtNS40NjggMTEuMzdDMy4yNDIgMTEuMjI2IDQuODA1IDEwIDggMTBzNC43NTcgMS4yMjUgNS40NjggMi4zN0E3IDcgMCAwIDAgOCAxIi8+PC9zdmc+",
-			displayAvatar: ctx.state<string | null>(null),
-			userId: ctx.state<string | null>(null),
-			username: ctx.state<string | null>(null),
-			isVip: ctx.state<boolean>(false),
-			status: ctx.state<ConnectionState | null>(ConnectionState.Disconnected),
-			reset() {
-				this.displayAvatar.set(null);
-				this.userId.set(null);
-				this.username.set(null);
-				this.status.set(ConnectionState.Disconnected);
+				fieldRefs.disableSyncing.setValue(false);
 			},
 		};
 
@@ -467,6 +481,24 @@ function init() {
 
 				return tray.div([container, stack]);
 			},
+
+			backBtn() {
+				return tray.button("←", {
+					size: "md",
+					intent: "gray-subtle",
+					style: {
+						width: "2.9em",
+						borderRadius: "50%",
+						position: "fixed",
+						top: "1em",
+						left: "1em",
+					},
+					onClick: ctx.eventHandler("trakt:navigate-landing", () => {
+						tabs.current.set(Tab.landing);
+					}),
+				});
+			},
+
 			// Tray tab used for logging in
 			[Tab.logon]() {
 				// login details
@@ -513,10 +545,10 @@ function init() {
 				const authToken = tray.input({
 					label: "\u200b",
 					placeholder: "Auth Code",
-					fieldRef: traktAuthCode,
+					fieldRef: fieldRefs.traktAuthCode,
 					disabled: state.loggingIn.get(),
 					style: {
-						"-webkit-text-security": "disc",
+						// "-webkit-text-security": "disc",
 						textAlign: "center",
 					},
 				});
@@ -530,8 +562,8 @@ function init() {
 						width: "100%",
 					},
 					onClick: ctx.eventHandler("traktsync:login", async () => {
-						if (!traktAuthCode.current.length) {
-							state.loginError.set("Error: Please enter your PIN");
+						if (!fieldRefs.traktAuthCode.current.length) {
+							state.loginError.set("Error: Please enter your Auth code");
 							return;
 						} else {
 							state.loginError.set(null);
@@ -540,11 +572,11 @@ function init() {
 						// start logging in
 						state.loggingIn.set(true);
 						try {
-							await traktTokenManager.exchangeCode(traktAuthCode.current);
+							await traktTokenManager.exchangeCode(fieldRefs.traktAuthCode.current);
 							await $_wait(5_000);
 							await traktTokenManager.getUserInfo();
 							log.sendSuccess("Successfully logged in!");
-							traktAuthCode.setValue("");
+							fieldRefs.traktAuthCode.setValue("");
 						} catch (e) {
 							await $_wait(2_000);
 							state.loginError.set(`Error: ${(e as Error).message}`);
@@ -686,14 +718,22 @@ function init() {
 
 				const tempDisable = tray.switch("Temporarily disable syncing progress", {
 					size: "sm",
-					fieldRef: disableSyncing,
+					fieldRef: fieldRefs.disableSyncing,
 					disabled: state.loggingOut.get(),
 					onChange: ctx.eventHandler("trakt:temp-disable", (e) => {
 						$storage.set("trakt:options-disableSync", e.value);
 					}),
 				});
 
-				const Logs = tray.button("View Logs", {
+				const manageList = tray.button("Manage List", {
+					...buttonOpts,
+					loading: state.loggingOut.get(),
+					onClick: ctx.eventHandler("trakt:list-settings", () => {
+						tabs.current.set(Tab.manageList);
+					}),
+				});
+
+				const logs = tray.button("View Logs", {
 					...buttonOpts,
 					onClick: ctx.eventHandler("trakt:view-logs", () => {
 						tabs.current.set(Tab.logs);
@@ -701,7 +741,9 @@ function init() {
 					loading: state.loggingOut.get(),
 				});
 
-				const stack = tray.flex([status, userInfo, tempDisable, Logs], {
+				const btnGroup = tray.stack([manageList, logs], { gap: 3 });
+
+				const stack = tray.flex([status, userInfo, tempDisable, btnGroup], {
 					direction: "column",
 					gap: 5,
 				});
@@ -729,28 +771,16 @@ function init() {
 								fontWeight: "bolder",
 							},
 						}),
-						tray.flex([
-							tray.button("Clear logs", {
-								size: "sm",
-								intent: "alert-subtle",
-								style: {
-									width: "fit-content",
-								},
-								onClick: ctx.eventHandler("trakt:clear-logs", () => {
-									log.clearEntries();
-								}),
+						tray.button("Clear logs", {
+							size: "sm",
+							intent: "alert-subtle",
+							style: {
+								width: "fit-content",
+							},
+							onClick: ctx.eventHandler("trakt:clear-logs", () => {
+								log.clearEntries();
 							}),
-							tray.button("Go Back", {
-								size: "sm",
-								intent: "gray-subtle",
-								style: {
-									width: "fit-content",
-								},
-								onClick: ctx.eventHandler("trakt:navigate-landing", () => {
-									tabs.current.set(Tab.landing);
-								}),
-							}),
-						]),
+						}),
 					],
 					{
 						direction: "row",
@@ -773,7 +803,7 @@ function init() {
 					return tray.text(message, {
 						style: {
 							fontFamily: "monospace",
-							fontSize: "14px",
+							fontSize: "12px",
 							color: color[type],
 							lineHeight: "1",
 						},
@@ -791,11 +821,173 @@ function init() {
 					},
 				});
 
-				return this.stack([this.logo(), header, terminal], 2);
+				return this.stack([this.logo(), header, terminal, this.backBtn()], 2);
 			},
 
 			[Tab.loading]() {
 				return this.stack([this.logo()], 2);
+			},
+
+			[Tab.manageList]() {
+				const jobType = tray.select("Job type", {
+					size: "md",
+					placeholder: "Select...",
+					value: "import",
+					disabled: state.syncing.get() || state.cancellingSync.get(),
+					style: {
+						borderRadius: "1em 1em 0 0",
+					},
+					options: [
+						{
+							label: "Import from Anilist",
+							value: "import",
+						},
+					],
+				});
+
+				const jobTypeSubText = tray.text("Bring your AniList library into Trakt to sync progress.", {
+					className: "border",
+					style: {
+						fontSize: "12px",
+						color: "#ffc107",
+						padding: "0.5em 0.5em 0.5em 1em",
+						borderRadius: "0 0 1em 1em",
+						marginTop: "-0.75em",
+						background: "var(--neutral-900)",
+						wordBreak: "normal",
+						lineHeight: "normal",
+						opacity: state.syncing.get() || state.cancellingSync.get() ? "0.5" : "1",
+					},
+				});
+
+				const mediaType = tray.select("Media Type", {
+					size: "md",
+					placeholder: "Select...",
+					value: "Anime",
+					disabled: state.syncing.get() || state.cancellingSync.get(),
+					options: [
+						{
+							label: "Anime",
+							value: "Anime",
+						},
+					],
+				});
+
+				const syncType = tray.select("Sync Type", {
+					size: "md",
+					placeholder: "Select...",
+					value: ManageListSyncType.Post,
+					disabled: state.syncing.get() || state.cancellingSync.get(),
+					style: {
+						borderRadius: "1em 1em 0 0",
+					},
+					options: [
+						{
+							label: "Update Shared Entries",
+							value: ManageListSyncType.Post,
+						},
+					] satisfies { label: string; value: ManageListSyncType }[],
+					onChange: ctx.eventHandler("trakt:manage-list-sync-type", (e) => {
+						const value = e.value as ManageListSyncType;
+						const subtext: Record<ManageListSyncType, string> = {
+							post: "Replace data for items found in both trackers. Items missing in either list are ignored.",
+						};
+						state.manageListSyncTypeDesc.set(subtext[value]);
+					}),
+				});
+
+				const syncTypeSubText = tray.text(state.manageListSyncTypeDesc.get() || "\u200b", {
+					className: "border",
+					style: {
+						fontSize: "12px",
+						color: "#ffc107",
+						padding: "0.5em 0.5em 0.5em 1em",
+						borderRadius: "0 0 1em 1em",
+						marginTop: "-0.75em",
+						background: "var(--neutral-900)",
+						wordBreak: "normal",
+						lineHeight: "normal",
+						opacity: state.syncing.get() || state.cancellingSync.get() ? "0.5" : "1",
+					},
+				});
+
+				const startJob = tray.button({
+					label: state.syncing.get() || state.cancellingSync.get() ? "Cancel" : "Sync!",
+					size: "md",
+					loading: state.cancellingSync.get(),
+					intent: state.syncing.get() || state.cancellingSync.get() ? "alert" : "success",
+					style: {
+						width: "100%",
+						marginTop: "1.5em",
+					},
+					onClick: ctx.eventHandler("trakt:manage-list-start-job", () => {
+						if (state.syncing.get()) {
+							state.syncing.set(false);
+							state.cancellingSync.set(true);
+							ctx.setTimeout(() => {
+								state.cancellingSync.set(false);
+							}, 5_000);
+						} else {
+							state.syncing.set(true);
+							ctx.setTimeout(() => syncEntries(), 1000);
+						}
+					}),
+				});
+
+				const progressBar = tray.div(
+					[
+						tray.div([], {
+							style: {
+								position: "absolute",
+								left: "0",
+								width: `${(state.syncProgressPercent.get() * 100).toString()}%`,
+								height: "100%",
+								background: "linear-gradient(to right, #f40613, #9f41c4)",
+								animation: "slide 1.2 ease-in-out infinite",
+							},
+						}),
+					],
+					{
+						style: {
+							position: "relative",
+							marginTop: "1em",
+							width: "100%",
+							height: "8px",
+							background: "#2c2f36",
+							borderRadius: "999px",
+							overflow: "hidden",
+						},
+					}
+				);
+
+				const progressDetails = tray.flex(
+					[
+						tray.text(state.syncDetail.get(), {
+							style: {
+								overflowX: "hidden",
+								textOverflow: "ellipsis",
+							},
+						}),
+						tray.text(`[${state.syncProgressCurrent.get()}/${state.syncProgressTotal.get()}]`, {
+							style: {
+								width: "fit-content",
+								color: "#6de745",
+							},
+						}),
+					],
+					{
+						style: {
+							justifyContent: "space-around",
+							fontSize: "12px",
+							textWrap: "nowrap",
+							marginTop: "-0.5em",
+						},
+					}
+				);
+
+				const container = tray.stack([jobType, jobTypeSubText, mediaType, syncType, syncTypeSubText], { gap: 2 });
+
+				return this.stack([this.logo(), container, startJob, progressBar, progressDetails, this.backBtn()], 2);
 			},
 			// Wrapper to retrieve the current tab
 			get() {
@@ -803,8 +995,68 @@ function init() {
 			},
 		};
 
-		function $_wait(ms: number): Promise<void> {
-			return new Promise((resolve) => ctx.setTimeout(resolve, ms));
+		function $_wait(ms: number, relyOnRateLimit: boolean = false): Promise<void> {
+			return new Promise((resolve) => {
+				// If not rate-limit aware, just wait normally
+				if (!relyOnRateLimit) {
+					return ctx.setTimeout(resolve, ms);
+				}
+
+				// Rate-limit aware wait
+				const info = traktTokenManager.rateLimit.get();
+
+				// No rate-limit info yet → fallback to normal wait
+				if (!info) {
+					return ctx.setTimeout(resolve, ms);
+				}
+
+				let extraDelay = 0;
+
+				// Hard throttle: remaining == 0 or 1
+				if (info.remaining <= 1) {
+					extraDelay = info.reset * 1000; // reset is in seconds
+				}
+				// Soft throttle: remaining < 10% of limit
+				else if (info.remaining < info.limit * 0.1) {
+					extraDelay = 500; // gentle slowdown
+				}
+
+				// Final wait time
+				const total = ms + extraDelay;
+				log.sendInfo(`[WAIT] Throttling for ${(total / 1000).toFixed(2)} seconds...`);
+				ctx.setTimeout(resolve, total);
+			});
+		}
+
+		function unwrap<T>(value: T | null | undefined): T | undefined {
+			if (value == null) return undefined;
+			if (typeof value === "object") {
+				const v = (value as any).valueOf?.();
+				return v == null ? undefined : v;
+			}
+			return value;
+		}
+
+		function toISODate(startedAt?: { year?: number; month?: number; day?: number }): string | undefined {
+			if (!startedAt?.year) return undefined; // year is required
+
+			const year = startedAt.year;
+			const month = startedAt.month ?? 1; // default to January if missing
+			const day = startedAt.day ?? 1; // default to 1st if missing
+
+			const date = new Date(year, month - 1, day);
+
+			return date.toISOString();
+		}
+
+		function getAnilistEntries(mediaType: "Anime" | "Manga") {
+			return ($anilist[`get${mediaType}Collection`](false).MediaListCollection?.lists ?? [])
+				.flatMap((list) => list.entries)
+				.filter((entry): entry is $app.AL_AnimeCollection_MediaListCollection_Lists_Entries => Boolean(entry))
+				.map((entry) => {
+					const { media, ...rest } = entry;
+					return { ...rest, title: media?.title?.userPreferred, mediaId: media?.id };
+				});
 		}
 
 		async function resolveTraktIdFromAnilistId(mediaId: number) {
@@ -846,190 +1098,446 @@ function init() {
 			return null;
 		}
 
-		// Add to Trakt watchlist
-		async function addTraktEntry(traktId: number, type: "movies" | "shows") {
-			const body = {
-				[type]: [{ ids: { trakt: traktId } }],
-			};
+		async function addTraktWatchlistEntry(traktId: number, type: "movies" | "shows", season?: number) {
+			let body;
+
+			if (type === "movies") {
+				body = { movies: [{ ids: { trakt: traktId } }] };
+			} else if (season != null) {
+				body = {
+					shows: [
+						{
+							ids: { trakt: traktId },
+							seasons: [{ number: season }],
+						},
+					],
+				};
+			} else {
+				body = { shows: [{ ids: { trakt: traktId } }] };
+			}
 
 			const res = await traktTokenManager.traktFetch("/sync/watchlist", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(body),
 			});
+
 			if (!res.ok) throw new Error(res.statusText);
 			return res.json();
 		}
 
-		// Remove from Trakt watchlist
-		async function removeTraktEntry(traktId: number, type: "movies" | "shows") {
-			const body = {
-				[type]: [{ ids: { trakt: traktId } }],
-			};
+		async function removeTraktWatchlistEntry(traktId: number, type: "movies" | "shows", season?: number) {
+			let body;
+
+			if (type === "movies") {
+				body = { movies: [{ ids: { trakt: traktId } }] };
+			} else if (season != null) {
+				body = {
+					shows: [
+						{
+							ids: { trakt: traktId },
+							seasons: [{ number: season }],
+						},
+					],
+				};
+			} else {
+				body = { shows: [{ ids: { trakt: traktId } }] };
+			}
 
 			const res = await traktTokenManager.traktFetch("/sync/watchlist/remove", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(body),
 			});
+
 			if (!res.ok) throw new Error(res.statusText);
+			return await res.json();
 		}
 
-		async function handlePostUpdateEntry(e: PostUpdateEntry) {
-			// Early return for nonexistent media
+		async function removeTraktHistoryEntry(traktId: number, seasonId: number) {
+			const histRes = await traktTokenManager.traktFetch(`/users/me/history/seasons/${seasonId}?extended=full`);
+			if (!histRes.ok) throw new Error(`Unable to fetch history for season ${seasonId}: ${histRes.statusText}`);
+
+			const ids = (await histRes.json()).map((h: any) => h.id);
+
+			const res = await traktTokenManager.traktFetch("/sync/history/remove", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ ids }),
+			});
+
+			if (!res.ok) throw new Error(res.statusText);
+			return await res.json();
+		}
+
+		async function updateTraktSeasonProgress(traktId: number, seasonNumber: number, seasonId: number, progress: number) {
+			const histRes = await traktTokenManager.traktFetch(`/users/me/history/seasons/${seasonId}?extended=full`);
+			if (!histRes.ok) throw new Error(`Unable to fetch history for season ${seasonId}: ${histRes.statusText}`);
+
+			const watchedHistory = await histRes.json();
+			await $_wait(1500, true);
+
+			// Build map: episodeNumber → watched_at
+			const watchedMap = new Map<number, string>();
+
+			for (const item of watchedHistory) {
+				const ep = item.episode;
+				if (ep?.number != null && item.watched_at) {
+					watchedMap.set(ep.number, item.watched_at);
+				}
+			}
+
+			// Build payload for episodes 1 → progress
+			const now = new Date().toISOString();
+			const episodesToSync = [];
+
+			for (let epNumber = 1; epNumber <= progress; epNumber++) {
+				const watched_at = epNumber === progress ? now : watchedMap.get(epNumber) ?? now;
+
+				episodesToSync.push({
+					ids: {
+						number: epNumber,
+						season: seasonNumber,
+						show: traktId,
+					},
+					watched_at,
+				});
+			}
+
+			const res = await traktTokenManager.traktFetch("/sync/history", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ episodes: episodesToSync }),
+			});
+
+			if (!res.ok) throw new Error(res.statusText);
+			return await res.json();
+		}
+
+		async function updateTraktMovieProgress(traktId: number, date?: string) {
+			const res = await traktTokenManager.traktFetch("/sync/history", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					movies: [{ ids: { trakt: traktId }, watched_at: date ?? new Date().toISOString() }],
+				}),
+			});
+
+			if (!res.ok) throw new Error(res.statusText);
+			return await res.json();
+		}
+
+		async function updateTraktRating(traktId: number, type: "movies" | "shows", rating: number) {
+			const res = await traktTokenManager.traktFetch("/sync/ratings", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					[type]: [{ ids: { trakt: traktId }, rating }],
+				}),
+			});
+
+			if (!res.ok) throw new Error(res.statusText);
+			return await res.json();
+		}
+
+		async function syncEntries() {
+			log.sendInfo("[SYNCLIST] Starting sync job... (Anilist ➔ Trakt)");
+			const entries = getAnilistEntries("Anime");
+
+			if (!entries.length) {
+				log.sendWarning("[SYNCLIST] No entries found.");
+				log.sendWarning("[SYNCLIST] Sync job terminated.");
+				return state.syncing.set(false);
+			} else {
+				log.sendInfo(`[SYNCLIST] Found ${entries.length} entries!`);
+				state.syncProgressTotal.set(entries.length);
+				state.syncProgressCurrent.set(0);
+				state.syncProgressPercent.set(0 / entries.length);
+			}
+
+			while (state.syncing.get() && entries.length) {
+				const entry = entries.pop();
+				if (!entry) continue;
+
+				state.syncProgressCurrent.set(state.syncProgressCurrent.get() + 1);
+				state.syncProgressPercent.set(state.syncProgressCurrent.get() / state.syncProgressTotal.get());
+				state.syncDetail.set(`Syncing ${entry.title ?? entry.mediaId}`);
+				if (!entry.mediaId) continue;
+
+				const trakt = await resolveTraktIdFromAnilistId(entry.mediaId).catch((e) => (e as Error).message);
+				if (typeof trakt === "string") {
+					log.sendError(`[SYNCLIST] Error on ${entry.title} (${entry.mediaId}): ${trakt}`);
+					await $_wait(1_500, true);
+					continue;
+				} else if (!trakt.id || !trakt.type) {
+					log.sendWarning(`[SYNCLIST] No matching records found for ${entry.title} (${entry.mediaId})`);
+					await $_wait(1_500, true);
+					continue;
+				} else if (trakt.mayInvalid) {
+					log.sendWarning(`[SYNCLIST] Part of a multi-cour series. Please manually add this entry to trakt: ${JSON.stringify(entry, null, 2)}`);
+					await $_wait(1_500, true);
+					continue;
+				} else {
+					await $_wait(1_500, true);
+				}
+
+				const status = unwrap(entry.status);
+				if (status === "PLANNING") {
+					await addTraktWatchlistEntry(trakt.id, trakt.type, trakt.season ?? undefined)
+						.then((data) => {
+							if (data.added[trakt.type!]) {
+								log.sendSuccess(`[SYNCLIST] Added ${entry.title} to trakt.tv watchlist!`);
+							} else {
+								log.send(`[SYNCLIST] Skipped ${entry.title} to trakt.tv watchlist! (already exists)`);
+							}
+						})
+						.catch((e) => log.sendError(`[SYNCLIST] Failed to add ${entry.title} to trakt.tv watchlist! ${(e as Error).message}`));
+					await $_wait(1_500, true);
+				} else {
+					// Remove from traklist watchlist entry if not planning
+					await removeTraktWatchlistEntry(trakt.id, trakt.type, trakt.season ?? undefined)
+						.then((data) => {
+							if (data.deleted[trakt.type!]) {
+								log.sendSuccess(`[SYNCLIST] Removed ${entry.title} from watchlist (status not PLANNED)`);
+							} else {
+								log.send(`[SYNCLIST] Skipped removing ${entry.title} from watchlist (not found)`);
+							}
+						})
+						.catch((e) => log.sendError(`[SYNCLIST] Failed to remove ${entry.title} from watchlist (status not PLANNED): ${(e as Error).message}`));
+					await $_wait(1_500, true);
+
+					// update score
+					const score = unwrap(entry.score);
+					// Use the score for season 1 only
+					if (score && (trakt.season === 1 || trakt.season === null)) {
+						await updateTraktRating(trakt.id, trakt.type, score / 10)
+							.then(() => log.sendSuccess(`[SYNCLIST] Rated ${entry.title} (${entry.mediaId}) = ${score}`))
+							.catch((e) => log.sendError(`[SYNCLIST] Failed to update score for ${entry.mediaId}: ${(e as Error).message}`));
+						await $_wait(1_500, true);
+					}
+
+					// update progress for shows
+					const progress = unwrap(entry.progress);
+					if (progress && trakt.type === "shows") {
+						// TV-SHOWS
+						if (trakt.season && trakt.seasonId) {
+							await updateTraktSeasonProgress(trakt.id, trakt.season, trakt.seasonId, progress)
+								.then(() => log.sendSuccess(`[SYNCLIST] Marked episode ${progress} as watched for ${entry.title} (${entry.mediaId})`))
+								.catch((e) => log.sendError(`[SYNCLIST] Error on updating progress for ${entry.title} (${entry.mediaId}): ${(e as Error).message}`));
+							await $_wait(1_500, true);
+						} else {
+							log.sendWarning(`[SYNCLIST] Missing trakt-ids for ${entry.title} (${entry.mediaId}): ${{ trakt }}`);
+						}
+					} else {
+						// MOVIES
+						await updateTraktMovieProgress(trakt.id, toISODate(entry.completedAt))
+							.then(() => log.sendSuccess(`[SYNCLIST] Marked movie ${entry.title}(${entry.mediaId}) as watched via progress!`))
+							.catch((e) => log.sendError(`[SYNCLIST] Error on updating progress for ${entry.title}(${entry.mediaId}): ${(e as Error).message}`));
+					}
+
+					await $_wait(1_500, true);
+				}
+			}
+
+			if (!state.syncing.get()) {
+				// sync was cancelled
+				log.sendWarning("[SYNCLIST] Syncing was terminated by user");
+			} else {
+				log.sendInfo("[SYNCLIST] Finished syncing entries!");
+				state.syncing.set(false);
+			}
+
+			state.syncDetail.set(`Waiting...`);
+			state.syncProgressTotal.set(0);
+			state.syncProgressCurrent.set(0);
+			state.syncProgressPercent.set(0);
+		}
+
+		$store.watch("POST_UPDATE_ENTRY", async (e: $app.PostUpdateEntryEvent) => {
 			if (!e.mediaId) {
-				// prettier-ignore
-				log.sendWarning("postUpdate hook was triggered but it contained no mediaId")
-				return $store.set("PRE_UPDATE_DATA", null);
+				log.sendWarning("postUpdate hook was triggered but it contained no mediaId");
+				return $store.set("PRE_UPDATE_ENTRY_DATA", null);
 			}
 
-			if (disableSyncing.current.valueOf()) {
-				log.sendInfo(`Syncing was disabled. Will not sync entry [${e.mediaId}]`);
-				return $store.set("PRE_UPDATE_DATA", null);
+			const entry = await getMedia(e.mediaId);
+			const title = entry?.media?.title?.userPreferred;
+			if (!entry || entry.type === "Manga") {
+				log.send("[Trakt.UpdateEntry] Manga detected. Aborting...");
+				return $store.set("PRE_UPDATE_ENTRY_DATA", null);
 			}
 
-			// Early return for nonexsistent media
-			const mediaData = await getMedia(e.mediaId);
-			if (!mediaData) {
-				log.sendWarning(`mediaData not found for media [${e.mediaId}]`);
-				return $store.set("PRE_UPDATE_DATA", null);
+			const data: $app.PreUpdateEntryEvent = $store.get("PRE_UPDATE_ENTRY_DATA");
+			if (!data) return log.sendWarning("No update data was emitted from the pre update hooks!");
+
+			// consume the data
+			$store.set("PRE_UPDATE_ENTRY_DATA", null);
+
+			if (data.mediaId !== e.mediaId) {
+				return log.sendWarning("preUpdate data was invalid!");
 			}
 
-			if (mediaData.type !== "Anime") {
-				log.sendWarning(`type=manga, skipping...`);
-				return $store.set("PRE_UPDATE_DATA", null);
+			const trakt = await resolveTraktIdFromAnilistId(e.mediaId).catch((e) => (e as Error).message);
+			if (typeof trakt === "string") {
+				return log.sendError(`[Trakt.UpdateEntry] ${trakt}`);
 			}
 
-			const trakt = await resolveTraktIdFromAnilistId(e.mediaId);
-			if (!trakt.id || !trakt.type) {
-				log.sendWarning(`No Trakt mapping for AniList ${e.mediaId}`);
-				return $store.set("PRE_UPDATE_DATA", null);
+			if (!trakt.id || !trakt.type || trakt.mayInvalid) {
+				return log.sendWarning(`[Trakt.UpdateEntry] No Trakt mapping for AniList ${e.mediaId}`);
 			}
 
-			// Handle deletion
-			if ("isDeleted" in e && e.isDeleted) {
-				log.sendInfo(`[TraktSync.DELETE] Removing ${e.mediaId} → Trakt ${trakt.id}`);
-				await removeTraktEntry(trakt.id, trakt.type)
-					.then(() => log.sendInfo(`[TraktSync.DELETE] Removed ${e.mediaId} from Trakt`))
-					.catch((e) => log.sendError(e.message));
-				return $store.set("PRE_UPDATE_DATA", null);
-			}
-
-			const updateData: PreUpdateData | null = $store.get("PRE_UPDATE_DATA");
-			if (!updateData) {
-				log.sendWarning("No update data was emitted from the pre update hooks!");
-				log.send("Cancelling syncing of media " + e.mediaId);
+			const status = unwrap(data.status);
+			if (status === "PLANNING") {
+				await addTraktWatchlistEntry(trakt.id, trakt.type, trakt.season ?? undefined)
+					.then((data) => {
+						if (data.added[trakt.type!]) {
+							log.sendSuccess(`[Trakt.UpdateEntry] Added ${title} to trakt.tv watchlist!`);
+						} else {
+							log.send(`[Trakt.UpdateEntry] Skipped ${title} to trakt.tv watchlist! (already exists)`);
+						}
+					})
+					.catch((e) => log.sendError(`[Trakt.UpdateEntry] Failed to add ${title} to trakt.tv watchlist! ${(e as Error).message}`));
 				return;
 			} else {
-				$store.set("PRE_UPDATE_DATA", null); // consume it
+				await removeTraktWatchlistEntry(trakt.id, trakt.type, trakt.season ?? undefined)
+					.then((data) => {
+						if (data.deleted[trakt.type!]) {
+							log.sendSuccess(`[Trakt.UpdateEntry] Removed ${title ?? e.mediaId} from watchlist (status not PLANNED)`);
+						}
+					})
+					.catch((e) => log.sendError(`[Trakt.UpdateEntry] Failed to remove ${title} from watchlist (status not PLANNED): ${(e as Error).message}`));
+				await $_wait(1_500, true);
 			}
 
-			// handle rating
-			if ("scoreRaw" in updateData && updateData.scoreRaw) {
-				const rating = Math.round(updateData.scoreRaw / 10);
-				await traktTokenManager
-					.traktFetch("/sync/ratings", {
-						method: "POST",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({
-							[trakt.type]: [{ ids: { trakt: trakt.id }, rating }],
-						}),
-					})
-					.then(async (res) => {
-						log.sendInfo(`[TraktSync.RATING] Rated ${e.mediaId} → Trakt ${trakt.id} = ${rating}`);
-					})
-					.catch((err) => log.sendError(err.message));
+			// scoring
+			const score = unwrap(data.scoreRaw);
+			// only rate season 1 and movies
+			if (score && (trakt.type === "shows" ? trakt.season === 1 : true)) {
+				await updateTraktRating(trakt.id, trakt.type, score / 10)
+					.then(() => log.sendSuccess(`[Trakt.UpdateEntry] Rated ${title} (${e.mediaId}) = ${(score / 10).toFixed(2)}`))
+					.catch((e) => log.sendError(`[Trakt.UpdateEntry] Failed to update score for ${title} (${e.mediaId}): ${(e as Error).message}`));
+				await $_wait(2_000);
 			}
 
-			// Progress for shows
-			if ("progress" in updateData && updateData.progress && trakt.type === "shows") {
-				const progress = updateData.progress;
-				const season = trakt.season ?? 1;
-				// fetch episodes from Trakt
-				const epRes = await traktTokenManager.traktFetch(`/shows/${trakt.id}/seasons/${season}`);
+			const progress = unwrap(data.progress);
+			if (!progress) return;
 
-				if (epRes.ok) {
-					const episodes = await epRes.json();
-					const watched = episodes.slice(0, progress).map((ep: any) => ({
-						ids: { trakt: ep.ids.trakt },
-						watched_at: new Date().toISOString(),
-					}));
-					const payload = { episodes: watched };
-					await traktTokenManager.traktFetch("/sync/history", {
-						method: "POST",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify(payload),
-					});
-					log.sendInfo(`[TraktSync.HISTORY] Synced ${progress} episodes for ${e.mediaId}`);
+			if (trakt.type === "shows") {
+				if (trakt.season && trakt.seasonId) {
+					await updateTraktSeasonProgress(trakt.id, trakt.season, trakt.seasonId, progress)
+						.then(() => log.sendSuccess(`[Trakt.UpdateEntry] Marked episode ${progress} as watched for ${title} (${e.mediaId})`))
+						.catch((e) => log.sendError(`[Trakt.UpdateEntry] Error on updating progress for ${title} (${e.mediaId}): ${(e as Error).message}`));
 				} else {
-					log.sendWarning(`[TraktSync.HISTORY] Unable to get [/shows/${trakt.id}/seasons/${season}]`);
+					log.sendWarning("[Trakt.UpdateEntry] Season not found!");
 				}
+			} else {
+				await updateTraktMovieProgress(trakt.id, toISODate(data.completedAt))
+					.then(() => log.sendSuccess(`[Trakt.UpdateEntry] Marked movie ${title} (${e.mediaId}) as watched via progress!`))
+					.catch((e) => log.sendError(`[Trakt.UpdateEntry] Error on updating progress for ${title} (${e.mediaId}): ${(e as Error).message}`));
 			}
 
-			// progress for movies
-			if ("progress" in updateData && updateData.progress && trakt.type === "movies") {
-				await traktTokenManager.traktFetch("/sync/history", {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						movies: [{ ids: { trakt: trakt.id }, watched_at: new Date().toISOString() }],
-					}),
-				});
-				log.sendInfo(`[TraktSync.HISTORY] Marked movie ${e.mediaId} as watched via progress`);
+			return;
+		});
+
+		$store.watch("POST_UPDATE_ENTRY_PROGRESS", async (e: $app.PostUpdateEntryProgressEvent) => {
+			if (!e.mediaId) {
+				log.sendWarning("postUpdate hook was triggered but it contained no mediaId");
+				return $store.set("PRE_UPDATE_ENTRY_PROGRESS_DATA", null);
 			}
 
-			// Handle status → watchlist
-			const status = "status" in updateData && updateData.status ? updateData.status.toUpperCase() : null;
-
-			if (status === "PLANNING") {
-				await addTraktEntry(trakt.id, trakt.type)
-					.then(() => log.sendSuccess(`[TraktSync.WATCHLIST] Added ${e.mediaId} to Trakt watchlist`))
-					.catch((err) => log.sendError(err.message));
-			} else if (status === "COMPLETED" || status === "DROPPED") {
-				await removeTraktEntry(trakt.id, trakt.type)
-					.then(() => log.sendSuccess(`[TraktSync.WATCHLIST] Removed ${e.mediaId} from Trakt watchlist`))
-					.catch((err) => log.sendError(err.message));
-
-				// For movies, also mark them watched in history when COMPLETED
-				if (trakt.type === "movies" && status === "COMPLETED") {
-					await traktTokenManager
-						.traktFetch("/sync/history", {
-							method: "POST",
-							headers: { "Content-Type": "application/json" },
-							body: JSON.stringify({
-								movies: [
-									{
-										ids: { trakt: trakt.id },
-										watched_at: new Date().toISOString(),
-									},
-								],
-							}),
-						})
-						.catch((err) => log.sendError(err.message));
-					log.sendInfo(`[TraktSync.HISTORY] Marked movie ${e.mediaId} as watched`);
-				}
-			} else if (status === "CURRENT" || status === "REPEATING") {
-				// For shows, handled via episode history above
-				// For movies, you can also mark them watched once here if desired
-				if (trakt.type === "movies") {
-					await traktTokenManager
-						.traktFetch("/sync/history", {
-							method: "POST",
-							headers: { "Content-Type": "application/json" },
-							body: JSON.stringify({
-								movies: [
-									{
-										ids: { trakt: trakt.id },
-										watched_at: new Date().toISOString(),
-									},
-								],
-							}),
-						})
-						.catch((err) => log.sendError(err.message));
-					log.sendInfo(`[TraktSync.HISTORY] Marked movie ${e.mediaId} as watched (CURRENT/REPEATING)`);
-				}
+			const entry = await getMedia(e.mediaId);
+			const title = entry?.media?.title?.userPreferred;
+			if (!entry || entry.type === "Manga") {
+				log.send("[Trakt.UpdateEntryProgress] Manga detected. Aborting...");
+				return $store.set("PRE_UPDATE_ENTRY_PROGRESS_DATA", null);
 			}
-		}
+
+			const data: $app.PreUpdateEntryProgressEvent = $store.get("PRE_UPDATE_ENTRY_PROGRESS_DATA");
+			if (!data) return log.sendWarning("No update data was emitted from the pre update hooks!");
+
+			// consume the data
+			$store.set("PRE_UPDATE_ENTRY_PROGRESS_DATA", null);
+
+			if (data.mediaId !== e.mediaId) {
+				return log.sendWarning("preUpdate data was invalid!");
+			}
+
+			if (!("progress" in data) || data.progress === undefined || data.progress === null) {
+				return log.sendWarning("No progress data was emitted from the pre update hooks!");
+			}
+
+			const trakt = await resolveTraktIdFromAnilistId(e.mediaId).catch((e) => (e as Error).message);
+			if (typeof trakt === "string") {
+				return log.sendError(`[Trakt.UpdateProgress] ${trakt}`);
+			}
+
+			if (!trakt.id || !trakt.type || trakt.mayInvalid) {
+				return log.sendWarning(`[Trakt.UpdateProgress] No Trakt mapping for AniList ${e.mediaId}`);
+			}
+
+			await removeTraktWatchlistEntry(trakt.id, trakt.type, trakt.season ?? undefined)
+				.then((data) => {
+					if (data.deleted[trakt.type!]) {
+						log.sendSuccess(`[Trakt.UpdateProgress] Removed ${title ?? e.mediaId} from watchlist (status not PLANNED)`);
+					}
+				})
+				.catch((e) => log.sendError(`[Trakt.UpdateProgress] Failed to remove ${title} from watchlist (status not PLANNED): ${(e as Error).message}`));
+			await $_wait(1_500, true);
+
+			if (trakt.type === "shows") {
+				if (trakt.season && trakt.seasonId) {
+					await updateTraktSeasonProgress(trakt.id, trakt.season, trakt.seasonId, data.progress)
+						.then(() => log.sendSuccess(`[Trakt.UpdateEntry] Marked episode ${data.progress} as watched for ${title} (${e.mediaId})`))
+						.catch((e) => log.sendError(`[Trakt.UpdateEntry] Error on updating progress for ${title} (${e.mediaId}): ${(e as Error).message}`));
+					await $_wait(1_500, true);
+				} else {
+					log.sendWarning("[Trakt.UpdateProgress] Season not found!");
+				}
+			} else {
+				await updateTraktMovieProgress(trakt.id)
+					.then(() => log.sendSuccess(`[Trakt.UpdateProgress] Marked movie ${title} (${e.mediaId}) as watched via progress!`))
+					.catch((e) => log.sendError(`[Trakt.UpdateProgress] Error on updating progress for ${title} (${e.mediaId}): ${(e as Error).message}`));
+			}
+		});
+
+		$store.watch("POST_DELETE_ENTRY", async (e: $app.PostDeleteEntryEvent) => {
+			if (!e.mediaId) return log.sendWarning("postDelete hook was triggered but it contained no mediaId");
+
+			const entry = await getMedia(e.mediaId);
+			const title = entry?.media?.title?.userPreferred;
+			if (!entry || entry.type === "Manga") {
+				return log.send("[Trakt.DeleteEntry] Manga detected. Aborting...");
+			}
+
+			const trakt = await resolveTraktIdFromAnilistId(e.mediaId).catch((e) => (e as Error).message);
+			if (typeof trakt === "string") {
+				return log.sendError(`[Trakt.DeleteEntry] ${trakt}`);
+			}
+
+			if (!trakt.id || !trakt.type || trakt.mayInvalid) {
+				return log.sendWarning(`[Trakt.DeleteEntry] No Trakt mapping for AniList ${e.mediaId}`);
+			}
+
+			await removeTraktWatchlistEntry(trakt.id, trakt.type, trakt.season ?? undefined)
+				.then((data) => {
+					if (data.deleted[trakt.type!]) {
+						log.sendSuccess(`[Trakt.DeleteEntry] Removed ${title ?? e.mediaId} from watchlist`);
+					}
+				})
+				.catch((e) => log.sendError(`[Trakt.DeleteEntry] Failed to remove ${title} from watchlist: ${(e as Error).message}`));
+			await $_wait(1_500, true);
+
+			if (trakt.seasonId) {
+				await removeTraktHistoryEntry(trakt.id, trakt.seasonId)
+					.then((data) => {
+						if (data[trakt.type!]) {
+							log.sendSuccess(`[Trakt.DeleteEntry] Removed ${title ?? e.mediaId} from history`);
+						}
+					})
+					.catch((e) => log.sendError(`[Trakt.DeleteEntry] Failed to remove ${title} from history: ${(e as Error).message}`));
+			} else {
+				log.sendWarning(`[Trakt.DeleteEntry] ${title} does not have a trakt season id (history not deleted)`);
+			}
+		});
 
 		tray.render(() => tabs.get());
 
@@ -1069,11 +1577,6 @@ function init() {
 			log.sendInfo("Logging in...");
 			traktTokenManager.getUserInfo();
 		}
-
-		$store.watch("POST_UPDATE_ENTRY", handlePostUpdateEntry);
-		$store.watch("POST_UPDATE_ENTRY_PROGRESS", handlePostUpdateEntry);
-		$store.watch("POST_UPDATE_ENTRY_REPEAT", handlePostUpdateEntry);
-		$store.watch("POST_DELETE_ENTRY", handlePostUpdateEntry);
 	});
 
 	// HOOKS
@@ -1087,28 +1590,18 @@ function init() {
 		e.next();
 	});
 
-	$app.onPostUpdateEntryRepeat((e) => {
-		$store.set("POST_UPDATE_ENTRY_REPEAT", $clone(e));
-		e.next();
-	});
-
 	$app.onPostDeleteEntry((e) => {
 		$store.set("POST_DELETE_ENTRY", { mediaId: e.mediaId, isDeleted: true });
 		e.next();
 	});
 
 	$app.onPreUpdateEntry((e) => {
-		$store.set("PRE_UPDATE_DATA", $clone(e));
+		$store.set("PRE_UPDATE_ENTRY_DATA", $clone(e));
 		e.next();
 	});
 
 	$app.onPreUpdateEntryProgress((e) => {
-		$store.set("PRE_UPDATE_DATA", $clone(e));
-		e.next();
-	});
-
-	$app.onPreUpdateEntryRepeat((e) => {
-		$store.set("PRE_UPDATE_DATA", $clone(e));
+		$store.set("PRE_UPDATE_ENTRY_PROGRESS_DATA", $clone(e));
 		e.next();
 	});
 }
