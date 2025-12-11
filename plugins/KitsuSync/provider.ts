@@ -647,7 +647,7 @@ function init() {
 					return tray.text(message, {
 						style: {
 							fontFamily: "monospace",
-							fontSize: "14px",
+							fontSize: "12px",
 							color: color[type],
 							lineHeight: "1",
 						},
