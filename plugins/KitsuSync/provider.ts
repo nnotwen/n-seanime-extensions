@@ -958,6 +958,15 @@ function init() {
 			return new Promise((resolve) => ctx.setTimeout(resolve, ms));
 		}
 
+		function unwrap<T>(value: T | null | undefined): T | undefined {
+			if (value == null) return undefined;
+			if (typeof value === "object") {
+				const v = (value as any).valueOf?.();
+				return v == null ? undefined : v;
+			}
+			return value;
+		}
+
 		function popByProperty<T, K extends keyof T>(entries: T[], prop: K, value: T[K]): T | undefined {
 			const index = entries.findIndex((e) => e[prop] === value);
 			if (index === -1) return undefined;
@@ -974,6 +983,36 @@ function init() {
 					const { media, ...rest } = entry;
 					return { ...rest, title: media?.title?.userPreferred, mediaId: media?.id };
 				});
+		}
+
+		function anilistEntryToKitsuAttributeBody(entry: ReturnType<typeof getAnilistEntries>[number]) {
+			// entry is a GO/WASM object so i need to properly unwrap them here
+			const status = unwrap(entry.status);
+			const progress = unwrap(entry.progress);
+			const repeat = unwrap(entry.repeat);
+			const score = unwrap(entry.score);
+
+			const body: KitsuLibraryEntryAttributes = {
+				status: normalizeStatus(status),
+				progress: status !== "COMPLETED" && progress ? progress : undefined,
+				reconsuming: status === "REPEATING",
+				reconsumeCount: repeat,
+				ratingTwenty: score && score >= 10 ? Math.round(score / 5) : undefined,
+				startedAt: toISODate({
+					year: unwrap(entry.startedAt?.year),
+					month: unwrap(entry.startedAt?.month),
+					day: unwrap(entry.startedAt?.day),
+				}),
+				finishedAt: toISODate({
+					year: unwrap(entry.completedAt?.year),
+					month: unwrap(entry.completedAt?.month),
+					day: unwrap(entry.completedAt?.day),
+				}),
+				notes: unwrap(entry.notes),
+				private: unwrap(entry.private),
+			};
+
+			return body;
 		}
 
 		async function getAllKitsuEntries(type: "anime" | "manga", throttle: number = 2_000) {
@@ -1171,9 +1210,7 @@ function init() {
 		}
 
 		function normalizeStatus(anilistStatus?: $app.AL_MediaListStatus): KitsuLibraryEntryAttributes["status"] {
-			if (!anilistStatus) return undefined;
-
-			switch (anilistStatus) {
+			switch (String(anilistStatus)) {
 				case "CURRENT":
 					return "current";
 				case "PLANNING":
@@ -1185,18 +1222,18 @@ function init() {
 				case "PAUSED":
 					return "on_hold";
 				case "REPEATING":
-					return "current"; // handled separately with reconsumeCount
+					return "current";
 				default:
 					return undefined;
 			}
 		}
 
 		function normalizeKitsuStatus(kitsuStatus?: KitsuLibraryEntry["attributes"]["status"], isReconsuming?: boolean) {
-			if (!kitsuStatus) return undefined;
+			if (kitsuStatus == null) return undefined;
 
-			if (isReconsuming) return "REPEATING";
+			if (isReconsuming?.valueOf()) return "REPEATING";
 
-			switch (kitsuStatus) {
+			switch (String(kitsuStatus)) {
 				case "current":
 					return "CURRENT";
 				case "planned":
@@ -1411,17 +1448,7 @@ function init() {
 
 						// RETRIEVE KITSU-LIBRARY-ID
 						const kitsuLibraryId = await getLibraryEntryId(kitsuMediaId);
-						const body: KitsuLibraryEntryAttributes = {
-							status: normalizeStatus(entry.status),
-							progress: entry.status === "COMPLETED" ? entry.progress : undefined,
-							reconsuming: entry.status === "REPEATING",
-							reconsumeCount: entry.repeat,
-							ratingTwenty: entry.score && entry.score >= 10 ? entry.score / 5 : undefined,
-							startedAt: toISODate(entry.startedAt),
-							finishedAt: toISODate(entry.completedAt),
-							notes: entry.notes ?? undefined,
-							private: entry.private,
-						};
+						const body: KitsuLibraryEntryAttributes = anilistEntryToKitsuAttributeBody(entry);
 
 						// Add missing entries
 						if (syncType === ManageListSyncType.Patch) {
@@ -1493,17 +1520,7 @@ function init() {
 						}
 
 						const kitsuEntry = popByProperty(kitsuEntries, "mediaId", kitsuMediaId.toString());
-						const body: KitsuLibraryEntryAttributes = {
-							status: normalizeStatus(entry.status),
-							progress: entry.status === "COMPLETED" ? entry.progress : undefined,
-							reconsuming: entry.status === "REPEATING",
-							reconsumeCount: entry.repeat,
-							ratingTwenty: entry.score && entry.score >= 10 ? entry.score / 5 : undefined,
-							startedAt: toISODate(entry.startedAt),
-							finishedAt: toISODate(entry.completedAt),
-							notes: entry.notes ?? undefined,
-							private: entry.private,
-						};
+						const body: KitsuLibraryEntryAttributes = anilistEntryToKitsuAttributeBody(entry);
 
 						if (!kitsuEntry) {
 							await post(kitsuMediaId.toString(), mediaType.toLowerCase() as "anime" | "manga", body)
@@ -1721,25 +1738,25 @@ function init() {
 						const variables: AniListSaveMediaListEntryInput = {
 							mediaId: anilistMediaId,
 							status: normalizeKitsuStatus(entry.attributes.status, entry.attributes.reconsuming),
-							score: entry.attributes.ratingTwenty ? entry.attributes.ratingTwenty * 5 : undefined,
+							...(entry.attributes.ratingTwenty && { score: entry.attributes.ratingTwenty * 5 }),
 							progress: entry.attributes.progress,
 							repeat: entry.attributes.reconsumeCount,
 							private: entry.attributes.private,
-							notes: entry.attributes.notes ?? undefined,
-							startedAt: entry.attributes.startedAt
-								? {
-										year: new Date(entry.attributes.startedAt).getFullYear(),
-										month: new Date(entry.attributes.startedAt).getMonth() + 1,
-										day: new Date(entry.attributes.startedAt).getDate(),
-								  }
-								: undefined,
-							completedAt: entry.attributes.finishedAt
-								? {
-										year: new Date(entry.attributes.finishedAt).getFullYear(),
-										month: new Date(entry.attributes.finishedAt).getMonth() + 1,
-										day: new Date(entry.attributes.finishedAt).getDate(),
-								  }
-								: undefined,
+							...(entry.attributes.notes && { notes: entry.attributes.notes }),
+							...(entry.attributes.startedAt && {
+								startedAt: {
+									year: new Date(entry.attributes.startedAt).getFullYear(),
+									month: new Date(entry.attributes.startedAt).getMonth() + 1,
+									day: new Date(entry.attributes.startedAt).getDate(),
+								},
+							}),
+							...(entry.attributes.finishedAt && {
+								completedAt: {
+									year: new Date(entry.attributes.finishedAt).getFullYear(),
+									month: new Date(entry.attributes.finishedAt).getMonth() + 1,
+									day: new Date(entry.attributes.finishedAt).getDate(),
+								},
+							}),
 						};
 
 						await anilistQuery(query, variables)
