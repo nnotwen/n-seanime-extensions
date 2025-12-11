@@ -623,6 +623,7 @@ function init() {
 							// clear data
 							traktTokenManager.reset();
 							traktProfile.reset();
+							state.syncing.set(false);
 
 							// Back to login screen
 							ctx.setTimeout(() => {
