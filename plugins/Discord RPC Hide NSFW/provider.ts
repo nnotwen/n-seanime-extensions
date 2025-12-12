@@ -20,11 +20,22 @@ function init() {
 		}
 
 		const ecchi = $getUserPreference("ecchi") === "true";
-		// prettier-ignore
-		if (ecchi && media.genres?.some(g => g.trim().toLowerCase() === "ecchi")){
+		if (ecchi && media.genres?.some((g) => g.trim().toLowerCase() === "ecchi")) {
 			console.log("Ecchi media detected... cancelling Discord RPC Update");
 			e.preventDefault();
 			return;
+		}
+
+		const isPrivate = $getUserPreference("private") === "true";
+		if (isPrivate) {
+			const isMediaPrivate = ($anilist.getAnimeCollection(false).MediaListCollection?.lists ?? [])
+				.flatMap((list) => list.entries)
+				.some((entry) => entry?.media?.id === animeActivity.id);
+			if (isMediaPrivate) {
+				console.log("Private media detected... Cancelling Discord RPC Update");
+				e.preventDefault();
+				return;
+			}
 		}
 
 		e.next();
@@ -45,11 +56,22 @@ function init() {
 		}
 
 		const ecchi = $getUserPreference("ecchi") === "true";
-		// prettier-ignore
-		if (ecchi && media.genres?.some(g => g.trim().toLowerCase() === "ecchi")){
+		if (ecchi && media.genres?.some((g) => g.trim().toLowerCase() === "ecchi")) {
 			console.log("Ecchi media detected... cancelling Discord RPC Update");
 			e.preventDefault();
 			return;
+		}
+
+		const isPrivate = $getUserPreference("private") === "true";
+		if (isPrivate) {
+			const isMediaPrivate = ($anilist.getMangaCollection(false).MediaListCollection?.lists ?? [])
+				.flatMap((list) => list.entries)
+				.some((entry) => entry?.media?.id === mangaActivity.id);
+			if (isMediaPrivate) {
+				console.log("Private media detected... Cancelling Discord RPC Update");
+				e.preventDefault();
+				return;
+			}
 		}
 
 		e.next();

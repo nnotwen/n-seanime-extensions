@@ -1,7 +1,7 @@
 {
 	"id": "discord-rpc-hide-nsfw",
 	"name": "Discord RPC Hide NSFW",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Discord%20RPC%20Hide%20NSFW/discord-rpc-hide-nsfw.json",
 	"language": "typescript",
 	"type": "plugin",
@@ -19,13 +19,19 @@
 	},
 	"userConfig": {
 		"requiresConfig": true,
-		"version": 1,
+		"version": 2,
 		"fields": [
 			{
 				"name": "ecchi",
-				"label": "Hide ecchi (hentai is hidden by default)",
+				"label": "Hide ecchi entries (hentai is hidden by default)",
 				"type": "switch",
 				"default": "true"
+			},
+			{
+				"name": "private",
+				"label": "Hide private entries",
+				"type": "switch",
+				"default": "false"
 			}
 		]
 	}
