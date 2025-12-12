@@ -30,6 +30,7 @@ function init() {
 		if (isPrivate) {
 			const isMediaPrivate = ($anilist.getAnimeCollection(false).MediaListCollection?.lists ?? [])
 				.flatMap((list) => list.entries)
+				.filter((entry) => Boolean(entry?.private))
 				.some((entry) => entry?.media?.id === animeActivity.id);
 			if (isMediaPrivate) {
 				console.log("Private media detected... Cancelling Discord RPC Update");
@@ -66,6 +67,7 @@ function init() {
 		if (isPrivate) {
 			const isMediaPrivate = ($anilist.getMangaCollection(false).MediaListCollection?.lists ?? [])
 				.flatMap((list) => list.entries)
+				.filter((entry) => Boolean(entry?.private))
 				.some((entry) => entry?.media?.id === mangaActivity.id);
 			if (isMediaPrivate) {
 				console.log("Private media detected... Cancelling Discord RPC Update");
