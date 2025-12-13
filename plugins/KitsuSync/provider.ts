@@ -1781,7 +1781,7 @@ function init() {
 
 					while (state.syncing.get() && anilistEntries.length) {
 						const anilistEntry = anilistEntries.pop()!;
-						const { mediaId, title } = anilistEntry;
+						const { mediaId, title, id } = anilistEntry;
 
 						state.syncProgressCurrent.set(state.syncProgressCurrent.get() + 1);
 						state.syncProgressPercent.set(state.syncProgressCurrent.get() / state.syncProgressTotal.get());
@@ -1808,7 +1808,7 @@ function init() {
 
 						// Delete anilist entry
 						const query = "mutation ($id: Int) { DeleteMediaListEntry(id: $id) { deleted } }";
-						const variables = { id: mediaId };
+						const variables = { id };
 
 						await anilistQuery(query, variables)
 							.then((e: any) => log.sendSuccess(`[SYNCLIST] Deleted ${title ?? mediaId} from Anilist!`))
