@@ -1381,6 +1381,10 @@ function init() {
 			if (!data) return log.sendWarning("[Shikimori.UpdateEntry] No update data was emitted from the pre update hooks!");
 			$store.set("PRE_UPDATE_ENTRY_DATA", null); // consume the data
 
+			if (fieldRefs.disableSyncing.current.valueOf()) {
+				return log.sendInfo(`[Shikimori.UpdateEntry] Syncing was disabled. Will not sync entry [${e.mediaId}]`);
+			}
+
 			const entry = await getMedia(e.mediaId);
 			if (!entry) return log.sendWarning(`[Shikimori.UpdateEntry] Media not found (${e.mediaId})`);
 
@@ -1434,6 +1438,10 @@ function init() {
 			if (!data) return log.sendWarning("[Shikimori.UpdateProgress] No update data was emitted from the pre update hooks!");
 			$store.set("PRE_UPDATE_ENTRY_PROGRESS_DATA", null); // consume the data
 
+			if (fieldRefs.disableSyncing.current.valueOf()) {
+				return log.sendInfo(`[Shikimori.UpdateEntry] Syncing was disabled. Will not sync entry [${e.mediaId}]`);
+			}
+
 			const entry = await getMedia(e.mediaId);
 			if (!entry) return log.sendWarning(`[Shikimori.UpdateProgress] Media not found (${e.mediaId})`);
 
@@ -1486,6 +1494,10 @@ function init() {
 			if (!data) return log.sendWarning("[Shikimori.UpdateRepeat] No update data was emitted from the pre update hooks!");
 			$store.set("PRE_UPDATE_ENTRY_REPEAT_DATA", null); // consume the data
 
+			if (fieldRefs.disableSyncing.current.valueOf()) {
+				return log.sendInfo(`[Shikimori.UpdateEntry] Syncing was disabled. Will not sync entry [${e.mediaId}]`);
+			}
+
 			const entry = await getMedia(e.mediaId);
 			if (!entry) return log.sendWarning(`[Shikimori.UpdateRepeat] Media not found (${e.mediaId})`);
 
@@ -1527,6 +1539,10 @@ function init() {
 		$store.watch("POST_DELETE_ENTRY", async (e: $app.PostDeleteEntryEvent) => {
 			if (!e.mediaId) {
 				return log.sendWarning("[Shikimori.DeleteEntry] postUpdate hook was triggered but it contained no mediaId");
+			}
+
+			if (fieldRefs.disableSyncing.current.valueOf()) {
+				return log.sendInfo(`[Shikimori.UpdateEntry] Syncing was disabled. Will not sync entry [${e.mediaId}]`);
 			}
 
 			const entry = await getMedia(e.mediaId);
