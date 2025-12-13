@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Trakt OAuth Callback</title>
+		<link
+			href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+			rel="stylesheet"
+			integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+			crossorigin="anonymous"
+		/>
+		<script
+			src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+			integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+			crossorigin="anonymous"
+		></script>
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+
+		<style>
+			.snippet-container {
+				position: relative;
+				background-color: #1e1e1e;
+				border-radius: 0.5rem;
+				padding: 1rem;
+				margin-top: 1rem;
+			}
+			.snippet-container code {
+				font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+				font-size: 1.25rem;
+				color: #c29ffa;
+				white-space: nowrap;
+				overflow-x: auto;
+				display: block;
+				padding-bottom: 0.25em;
+			}
+
+			.snippet-container code::-webkit-scrollbar {
+				height: 6px;
+			}
+
+			.snippet-container code::-webkit-scrollbar-track {
+				background: #1e1e1e;
+			}
+
+			.snippet-container code::-webkit-scrollbar-thumb {
+				background-color: #888;
+				border-radius: 3px;
+			}
+
+			.snippet-container code {
+				scrollbar-width: thin;
+				scrollbar-color: #888 #1e1e1e;
+			}
+
+			.copy-button:hover i {
+				color: #c29ffa;
+			}
+
+			.copy-button:active {
+				border-color: transparent !important;
+			}
+		</style>
+	</head>
+	<body class="d-flex align-items-center justify-content-center vh-100">
+		<div class="container text-center" style="max-width: 750px">
+			<div class="d-flex align-items-center justify-content-center gap-3 mb-4">
+				<img src="https://seanime.app/seanime-logo.png" alt="Logo" style="max-height: 80px" />
+
+				<span class="bi-link-45deg" style="font-size: 3em"></span>
+
+				<img
+					src="https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/refs/heads/master/plugins/MyAnimeListSync/logo.png"
+					alt="Logo"
+					style="max-height: 80px"
+				/>
+			</div>
+
+			<div class="card shadow-lg">
+				<div class="card-body">
+					<h1 class="card-title mb-4">MyAnimeListSync for Seanime</h1>
+					<div id="status" class="alert alert-secondary">Waiting for authorization code...</div>
+
+					<div class="snippet-container text-center border d-flex align-items-start">
+						<code id="code" class="w-100"></code>
+						<button
+							id="copyBtn"
+							type="button"
+							class="btn btn-sm copy-button shadow-none pe-0"
+							style="display: none"
+							data-bs-toggle="tooltip"
+							title="Copy to clipboard"
+						>
+							<i class="bi bi-clipboard"></i>
+						</button>
+					</div>
+				</div>
+			</div>
+			<footer class="mt-4">
+				<p class="text-center text-muted small">
+					<span class="bi-exclamation-triangle-fill me-2"></span> The logo, app name, and application referenced here are the property of their respective
+					developer. This page and the MyAnimeListSync plugin have no affiliation, endorsement, or connection with the developer of Seanime.
+				</p>
+			</footer>
+		</div>
+
+		<script>
+			const params = new URLSearchParams(window.location.search);
+			const code = params.get("code");
+			const error = params.get("error");
+
+			const statusEl = document.getElementById("status");
+			const codeEl = document.getElementById("code");
+			const copyBtn = document.getElementById("copyBtn");
+
+			if (error) {
+				statusEl.className = "alert alert-danger";
+				statusEl.textContent = "Error during authorization:";
+				codeEl.textContent = error;
+				copyBtn.style.display = "block";
+			} else if (code) {
+				statusEl.className = "alert alert-success";
+				statusEl.textContent = "Please copy the code below and enter it into the MyAnimeListSync plugin within Seanime.";
+				codeEl.textContent = code;
+				copyBtn.style.display = "block";
+			} else {
+				statusEl.className = "alert alert-warning";
+				statusEl.textContent = "No code or error found in URL.";
+			}
+
+			let resetTimeout;
+
+			const tooltip = new bootstrap.Tooltip(copyBtn);
+
+			copyBtn.addEventListener("click", () => {
+				navigator.clipboard.writeText(codeEl.textContent).then(() => {
+					copyBtn.innerHTML = '<i class="bi bi-check-lg"></i>';
+
+					copyBtn.setAttribute("data-bs-original-title", "Copied!");
+					tooltip.show();
+
+					if (resetTimeout) clearTimeout(resetTimeout);
+					resetTimeout = setTimeout(() => {
+						copyBtn.innerHTML = '<i class="bi bi-clipboard"></i>';
+						copyBtn.setAttribute("data-bs-original-title", "Copy to clipboard");
+						resetTimeout = null;
+					}, 3000);
+				});
+			});
+		</script>
+	</body>
+</html>
