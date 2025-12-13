@@ -14,8 +14,8 @@ function init() {
 			logon = "1",
 			landing = "2",
 			logs = "3",
-			loading = "4",
-			manageList = "5",
+			manageList = "4",
+			manageListDanger = "5",
 		}
 
 		enum ManageListJobType {
@@ -668,10 +668,6 @@ function init() {
 				return this.stack([this.logo(), header, terminal, this.backBtn()], 2);
 			},
 
-			[Tab.loading]() {
-				return this.stack([this.logo()], 2);
-			},
-
 			[Tab.manageList]() {
 				const jobType = tray.select("Job type", {
 					size: "md",
@@ -809,6 +805,10 @@ function init() {
 								state.cancellingSync.set(false);
 							}, 5_000);
 						} else {
+							if (fieldRefs.manageListSynctype.current === ManageListSyncType.FullSync) {
+								tabs.current.set(Tab.manageListDanger);
+								return;
+							}
 							state.syncing.set(true);
 							ctx.setTimeout(() => syncEntries(), 1000);
 						}
@@ -869,6 +869,41 @@ function init() {
 				const container = tray.stack([jobType, jobTypeSubText, mediaType, syncType, syncTypeSubText], { gap: 2 });
 
 				return this.stack([this.logo(), container, startJob, progressBar, progressDetails, this.backBtn()], 2);
+			},
+
+			[Tab.manageListDanger]() {
+				const container = tray.stack(
+					[
+						tray.text(
+							"Continuing this operation will completely overwrite your list. Any entries that are not present in the source list will be permanently deleted. It is strongly recommended that you create a backup first by exporting your list on the respective tracker's website. By clicking the button below, you confirm that you understand the risk, acknowledge the consequences, and agree to proceed despite the potential loss of data."
+						,{
+							style: {
+								textAlign: "justify",
+								textAlignLast: "center",
+								wordBreak: "normal",
+							}
+						}),
+						tray.button({
+							label: "Proceed",
+							intent: "alert",
+							size: "md",
+							onClick: ctx.eventHandler("shikimori:sync-danger-accepted", () => {
+								state.syncing.set(true);
+								tabs.current.set(Tab.manageList);
+								ctx.setTimeout(() => syncEntries(), 1000);
+							}),
+						}),
+					],
+					{
+						gap: 5,
+						style: {
+							justifyContent: "center",
+							height: "100%",
+						},
+					}
+				);
+
+				return this.stack([this.logo(), container, this.backBtn()]);
 			},
 			// Wrapper to retrieve the current tab
 			get() {
