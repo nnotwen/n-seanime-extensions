@@ -44,7 +44,7 @@ function init() {
 			loginError: ctx.state<string | null>(null),
 			loginLabel: ctx.state<string>("Login"),
 			loggingOut: ctx.state<boolean>(false),
-			manageListSyncTypeDesc: ctx.state<string>("Import only items not already in your list. Existing entries remain unchanged."),
+			manageListSyncTypeDesc: ctx.state<string>("Replace data for items found in both trackers. Items missing in either list are ignored."),
 			syncing: ctx.state<boolean>(false),
 			cancellingSync: ctx.state<boolean>(false),
 			syncProgressCurrent: ctx.state<number>(0),
