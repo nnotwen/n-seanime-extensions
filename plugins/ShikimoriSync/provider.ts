@@ -1412,6 +1412,10 @@ function init() {
 				return log.sendWarning("[Shikimori.UpdateEntry] preUpdate data was invalid!");
 			}
 
+			if (unwrap(getAnilistEntries(entry.type).find((x) => x.mediaId === e.mediaId)?.private)) {
+				return log.sendWarning(`[Shikimori.UpdateEntry] ${entry.media.title?.userPreferred ?? "anilist-id/" + e.mediaId} is private. Skipping...`);
+			}
+
 			const rateBase: UserRateBase = {
 				user_id: shikimoriProfile.userId.get()!,
 			};
@@ -1467,6 +1471,10 @@ function init() {
 
 			if (data.mediaId !== e.mediaId) {
 				return log.sendWarning("[Shikimori.UpdateProgress] preUpdate data was invalid!");
+			}
+
+			if (unwrap(getAnilistEntries(entry.type).find((x) => x.mediaId === e.mediaId)?.private)) {
+				return log.sendWarning(`[Shikimori.UpdateProgress] ${entry.media.title?.userPreferred ?? "anilist-id/" + e.mediaId} is private. Skipping...`);
 			}
 
 			const rateBase: UserRateBase = {
@@ -1525,6 +1533,10 @@ function init() {
 				return log.sendWarning("[Shikimori.UpdateRepeat] preUpdate data was invalid!");
 			}
 
+			if (unwrap(getAnilistEntries(entry.type).find((x) => x.mediaId === e.mediaId)?.private)) {
+				return log.sendWarning(`[Shikimori.UpdateRepeat] ${entry.media.title?.userPreferred ?? "anilist-id/" + e.mediaId} is private. Skipping...`);
+			}
+
 			const rateBase: UserRateBase = {
 				user_id: shikimoriProfile.userId.get()!,
 			};
@@ -1566,6 +1578,10 @@ function init() {
 
 			if (!entry.media?.idMal) {
 				return log.sendWarning(`[Shikimori.DeleteEntry] No equivalent Shikimori entry found for [${e.mediaId}]`);
+			}
+
+			if (unwrap(getAnilistEntries(entry.type).find((x) => x.mediaId === e.mediaId)?.private)) {
+				return log.sendWarning(`[Shikimori.DeleteEntry] ${entry.media.title?.userPreferred ?? "anilist-id/" + e.mediaId} is private. Skipping...`);
 			}
 
 			const rate = await getUserRate(entry.media.idMal, entry.type, shikimoriProfile.userId.get()!).catch((e) => (e as Error).message);
