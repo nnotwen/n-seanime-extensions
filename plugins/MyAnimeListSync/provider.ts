@@ -1617,6 +1617,10 @@ function init() {
 				return log.sendWarning("[MAL.UpdateEntry] preUpdate data was invalid!");
 			}
 
+			if (unwrap(getAnilistEntries(entry.type).find((x) => x.mediaId === e.mediaId)?.private)) {
+				return log.sendWarning(`[MAL.UpdateEntry] ${entry.media.title?.userPreferred ?? "anilist-id/" + e.mediaId} is private. Skipping...`);
+			}
+
 			const title = entry.media.title?.userPreferred ?? "anilist-id/" + e.mediaId;
 			const body =
 				entry.type === "Anime"
@@ -1666,6 +1670,10 @@ function init() {
 
 			if (data.mediaId !== e.mediaId) {
 				return log.sendWarning("[MAL.UpdateProgress] preUpdate data was invalid!");
+			}
+
+			if (unwrap(getAnilistEntries(entry.type).find((x) => x.mediaId === e.mediaId)?.private)) {
+				return log.sendWarning(`[MAL.UpdateProgress] ${entry.media.title?.userPreferred ?? "anilist-id/" + e.mediaId} is private. Skipping...`);
 			}
 
 			const title = entry.media.title?.userPreferred ?? "anilist-id/" + e.mediaId;
@@ -1729,6 +1737,10 @@ function init() {
 				return log.sendWarning("[MAL.UpdateRepeat] preUpdate data was of invalid type!");
 			}
 
+			if (unwrap(getAnilistEntries(entry.type).find((x) => x.mediaId === e.mediaId)?.private)) {
+				return log.sendWarning(`[MAL.UpdateRepeat] ${entry.media.title?.userPreferred ?? "anilist-id/" + e.mediaId} is private. Skipping...`);
+			}
+
 			const title = entry.media.title?.userPreferred ?? "anilist-id/" + e.mediaId;
 			const body =
 				entry.type === "Anime"
@@ -1763,6 +1775,10 @@ function init() {
 
 			if (!entry.media?.idMal) {
 				return log.sendWarning(`[MAL.DeleteEntry] No equivalent MyAnimeList entry found for [${e.mediaId}]`);
+			}
+
+			if (unwrap(getAnilistEntries(entry.type).find((x) => x.mediaId === e.mediaId)?.private)) {
+				return log.sendWarning(`[MAL.DeleteEntry] ${entry.media.title?.userPreferred ?? "anilist-id/" + e.mediaId} is private. Skipping...`);
 			}
 
 			const title = entry.media.title?.userPreferred ?? "anilist-id/" + e.mediaId;
