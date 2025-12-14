@@ -2,7 +2,7 @@
 	"id": "myanimelistsync",
 	"name": "MyAnimeListSync",
 	"version": "1.0.0",
-	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/MyAnimeListSync/shikimorisync.json",
+	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/MyAnimeListSync/myanimelistsync.json",
 	"language": "typescript",
 	"type": "plugin",
 	"description": "Synchronize entry progress seamlessly with MyAnimeList.net",
