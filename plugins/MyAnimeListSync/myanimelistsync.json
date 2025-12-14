@@ -1,0 +1,21 @@
+{
+	"id": "myanimelistsync",
+	"name": "MyAnimeListSync",
+	"version": "1.0.0",
+	"manifestURI": "",
+	"language": "typescript",
+	"type": "plugin",
+	"description": "An example plugin",
+	"author": "nnotwen",
+	"icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/refs/heads/master/plugins/MyAnimeListSync/icon.png",
+	"website": "",
+	"lang": "multi",
+	"payloadURI": "C:\\Users\\wenbo\\Dev\\seanime-extensions\\plugins\\MyAnimeListSync\\provider.ts",
+	"plugin": {
+		"version": "1",
+		"permissions": {
+			"scopes": ["storage", "anilist", "database", "anilist-token"]
+		}
+	},
+	"isDevelopment": true
+}

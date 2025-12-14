@@ -875,14 +875,15 @@ function init() {
 				const container = tray.stack(
 					[
 						tray.text(
-							"Continuing this operation will completely overwrite your list. Any entries that are not present in the source list will be permanently deleted. It is strongly recommended that you create a backup first by exporting your list on the respective tracker's website. By clicking the button below, you confirm that you understand the risk, acknowledge the consequences, and agree to proceed despite the potential loss of data."
-						,{
-							style: {
-								textAlign: "justify",
-								textAlignLast: "center",
-								wordBreak: "normal",
+							"Continuing this operation will completely overwrite your list. Any entries that are not present in the source list will be permanently deleted. It is strongly recommended that you create a backup first by exporting your list on the respective tracker's website. By clicking the button below, you confirm that you understand the risk, acknowledge the consequences, and agree to proceed despite the potential loss of data.",
+							{
+								style: {
+									textAlign: "justify",
+									textAlignLast: "center",
+									wordBreak: "normal",
+								},
 							}
-						}),
+						),
 						tray.button({
 							label: "Proceed",
 							intent: "alert",
