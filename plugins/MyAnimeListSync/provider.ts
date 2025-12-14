@@ -1684,7 +1684,7 @@ function init() {
 				.catch((e) => log.sendError(`[MAL.UpdateEntry] [PATCH] ${(e as Error).message}`));
 		});
 
-		$store.watch("POST_UPDATE_ENTRY_PROGRESS", async (e: $app.PostUpdateEntryEvent) => {
+		$store.watch("POST_UPDATE_ENTRY_PROGRESS", async (e: $app.PostUpdateEntryProgressEvent) => {
 			if (!e.mediaId) {
 				log.sendWarning("[MAL.UpdateProgress] postUpdate hook was triggered but it contained no mediaId");
 				return $store.set("PRE_UPDATE_ENTRY_PROGRESS_DATA", null);
@@ -1745,7 +1745,7 @@ function init() {
 				.catch((e) => log.sendError(`[MAL.UpdateProgress] [PATCH] ${(e as Error).message}`));
 		});
 
-		$store.watch("POST_UPDATE_ENTRY_REPEAT", async (e: $app.PostUpdateEntryEvent) => {
+		$store.watch("POST_UPDATE_ENTRY_REPEAT", async (e: $app.PostUpdateEntryRepeatEvent) => {
 			if (!e.mediaId) {
 				log.sendWarning("[MAL.UpdateRepeat] postUpdate hook was triggered but it contained no mediaId");
 				return $store.set("PRE_UPDATE_ENTRY_REPEAT_DATA", null);
@@ -1798,7 +1798,7 @@ function init() {
 				.catch((e) => log.sendError(`[MAL.UpdateRepeat] [PATCH] ${(e as Error).message}`));
 		});
 
-		$store.watch("POST_UPDATE_DELETE", async (e: $app.PostUpdateEntryEvent) => {
+		$store.watch("POST_UPDATE_DELETE", async (e: $app.PostDeleteEntryEvent) => {
 			if (!e.mediaId) {
 				return log.sendWarning("[MAL.DeleteEntry] postUpdate hook was triggered but it contained no mediaId");
 			}
