@@ -655,6 +655,7 @@ function init() {
 							log.sendSuccess("Successfully fetched user info!");
 							log.send(`Welcome ${data.name}!`);
 							tabs.current.set(Tab.landing);
+							fieldRefs.authCode.setValue("");
 						} catch (e) {
 							await $_wait(2_000);
 							state.loginError.set(`Error: ${(e as Error).message}`);
