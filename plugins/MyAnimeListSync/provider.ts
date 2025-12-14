@@ -1385,7 +1385,7 @@ function init() {
 									if (entry.status) b.status = normalizeAnimeStatusToMal(entry.status);
 									if (entry.status === "REPEATING") b.is_rewatching = true;
 									if (entry.progress) b.num_watched_episodes = entry.progress;
-									if (entry.repeat) b.rewatch_value = entry.repeat;
+									if (entry.repeat) b.num_times_rewatched = entry.repeat;
 									if (entry.notes) b.comments = entry.notes;
 									// if (entry.private) b.is_private = entry.private;
 									return b;
@@ -1396,7 +1396,7 @@ function init() {
 									if (entry.status) b.status = normalizeMangaStatusToMal(entry.status);
 									if (entry.status === "REPEATING") b.is_rereading = true;
 									if (entry.progress) b.num_chapters_read = entry.progress;
-									if (entry.repeat) b.reread_value = entry.repeat;
+									if (entry.repeat) b.num_times_reread = entry.repeat;
 									if (entry.notes) b.comments = entry.notes;
 									// if (entry.private) b.is_private = entry.private;
 									return b;
@@ -1734,12 +1734,12 @@ function init() {
 				entry.type === "Anime"
 					? (() => {
 							const b: $malsync.ListUpdateAnimeBody = {};
-							b.rewatch_value = data.repeat;
+							b.num_times_rewatched = data.repeat;
 							return b;
 					  })()
 					: (() => {
 							const b: $malsync.ListUpdateMangaBody = {};
-							b.reread_value = data.repeat;
+							b.num_times_reread = data.repeat;
 							return b;
 					  })();
 
