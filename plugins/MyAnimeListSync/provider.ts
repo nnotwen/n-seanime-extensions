@@ -1629,173 +1629,120 @@ function init() {
 			state.syncProgressPercent.set(0);
 		}
 
-		$store.watch("POST_UPDATE_ENTRY", async (e: $app.PostUpdateEntryEvent) => {
-			if (!e.mediaId) {
-				log.sendWarning("[MAL.UpdateEntry] postUpdate hook was triggered but it contained no mediaId");
-				return $store.set("PRE_UPDATE_ENTRY_DATA", null);
+		async function liveSync<TData>({
+			event,
+			preDataKey,
+			actionLabel,
+			buildBody,
+			requireRepeat = false,
+		}: {
+			event: { mediaId?: number };
+			preDataKey: string;
+			actionLabel: string;
+			buildBody: (data: TData, entry: any) => $malsync.ListUpdateAnimeBody | $malsync.ListUpdateMangaBody;
+			requireRepeat?: boolean;
+		}) {
+			const { mediaId } = event;
+
+			if (!mediaId) {
+				log.sendWarning(`[${actionLabel}] postUpdate hook was triggered but it contained no mediaId`);
+				return $store.set(preDataKey, null);
 			}
 
-			const data: $app.PreUpdateEntryEvent = $store.get("PRE_UPDATE_ENTRY_DATA");
-			if (!data) return log.sendWarning("[MAL.UpdateEntry] No update data was emitted from the pre update hooks!");
-			$store.set("PRE_UPDATE_ENTRY_DATA", null); // consume the data
+			const data = $store.get(preDataKey) as TData | null;
+			if (!data) return log.sendWarning(`[${actionLabel}] No update data was emitted from the pre update hooks!`);
+			$store.set(preDataKey, null);
 
 			if (fieldRefs.disableSyncing.current.valueOf()) {
-				return log.sendInfo(`[MAL.UpdateEntry] Syncing was disabled. Will not sync entry [${e.mediaId}]`);
+				return log.sendInfo(`[${actionLabel}] Syncing was disabled. Will not sync entry [${mediaId}]`);
 			}
 
-			const entry = await getMedia(e.mediaId);
-			if (!entry) return log.sendWarning(`[MAL.UpdateEntry] Media not found (${e.mediaId})`);
+			const entry = await getMedia(mediaId);
+			if (!entry) return log.sendWarning(`[${actionLabel}] Media not found (${mediaId})`);
 
 			if (!entry.media?.idMal) {
-				return log.sendWarning(`[MAL.UpdateEntry] No equivalent MyAnimeList entry found for [${e.mediaId}]`);
+				return log.sendWarning(`[${actionLabel}] No equivalent MyAnimeList entry found for [${mediaId}]`);
 			}
 
-			if (data.mediaId !== e.mediaId) {
-				return log.sendWarning("[MAL.UpdateEntry] preUpdate data was invalid!");
+			if ((data as any).mediaId !== mediaId) {
+				return log.sendWarning(`[${actionLabel}] preUpdate data was invalid!`);
 			}
 
-			if (unwrap(getAnilistEntries(entry.type).find((x) => x.mediaId === e.mediaId)?.private)) {
-				return log.sendWarning(`[MAL.UpdateEntry] ${entry.media.title?.userPreferred ?? "anilist-id/" + e.mediaId} is private. Skipping...`);
+			if (requireRepeat && typeof (data as any).repeat !== "number") {
+				return log.sendWarning(`[${actionLabel}] preUpdate data was of invalid type!`);
 			}
 
-			const title = entry.media.title?.userPreferred ?? "anilist-id/" + e.mediaId;
-			const body =
-				entry.type === "Anime"
-					? (() => {
-							const b: $malsync.ListUpdateAnimeBody = {};
-							if (data.scoreRaw) b.score = data.scoreRaw / 10;
-							if (data.status) b.status = normalizeAnimeStatusToMal(data.status);
-							if (data.status === "REPEATING") b.is_rewatching = true;
-							if (data.progress) b.num_watched_episodes = data.progress;
-							return b;
-					  })()
-					: (() => {
-							const b: $malsync.ListUpdateMangaBody = {};
-							if (data.scoreRaw) b.score = data.scoreRaw / 10;
-							if (data.status) b.status = normalizeMangaStatusToMal(data.status);
-							if (data.status === "REPEATING") b.is_rereading = true;
-							if (data.progress) b.num_chapters_read = data.progress;
-							return b;
-					  })();
+			if (unwrap(getAnilistEntries(entry.type).find((x) => x.mediaId === mediaId)?.private)) {
+				return log.sendWarning(`[${actionLabel}] ${entry.media.title?.userPreferred ?? "anilist-id/" + mediaId} is private. Skipping...`);
+			}
+
+			const title = entry.media.title?.userPreferred ?? `anilist-id/${mediaId}`;
+			const body = buildBody(data, entry);
 
 			application.list
 				.patch(entry.type, entry.media.idMal, body)
-				.then(() => log.sendSuccess(`[MAL.UpdateEntry] [PATCH] Synced ${title} to MyAnimeList. ${JSON.stringify(body)}`))
-				.catch((e) => log.sendError(`[MAL.UpdateEntry] [PATCH] ${(e as Error).message}`));
+				.then(() => log.sendSuccess(`[${actionLabel}] [PATCH] Synced ${title} to MyAnimeList. ${JSON.stringify(body)}`))
+				.catch((e) => log.sendError(`[${actionLabel}] [PATCH] ${(e as Error).message}`));
+		}
+
+		$store.watch("POST_UPDATE_ENTRY", async (e) => {
+			liveSync<$app.PreUpdateEntryEvent>({
+				event: e,
+				preDataKey: "PRE_UPDATE_ENTRY_DATA",
+				actionLabel: "MAL.UpdateEntry",
+				buildBody: (data, entry) => {
+					if (entry.type === "Anime") {
+						return {
+							score: data.scoreRaw ? data.scoreRaw / 10 : undefined,
+							status: data.status ? normalizeAnimeStatusToMal(data.status) : undefined,
+							is_rewatching: data.status === "REPEATING" || undefined,
+							num_watched_episodes: data.progress,
+						};
+					}
+					return {
+						score: data.scoreRaw ? data.scoreRaw / 10 : undefined,
+						status: data.status ? normalizeMangaStatusToMal(data.status) : undefined,
+						is_rereading: data.status === "REPEATING" || undefined,
+						num_chapters_read: data.progress,
+					};
+				},
+			});
 		});
 
-		$store.watch("POST_UPDATE_ENTRY_PROGRESS", async (e: $app.PostUpdateEntryProgressEvent) => {
-			if (!e.mediaId) {
-				log.sendWarning("[MAL.UpdateProgress] postUpdate hook was triggered but it contained no mediaId");
-				return $store.set("PRE_UPDATE_ENTRY_PROGRESS_DATA", null);
-			}
-
-			const data: $app.PreUpdateEntryProgressEvent = $store.get("PRE_UPDATE_ENTRY_PROGRESS_DATA");
-			if (!data) return log.sendWarning("[MAL.UpdateProgress] No update data was emitted from the pre update hooks!");
-			$store.set("PRE_UPDATE_ENTRY_PROGRESS_DATA", null); // consume the data
-
-			if (fieldRefs.disableSyncing.current.valueOf()) {
-				return log.sendInfo(`[MAL.UpdateProgress] Syncing was disabled. Will not sync entry [${e.mediaId}]`);
-			}
-
-			const entry = await getMedia(e.mediaId);
-			if (!entry) return log.sendWarning(`[MAL.UpdateProgress] Media not found (${e.mediaId})`);
-
-			if (!entry.media?.idMal) {
-				return log.sendWarning(`[MAL.UpdateProgress] No equivalent MyAnimeList entry found for [${e.mediaId}]`);
-			}
-
-			if (data.mediaId !== e.mediaId) {
-				return log.sendWarning("[MAL.UpdateProgress] preUpdate data was invalid!");
-			}
-
-			if (unwrap(getAnilistEntries(entry.type).find((x) => x.mediaId === e.mediaId)?.private)) {
-				return log.sendWarning(`[MAL.UpdateProgress] ${entry.media.title?.userPreferred ?? "anilist-id/" + e.mediaId} is private. Skipping...`);
-			}
-
-			const title = entry.media.title?.userPreferred ?? "anilist-id/" + e.mediaId;
-			const body =
-				entry.type === "Anime"
-					? (() => {
-							const b: $malsync.ListUpdateAnimeBody = {};
-							if (data.status) b.status = normalizeAnimeStatusToMal(data.status);
-							if (data.status === "REPEATING") b.is_rewatching = true;
-							if (data.progress) b.num_watched_episodes = data.progress;
-							if (data.progress === data.totalCount) {
-								b.status = "completed";
-								b.is_rewatching = false;
-							}
-							return b;
-					  })()
-					: (() => {
-							const b: $malsync.ListUpdateMangaBody = {};
-							if (data.status) b.status = normalizeMangaStatusToMal(data.status);
-							if (data.status === "REPEATING") b.is_rereading = true;
-							if (data.progress) b.num_chapters_read = data.progress;
-							if (data.progress === data.totalCount) {
-								b.status = "completed";
-								b.is_rereading = false;
-							}
-							return b;
-					  })();
-
-			application.list
-				.patch(entry.type, entry.media.idMal, body)
-				.then(() => log.sendSuccess(`[MAL.UpdateProgress] [PATCH] Synced ${title} to MyAnimeList. ${JSON.stringify(body)}`))
-				.catch((e) => log.sendError(`[MAL.UpdateProgress] [PATCH] ${(e as Error).message}`));
+		$store.watch("POST_UPDATE_ENTRY_PROGRESS", async (e) => {
+			liveSync<$app.PreUpdateEntryProgressEvent>({
+				event: e,
+				preDataKey: "PRE_UPDATE_ENTRY_PROGRESS_DATA",
+				actionLabel: "MAL.UpdateProgress",
+				buildBody: (data, entry) => {
+					if (entry.type === "Anime") {
+						const completed = data.progress === data.totalCount;
+						return {
+							status: completed ? "completed" : normalizeAnimeStatusToMal(data.status),
+							is_rewatching: completed ? false : data.status === "REPEATING",
+							num_watched_episodes: data.progress,
+						};
+					}
+					const completed = data.progress === data.totalCount;
+					return {
+						status: completed ? "completed" : normalizeMangaStatusToMal(data.status),
+						is_rereading: completed ? false : data.status === "REPEATING",
+						num_chapters_read: data.progress,
+					};
+				},
+			});
 		});
 
-		$store.watch("POST_UPDATE_ENTRY_REPEAT", async (e: $app.PostUpdateEntryRepeatEvent) => {
-			if (!e.mediaId) {
-				log.sendWarning("[MAL.UpdateRepeat] postUpdate hook was triggered but it contained no mediaId");
-				return $store.set("PRE_UPDATE_ENTRY_REPEAT_DATA", null);
-			}
-
-			const data: $app.PreUpdateEntryRepeatEvent = $store.get("PRE_UPDATE_ENTRY_REPEAT_DATA");
-			if (!data) return log.sendWarning("[MAL.UpdateRepeat] No update data was emitted from the pre update hooks!");
-			$store.set("PRE_UPDATE_ENTRY_REPEAT_DATA", null); // consume the data
-
-			if (fieldRefs.disableSyncing.current.valueOf()) {
-				return log.sendInfo(`[MAL.UpdateRepeat] Syncing was disabled. Will not sync entry [${e.mediaId}]`);
-			}
-
-			const entry = await getMedia(e.mediaId);
-			if (!entry) return log.sendWarning(`[MAL.UpdateRepeat] Media not found (${e.mediaId})`);
-
-			if (!entry.media?.idMal) {
-				return log.sendWarning(`[MAL.UpdateRepeat] No equivalent MyAnimeList entry found for [${e.mediaId}]`);
-			}
-
-			if (data.mediaId !== e.mediaId) {
-				return log.sendWarning("[MAL.UpdateRepeat] preUpdate data was invalid!");
-			}
-
-			if (typeof data.repeat !== "number") {
-				return log.sendWarning("[MAL.UpdateRepeat] preUpdate data was of invalid type!");
-			}
-
-			if (unwrap(getAnilistEntries(entry.type).find((x) => x.mediaId === e.mediaId)?.private)) {
-				return log.sendWarning(`[MAL.UpdateRepeat] ${entry.media.title?.userPreferred ?? "anilist-id/" + e.mediaId} is private. Skipping...`);
-			}
-
-			const title = entry.media.title?.userPreferred ?? "anilist-id/" + e.mediaId;
-			const body =
-				entry.type === "Anime"
-					? (() => {
-							const b: $malsync.ListUpdateAnimeBody = {};
-							b.num_times_rewatched = data.repeat;
-							return b;
-					  })()
-					: (() => {
-							const b: $malsync.ListUpdateMangaBody = {};
-							b.num_times_reread = data.repeat;
-							return b;
-					  })();
-
-			application.list
-				.patch(entry.type, entry.media.idMal, body)
-				.then(() => log.sendSuccess(`[MAL.UpdateRepeat] [PATCH] Synced ${title} to MyAnimeList. ${JSON.stringify(body)}`))
-				.catch((e) => log.sendError(`[MAL.UpdateRepeat] [PATCH] ${(e as Error).message}`));
+		$store.watch("POST_UPDATE_ENTRY_REPEAT", async (e) => {
+			liveSync<$app.PreUpdateEntryRepeatEvent>({
+				event: e,
+				preDataKey: "PRE_UPDATE_ENTRY_REPEAT_DATA",
+				actionLabel: "MAL.UpdateRepeat",
+				requireRepeat: true,
+				buildBody: (data, entry) => {
+					return entry.type === "Anime" ? { num_times_rewatched: data.repeat } : { num_times_reread: data.repeat };
+				},
+			});
 		});
 
 		$store.watch("POST_UPDATE_DELETE", async (e: $app.PostDeleteEntryEvent) => {
