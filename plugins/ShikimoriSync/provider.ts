@@ -1151,6 +1151,11 @@ function init() {
 						continue;
 					}
 
+					if (unwrap(entry.private)) {
+						log.sendWarning(`[SYNCLIST] Skipping ${entry.title} (private)...`);
+						continue;
+					}
+
 					// RETRIEVE SHIKIMORI-RATE-ID
 					const idMal = media.media.idMal;
 					const rate = await getUserRate(idMal, mediaType, shikimoriProfile.userId.get()!).catch((e) => (e as Error).message);
@@ -1285,7 +1290,7 @@ function init() {
 				// prettier-ignore
 				const query = "mutation ( $mediaId: Int!, $status: MediaListStatus, $progress: Int, $progressVolumes: Int, $score: Float, $repeat: Int, $notes: String ) { SaveMediaListEntry( mediaId: $mediaId, status: $status, progress: $progress, progressVolumes: $progressVolumes, score: $score, repeat: $repeat,  notes: $notes) { id status progress progressVolumes score repeat notes startedAt { year month day } completedAt { year month day } } }";
 				const anilistGlobalEntries = await filterExistingMalIds(entries.map((e) => e.idMal)).catch((e) => (e as Error).message);
-				const anilistEntries = syncType === ManageListSyncType.FullSync ? getAnilistEntries(mediaType) : [];
+				const anilistEntries = syncType === ManageListSyncType.FullSync ? getAnilistEntries(mediaType).filter((x) => !unwrap(x.private)) : [];
 
 				if (typeof anilistGlobalEntries === "string") {
 					log.sendError(`[SYNCLIST] ${anilistGlobalEntries}`);
