@@ -66,10 +66,23 @@ function init() {
 			manageListSyncTypeDesc: ctx.state<string>(manageListSyncTypeDesc[fieldRefs.manageListSyncType.current]),
 			syncing: ctx.state<boolean>(false),
 			cancellingSync: ctx.state<boolean>(false),
-			syncProgressCurrent: ctx.state<number>(0),
-			syncProgressTotal: ctx.state<number>(0),
-			syncProgressPercent: ctx.state<number>(0),
 			syncDetail: ctx.state<string>("Waiting..."),
+		};
+
+		const syncProgress = {
+			current: ctx.state<number>(0),
+			total: ctx.state<number>(0),
+			percent() {
+				const total = this.total.get();
+				return total > 0 ? this.current.get() / total : 0;
+			},
+			refresh(max: number) {
+				this.total.set(max);
+				this.current.set(0);
+			},
+			tick() {
+				this.current.set(this.current.get() + 1);
+			},
 		};
 
 		const log = {
@@ -403,26 +416,6 @@ function init() {
 					return res.json() as T extends "Anime" ? $malsync.AnimeListEntry : $malsync.MangaListEntry;
 				},
 
-				async has(type: "Anime" | "Manga", malId: number): Promise<boolean> {
-					const normalized = type.toLowerCase() as "anime" | "manga";
-
-					const res = await application.fetch(`${normalized}/${malId}/my_list_status`, {
-						method: "GET",
-					});
-
-					if (res.ok) return true;
-					if (res.status === 405 || res.status === 404) return false;
-
-					let err = null;
-					try {
-						err = res.json(); // synchronous
-					} catch {}
-
-					console.log(err);
-
-					throw new Error(err?.message || err?.error || res.statusText);
-				},
-
 				async delete(type: "Anime" | "Manga", malId: number): Promise<boolean> {
 					const normalized = type.toLowerCase() as "anime" | "manga";
 
@@ -444,7 +437,7 @@ function init() {
 
 				async fetchAll<T extends "Anime" | "Manga">(
 					type: T
-				): Promise<(T extends "Anime" ? $malsync.AnimeListEntryWrapper[] : $malsync.MangaListEntryWrapper[]) & { idMal: number }> {
+				): Promise<Array<(T extends "Anime" ? $malsync.AnimeListEntryWrapper : $malsync.MangaListEntryWrapper) & { idMal: number }>> {
 					let path: string | null = `users/@me/${type.toLowerCase()}list?fields=list_status&limit=1000`;
 					const all = [];
 
@@ -567,7 +560,11 @@ function init() {
 						left: "1em",
 					},
 					onClick: ctx.eventHandler("mal:navigate-landing", () => {
-						tabs.current.set(Tab.landing);
+						if (application.userInfo.connectionState.get() === ConnectionState.Disconnected) {
+							tabs.current.set(Tab.logon);
+						} else {
+							tabs.current.set(Tab.landing);
+						}
 					}),
 				});
 			},
@@ -666,6 +663,17 @@ function init() {
 					}),
 				});
 
+				const logs = tray.button("View Logs", {
+					size: "md",
+					intent: "gray-subtle",
+					className: "h-10",
+					style: { margin: "0 1em 0.75em", padding: "1em 0.5em" },
+					onClick: ctx.eventHandler("mal:view-logs", () => {
+						tabs.current.set(Tab.logs);
+					}),
+					loading: state.loggingIn.get(),
+				});
+
 				const form = tray.flex([error, info, authButton, authToken, login], {
 					direction: "column",
 					style: {
@@ -676,7 +684,7 @@ function init() {
 					},
 				});
 
-				return this.stack([this.logo(), form], 2);
+				return this.stack([this.logo(), form, logs], 2);
 			},
 
 			[Tab.landing]() {
@@ -1090,7 +1098,7 @@ function init() {
 							style: {
 								position: "absolute",
 								left: "0",
-								width: `${(state.syncProgressPercent.get() * 100).toString()}%`,
+								width: `${(syncProgress.percent() * 100).toString()}%`,
 								height: "100%",
 								background: "#2e51a2",
 								animation: "slide 1.2 ease-in-out infinite",
@@ -1118,7 +1126,7 @@ function init() {
 								textOverflow: "ellipsis",
 							},
 						}),
-						tray.text(`[${state.syncProgressCurrent.get()}/${state.syncProgressTotal.get()}]`, {
+						tray.text(`[${syncProgress.current.get()}/${syncProgress.total.get()}]`, {
 							style: {
 								width: "fit-content",
 								color: "#6de745",
@@ -1358,23 +1366,22 @@ function init() {
 					return state.syncing.set(false);
 				} else {
 					log.sendInfo(`[SYNCLIST] Found ${entries.length} entries!`);
-					state.syncProgressTotal.set(entries.length);
-					state.syncProgressCurrent.set(0);
-					state.syncProgressPercent.set(0 / entries.length);
+					syncProgress.refresh(entries.length);
 				}
 
 				const malEntries =
-					syncType === ManageListSyncType.FullSync
+					syncType === ManageListSyncType.FullSync || syncType === ManageListSyncType.Patch
 						? await application.list.fetchAll(mediaType).catch((e) => (e as Error).message)
 						: ([] as (($malsync.AnimeListEntryWrapper | $malsync.MangaListEntryWrapper) & { idMal: number })[]);
 				if (typeof malEntries === "string") {
-					log.sendError(`[SYNCLIST] Error encountered (fall back to method POST): ${malEntries}`);
+					if (syncType === ManageListSyncType.Patch) {
+						return log.sendError(`[SYNCLIST] Terminating syncjob: ${malEntries}`);
+					} else log.sendError(`[SYNCLIST] Error encountered (fall back to method POST): ${malEntries}`);
 				}
 
 				while (state.syncing.get() && entries.length) {
 					const entry = entries.pop();
-					state.syncProgressCurrent.set(state.syncProgressCurrent.get() + 1);
-					state.syncProgressPercent.set(state.syncProgressCurrent.get() / state.syncProgressTotal.get());
+					syncProgress.tick();
 
 					if (!entry?.mediaId) continue;
 
@@ -1391,9 +1398,9 @@ function init() {
 						continue;
 					}
 
-					if (syncType === ManageListSyncType.Patch) {
+					if (syncType === ManageListSyncType.Patch && Array.isArray(malEntries)) {
 						try {
-							const existing = await application.list.has(mediaType, entry.idMal).catch((e) => (e as Error).message);
+							const existing = malEntries.find((x) => x.idMal === unwrap(entry.idMal));
 							await $_wait(1_500);
 							if (typeof existing === "string") {
 								log.sendError(`[SYNCLIST] ${title}: ${existing} [SKIPPED]`);
@@ -1405,7 +1412,7 @@ function init() {
 								continue;
 							}
 						} catch (error) {
-							console.log(error);
+							log.sendError(`[SYNCLIST] ${title}: ${(error as Error).message}`);
 							continue;
 						}
 					}
@@ -1418,24 +1425,22 @@ function init() {
 						mediaType === "Anime"
 							? (() => {
 									const b: $malsync.ListUpdateAnimeBody = {};
-									if (entry.score) b.score = entry.score / 10;
+									if (entry.score) b.score = Math.round(entry.score / 10);
 									if (entry.status) b.status = normalizeAnimeStatusToMal(entry.status);
-									if (entry.status === "REPEATING") b.is_rewatching = true;
+									if (unwrap(entry.status) === "REPEATING") b.is_rewatching = true;
 									if (entry.progress) b.num_watched_episodes = entry.progress;
 									if (entry.repeat) b.num_times_rewatched = entry.repeat;
 									if (entry.notes) b.comments = entry.notes;
-									// if (entry.private) b.is_private = entry.private;
 									return b;
 							  })()
 							: (() => {
 									const b: $malsync.ListUpdateMangaBody = {};
-									if (entry.score) b.score = entry.score / 10;
+									if (entry.score) b.score = Math.round(entry.score / 10);
 									if (entry.status) b.status = normalizeMangaStatusToMal(entry.status);
-									if (entry.status === "REPEATING") b.is_rereading = true;
+									if (unwrap(entry.status) === "REPEATING") b.is_rereading = true;
 									if (entry.progress) b.num_chapters_read = entry.progress;
 									if (entry.repeat) b.num_times_reread = entry.repeat;
 									if (entry.notes) b.comments = entry.notes;
-									// if (entry.private) b.is_private = entry.private;
 									return b;
 							  })();
 
@@ -1522,9 +1527,7 @@ function init() {
 					return state.syncing.set(false);
 				} else {
 					log.sendInfo(`[SYNCLIST] Found ${entries.length} entries!`);
-					state.syncProgressTotal.set(entries.length);
-					state.syncProgressCurrent.set(0);
-					state.syncProgressPercent.set(0 / entries.length);
+					syncProgress.refresh(entries.length);
 				}
 
 				// prettier-ignore
@@ -1537,9 +1540,7 @@ function init() {
 					log.send("[SYNCLIST] Terminating sync...");
 					state.syncing.set(false);
 					state.syncDetail.set(`Waiting...`);
-					state.syncProgressTotal.set(0);
-					state.syncProgressCurrent.set(0);
-					state.syncProgressPercent.set(0);
+					syncProgress.refresh(0);
 					return;
 				}
 
@@ -1547,8 +1548,7 @@ function init() {
 					const entry = entries.pop()!;
 					const listEntry = popByProperty(anilistEntries, "idMal", entry.idMal);
 					const { id, title } = anilistGlobalEntries.find((x) => x.idMal === entry.idMal) ?? {};
-					state.syncProgressCurrent.set(state.syncProgressCurrent.get() + 1);
-					state.syncProgressPercent.set(state.syncProgressCurrent.get() / state.syncProgressTotal.get());
+					syncProgress.tick();
 					state.syncDetail.set(`Syncing ${title ?? entry.title}`);
 
 					if (!id) {
@@ -1585,17 +1585,14 @@ function init() {
 					log.sendInfo(`[SYNCLIST] Found ${anilistEntries.length} remaining entries. Purging...`);
 					state.syncDetail.set(`Purging ${anilistEntries.length} entries...`);
 
-					state.syncProgressTotal.set(anilistEntries.length);
-					state.syncProgressCurrent.set(0);
-					state.syncProgressPercent.set(0 / anilistEntries.length);
+					syncProgress.refresh(anilistEntries.length);
 					const query = "mutation ($id: Int!) { DeleteMediaListEntry(id: $id) { deleted } }";
 
 					while (state.syncing.get() && anilistEntries.length) {
 						const anilistEntry = anilistEntries.pop()!;
 						const mediaTitle = anilistEntry.title;
 
-						state.syncProgressCurrent.set(state.syncProgressCurrent.get() + 1);
-						state.syncProgressPercent.set(state.syncProgressCurrent.get() / state.syncProgressTotal.get());
+						syncProgress.tick();
 						state.syncDetail.set(`Purging ${mediaTitle ?? "anilist-id/" + anilistEntry.id}`);
 
 						// Check if entry exists in shikomori/mal
@@ -1624,9 +1621,7 @@ function init() {
 			}
 
 			state.syncDetail.set(`Waiting...`);
-			state.syncProgressTotal.set(0);
-			state.syncProgressCurrent.set(0);
-			state.syncProgressPercent.set(0);
+			syncProgress.refresh(0);
 		}
 
 		async function liveSync<TData>({
@@ -1682,7 +1677,7 @@ function init() {
 			application.list
 				.patch(entry.type, entry.media.idMal, body)
 				.then(() => log.sendSuccess(`[${actionLabel}] [PATCH] Synced ${title} to MyAnimeList. ${JSON.stringify(body)}`))
-				.catch((e) => log.sendError(`[${actionLabel}] [PATCH] ${(e as Error).message}`));
+				.catch((e) => log.sendError(`[${actionLabel}] [PATCH] ${(e as Error).message} ${JSON.stringify(body)}`));
 		}
 
 		$store.watch("POST_UPDATE_ENTRY", async (e) => {
@@ -1693,14 +1688,14 @@ function init() {
 				buildBody: (data, entry) => {
 					if (entry.type === "Anime") {
 						return {
-							score: data.scoreRaw ? data.scoreRaw / 10 : undefined,
+							score: data.scoreRaw ? Math.round(data.scoreRaw / 10) : undefined,
 							status: data.status ? normalizeAnimeStatusToMal(data.status) : undefined,
 							is_rewatching: data.status === "REPEATING" || undefined,
 							num_watched_episodes: data.progress,
 						};
 					}
 					return {
-						score: data.scoreRaw ? data.scoreRaw / 10 : undefined,
+						score: data.scoreRaw ? Math.round(data.scoreRaw / 10) : undefined,
 						status: data.status ? normalizeMangaStatusToMal(data.status) : undefined,
 						is_rereading: data.status === "REPEATING" || undefined,
 						num_chapters_read: data.progress,
@@ -1778,7 +1773,6 @@ function init() {
 				.catch((e) => log.sendError(`[MAL.DeleteEntry] [DELETE] ${(e as Error).message}`));
 		});
 
-		// login logic
 		tray.render(() => tabs.get());
 
 		ctx.setTimeout(() => {
@@ -1787,46 +1781,60 @@ function init() {
 			});
 		}, 5_000);
 
+		// Authenticate
 		log.send("Initializing extension...");
 		log.send("Checking availability of access tokens...");
-		if (application.token.getAccessToken() === null) {
-			log.sendWarning("No access token found!");
-			if (application.token.refreshToken.get()) {
-				log.send("Checking availability of refresh token...");
-				try {
-					return application.token
-						.refresh()
-						.then(() => {
-							log.sendSuccess("Successfully refreshed access token!");
-							return application.userInfo.fetch();
-						})
-						.then((data) => {
-							log.sendSuccess("Successfully fetched user info!");
-							log.send(`Welcome ${data.name}!`);
-							if (!data.picture) log.sendWarning("No user avatar detected! Reverting to default...");
-							tabs.current.set(Tab.landing);
-						});
-				} catch (err) {
-					log.sendError(`Refresh failed: ${(err as Error).message}`);
-					log.sendError("Login required. Please login again.");
-					state.loginError.set("Session Expired. Please login again.");
-					tabs.current.set(Tab.logon);
-					return;
-				}
-			}
-
-			log.sendWarning("No refresh token found!");
-			log.sendWarning("Login required. Please login.");
-		} else {
+		if (application.token.getAccessToken() !== null) {
 			log.sendSuccess("Access token found!");
 			log.sendInfo("Fetching user info...");
-			return application.userInfo.fetch().then((data) => {
-				log.sendSuccess("Successfully fetched user info!");
-				log.send(`Welcome ${data.name}!`);
-				if (!data.picture) log.sendWarning("No user avatar detected! Reverting to default...");
-				tabs.current.set(Tab.landing);
-			});
+			return application.userInfo
+				.fetch()
+				.then((data) => {
+					log.sendSuccess("Successfully fetched user info!");
+					log.send(`Signed in as: ${data.name}!`);
+					if (!data.picture) log.sendWarning("No user avatar detected! Reverting to default...");
+					tabs.current.set(Tab.landing);
+				})
+				.catch((err: Error) => {
+					log.sendError(`Fetch failed: ${err.message}`);
+					log.sendInfo("Invalidating cached token...");
+					application.token.set(null);
+					log.send("Session invalid. Please log in again.");
+					tabs.current.set(Tab.logon);
+				});
 		}
+
+		log.sendWarning("Access token not found!");
+		log.sendInfo("Checking availability of refresh token...");
+		if (application.token.refreshToken.get()) {
+			log.sendSuccess("Refresh token found!");
+			log.sendInfo("Refreshing access token...");
+			return application.token
+				.refresh()
+				.then(() => {
+					log.sendSuccess("Successfully refreshed access token!");
+					log.sendInfo("Fetching user info...");
+					return application.userInfo.fetch();
+				})
+				.then((data) => {
+					log.sendSuccess("Successfully fetched the user info!");
+					log.send(`Signed in as: ${data.name}!`);
+					if (!data.picture) log.sendWarning("No user avatar detected! Reverting to default...");
+					tabs.current.set(Tab.landing);
+				})
+				.catch((err: Error) => {
+					log.sendError(`[Token Refresh Failed] ${err.message}`);
+					log.send("Session Expired. Please login again.");
+					state.loginError.set("Session Expired. Please login again.");
+					tabs.current.set(Tab.logon);
+				});
+		}
+
+		log.sendWarning("Refresh token not found!");
+		log.sendWarning("User authentication required.");
+		tabs.current.set(Tab.logon);
+
+		// END OF CODE //
 	});
 
 	// HOOKS
