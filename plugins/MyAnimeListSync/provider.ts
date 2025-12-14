@@ -786,6 +786,9 @@ function init() {
 										style: {
 											fontSize: "12px",
 											borderRadius: "999px",
+											pointerEvents: state.loggingOut.get() ? "none" : "auto",
+											opacity: state.loggingOut.get() ? "0.5" : "1",
+											width: "100%",
 										},
 									}),
 									tray.anchor({
@@ -797,6 +800,9 @@ function init() {
 										style: {
 											fontSize: "12px",
 											borderRadius: "999px",
+											pointerEvents: state.loggingOut.get() ? "none" : "auto",
+											opacity: state.loggingOut.get() ? "0.5" : "1",
+											width: "100%",
 										},
 									}),
 								]),
