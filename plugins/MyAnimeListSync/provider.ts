@@ -644,11 +644,16 @@ function init() {
 						state.loggingIn.set(true);
 						try {
 							await application.token.exchangeCode(fieldRefs.authCode.current);
-							await $_wait(5_000);
-							await application.userInfo.fetch();
+
 							log.sendSuccess("Successfully logged in!");
-							fieldRefs.authCode.setValue("");
-							tabs.current.set(Tab.landing);
+							log.send("Fetching user info");
+
+							await $_wait(5000);
+
+							const data = await application.userInfo.fetch();
+
+							log.sendSuccess("Successfully fetched user info!");
+							log.send(`Welcome ${data.name}!`);
 						} catch (e) {
 							await $_wait(2_000);
 							state.loginError.set(`Error: ${(e as Error).message}`);
@@ -771,6 +776,30 @@ function init() {
 										fontWeight: "600",
 									},
 								}),
+								tray.flex([
+									tray.anchor({
+										text: "AnimeList",
+										target: "_blank",
+										href: `https://myanimelist.net/animelist/${application.userInfo.name.get()}`,
+										// prettier-ignore
+										className: "whitespace-nowrap font-semibold rounded-lg inline-flex items-center transition ease-in text-center justify-center focus-visible:outline-none focus-visible:ring-2 ring-offset-1 ring-offset-[--background] focus-visible:ring-[--ring] disabled:opacity-50 disabled:pointer-events-none shadow-none text-[--gray] border bg-gray-100 border-transparent hover:bg-gray-200 active:bg-gray-300 dark:text-gray-300 dark:bg-opacity-10 dark:hover:bg-opacity-20 px-2 no-underline cursor-pointer",
+										style: {
+											fontSize: "12px",
+											borderRadius: "999px",
+										},
+									}),
+									tray.anchor({
+										text: "MangaList",
+										target: "_blank",
+										href: `https://myanimelist.net/mangalist/${application.userInfo.name.get()}`,
+										// prettier-ignore
+										className: "whitespace-nowrap font-semibold rounded-lg inline-flex items-center transition ease-in text-center justify-center focus-visible:outline-none focus-visible:ring-2 ring-offset-1 ring-offset-[--background] focus-visible:ring-[--ring] disabled:opacity-50 disabled:pointer-events-none shadow-none text-[--gray] border bg-gray-100 border-transparent hover:bg-gray-200 active:bg-gray-300 dark:text-gray-300 dark:bg-opacity-10 dark:hover:bg-opacity-20 px-2 no-underline cursor-pointer",
+										style: {
+											fontSize: "12px",
+											borderRadius: "999px",
+										},
+									}),
+								]),
 							],
 							{
 								gap: 0.5,
