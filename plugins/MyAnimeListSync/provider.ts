@@ -1214,6 +1214,29 @@ function init() {
 			return removed;
 		}
 
+		function toISODate(date?: $app.AL_FuzzyDateInput): string | undefined {
+			if (!date || !unwrap(date)) return undefined;
+			const year = unwrap(date?.year);
+
+			if (!year) return undefined;
+			const month = date.month ?? 1; // default to January if missing
+			const day = date.day ?? 1; // default to 1st if missing
+
+			return new Date(Date.UTC(year, month - 1, day)).toISOString().substring(0, 10);
+		}
+
+		function toFuzzyDate(date?: string): $app.AL_FuzzyDateInput | undefined {
+			if (!date) return undefined;
+
+			const dateObject = new Date(date);
+			const day = dateObject.getDate();
+			const month = dateObject.getMonth() + 1;
+			const year = dateObject.getFullYear();
+
+			if (isNaN(day) || isNaN(month) || isNaN(year)) return undefined;
+			return { day, month, year };
+		}
+
 		function normalizeAnimeStatusToMal(status?: $app.AL_MediaListStatus) {
 			if (status === undefined || status === null) return undefined;
 			const map: Record<typeof status, $malsync.ListStatusAnime> = {
@@ -1421,26 +1444,34 @@ function init() {
 						popByProperty(malEntries as ($malsync.AllListEntry & { idMal: number })[], "idMal", unwrap(entry.idMal)!);
 					}
 
+					const start = toISODate(entry.startedAt);
+					const finish = toISODate(entry.completedAt);
+					const notes = unwrap(entry.notes);
+					const score = unwrap(entry.score);
+					const status = unwrap(entry.status);
+					const shared: $malsync.ListUpdateBodyBase = {};
+
+					if (start) shared.start_date = start;
+					if (finish) shared.finish_date = finish;
+					if (notes && notes.length) shared.comments = notes;
+					if (score) shared.score = Math.round(score / 10);
+
 					const body =
 						mediaType === "Anime"
 							? (() => {
-									const b: $malsync.ListUpdateAnimeBody = {};
-									if (entry.score) b.score = Math.round(entry.score / 10);
-									if (entry.status) b.status = normalizeAnimeStatusToMal(entry.status);
-									if (unwrap(entry.status) === "REPEATING") b.is_rewatching = true;
+									const b: $malsync.ListUpdateAnimeBody = { ...shared };
+									if (status) b.status = normalizeAnimeStatusToMal(status);
+									if (status === "REPEATING") b.is_rewatching = true;
 									if (entry.progress) b.num_watched_episodes = entry.progress;
 									if (entry.repeat) b.num_times_rewatched = entry.repeat;
-									if (entry.notes) b.comments = entry.notes;
 									return b;
 							  })()
 							: (() => {
-									const b: $malsync.ListUpdateMangaBody = {};
-									if (entry.score) b.score = Math.round(entry.score / 10);
-									if (entry.status) b.status = normalizeMangaStatusToMal(entry.status);
-									if (unwrap(entry.status) === "REPEATING") b.is_rereading = true;
+									const b: $malsync.ListUpdateMangaBody = { ...shared };
+									if (status) b.status = normalizeMangaStatusToMal(status);
+									if (status === "REPEATING") b.is_rereading = true;
 									if (entry.progress) b.num_chapters_read = entry.progress;
 									if (entry.repeat) b.num_times_reread = entry.repeat;
-									if (entry.notes) b.comments = entry.notes;
 									return b;
 							  })();
 
@@ -1513,6 +1544,8 @@ function init() {
 							status: normalizeStatusToAnilist(e.list_status.status),
 							notes: e.list_status.comments,
 							// private: e.list_status.is_private,
+							startedAt: e.list_status.start_date ?? undefined,
+							completedAt: e.list_status.finish_date ?? undefined,
 						}))
 					)
 					.catch((e) => (e as Error).message);
@@ -1531,7 +1564,7 @@ function init() {
 				}
 
 				// prettier-ignore
-				const query = "mutation ( $mediaId: Int!, $status: MediaListStatus, $progress: Int, $progressVolumes: Int, $score: Float, $repeat: Int, $notes: String ) { SaveMediaListEntry( mediaId: $mediaId, status: $status, progress: $progress, progressVolumes: $progressVolumes, score: $score, repeat: $repeat,  notes: $notes) { id status progress progressVolumes score repeat notes startedAt { year month day } completedAt { year month day } } }";
+				const query = "const query = ` mutation ( $mediaId: Int!, $status: MediaListStatus, $progress: Int, $progressVolumes: Int, $score: Float, $repeat: Int, $notes: String, $startedAt: FuzzyDateInput, $completedAt: FuzzyDateInput ) { SaveMediaListEntry( mediaId: $mediaId, status: $status, progress: $progress, progressVolumes: $progressVolumes, score: $score, repeat: $repeat, notes: $notes, startedAt: $startedAt, completedAt: $completedAt ) { id status progress progressVolumes score repeat notes startedAt { year month day } completedAt { year month day } } }";
 				const anilistGlobalEntries = await filterExistingMalIds(entries.map((e) => e.idMal)).catch((e) => (e as Error).message);
 				const anilistEntries = syncType === ManageListSyncType.FullSync ? getAnilistEntries(mediaType).filter((x) => !unwrap(x.private)) : [];
 
@@ -1556,18 +1589,19 @@ function init() {
 						continue;
 					}
 
-					const body: any = {};
-					if (listEntry) {
-						body.id = listEntry.id;
-					} else {
-						body.mediaId = id;
-					}
+					const body: $malsync.AnilistSaveMediaListEntryVariables = { mediaId: id };
+					const startedAt = toFuzzyDate(entry.startedAt);
+					const completedAt = toFuzzyDate(entry.completedAt);
+
 					if (entry.status) body.status = entry.status;
 					if (entry.progress) body.progress = entry.progress;
 					if (entry.progressVolumes) body.progressVolumes = entry.progressVolumes;
 					if (entry.score) body.score = entry.score * 10;
 					if (entry.repeat) body.repeat = entry.repeat;
 					if (entry.notes) body.notes = entry.notes;
+
+					if (startedAt) body.startedAt = startedAt;
+					if (completedAt) body.completedAt = completedAt;
 
 					// Add missing entries (Omit if already exists)
 					if (syncType === ManageListSyncType.Patch && listEntry) {
@@ -1686,16 +1720,29 @@ function init() {
 				preDataKey: "PRE_UPDATE_ENTRY_DATA",
 				actionLabel: "MAL.UpdateEntry",
 				buildBody: (data, entry) => {
+					const body: $malsync.ListUpdateBodyBase = {};
+
+					const start = toISODate(data.startedAt);
+					if (start) body.start_date = start;
+
+					const finish = toISODate(data.completedAt);
+					if (finish) body.finish_date = finish;
+
+					if (typeof data.scoreRaw === "number" && data.scoreRaw > 0) {
+						body.score = Math.round(data.scoreRaw / 10);
+					}
+
 					if (entry.type === "Anime") {
 						return {
-							score: data.scoreRaw ? Math.round(data.scoreRaw / 10) : undefined,
+							...body,
 							status: data.status ? normalizeAnimeStatusToMal(data.status) : undefined,
 							is_rewatching: data.status === "REPEATING" || undefined,
 							num_watched_episodes: data.progress,
 						};
 					}
+
 					return {
-						score: data.scoreRaw ? Math.round(data.scoreRaw / 10) : undefined,
+						...body,
 						status: data.status ? normalizeMangaStatusToMal(data.status) : undefined,
 						is_rereading: data.status === "REPEATING" || undefined,
 						num_chapters_read: data.progress,
@@ -1710,18 +1757,22 @@ function init() {
 				preDataKey: "PRE_UPDATE_ENTRY_PROGRESS_DATA",
 				actionLabel: "MAL.UpdateProgress",
 				buildBody: (data, entry) => {
+					const body: $malsync.ListUpdateBodyBase = {};
+					if (data.progress && data.progress === data.totalCount) data.status = "COMPLETED";
+
 					if (entry.type === "Anime") {
-						const completed = data.progress === data.totalCount;
 						return {
-							status: completed ? "completed" : normalizeAnimeStatusToMal(data.status),
-							is_rewatching: completed ? false : data.status === "REPEATING",
+							...body,
+							status: normalizeAnimeStatusToMal(data.status),
+							is_rewatching: data.status === "REPEATING",
 							num_watched_episodes: data.progress,
 						};
 					}
-					const completed = data.progress === data.totalCount;
+
 					return {
-						status: completed ? "completed" : normalizeMangaStatusToMal(data.status),
-						is_rereading: completed ? false : data.status === "REPEATING",
+						...body,
+						status: normalizeMangaStatusToMal(data.status),
+						is_rereading: data.status === "REPEATING",
 						num_chapters_read: data.progress,
 					};
 				},
