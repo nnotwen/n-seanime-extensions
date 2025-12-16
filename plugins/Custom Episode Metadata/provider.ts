@@ -106,7 +106,7 @@ function init() {
 		const storage = {
 			key: "CUSTOM_EPISODE_METADATA_STORAGE",
 			getAll() {
-				return Object.values(($storage.get(this.key) ?? {}) as Record<number, CEM.Entry>);
+				return Object.values(($store.get(this.key) ?? {}) as Record<number, CEM.Entry>);
 			},
 			get(mediaId: number, mediaTitle?: string) {
 				return (
@@ -120,17 +120,17 @@ function init() {
 				);
 			},
 			_set(mediaId: number, data: CEM.Entry) {
-				const obj = $storage.get(this.key) ?? {};
+				const obj = $store.get(this.key) ?? {};
 				obj[mediaId] = data;
 				try {
-					$storage.set(this.key, obj);
+					$store.set(this.key, obj);
 					return data;
 				} catch (e) {
 					return null;
 				}
 			},
 			has(mediaId: number) {
-				return mediaId in ($storage.get(this.key) ?? {});
+				return mediaId in ($store.get(this.key) ?? {});
 			},
 			save(data: CEM.CustomEpisodeMetadata) {
 				const entry = this.get(data.mediaId);
@@ -143,6 +143,10 @@ function init() {
 				delete entry[type][episodeNumber];
 				this._set(mediaId, entry);
 				return this.get(mediaId);
+			},
+			init() {
+				$store.set(this.key, $storage.get(this.key));
+				ctx.setTimeout(() => $store.watch(this.key, (e) => $storage.set(this.key, e)), 1_000);
 			},
 		};
 
@@ -267,6 +271,7 @@ function init() {
 									[
 										tray.button("\u200b", {
 											intent: "alert",
+											disabled: state.deleting.get(),
 											style: {
 												width: "2.5rem",
 												height: "2.5rem",
@@ -278,9 +283,15 @@ function init() {
 												backgroundSize: "1rem 1rem",
 											},
 											onClick: ctx.eventHandler(`delete-entry:${e?.type}:${e?.episodeNumber}`, () => {
+												state.deleting.set(true);
 												storage.delete(state.currentMediaId.get()!, "main", e?.episodeNumber!);
 												ctx.anime.clearEpisodeMetadataCache();
-												tray.update();
+												ctx.setTimeout(() => {
+													tray.update();
+													$app.invalidateClientQuery(["ANIME-ENTRIES-get-anime-entry", "ANIME-get-anime-episode-collection"]);
+													ctx.toast.success(`Deleted custom metadata for [${e?.mediaId}] episode ${e?.episodeNumber}!`);
+													state.deleting.set(false);
+												}, 1_500);
 											}),
 										}),
 									],
@@ -396,16 +407,17 @@ function init() {
 										storage.delete(mediaId!, type!, episodeNumber!);
 										ctx.anime.clearEpisodeMetadataCache();
 										ctx.setTimeout(() => {
-											ctx.toast.success(`Deleted custom metadata for [${mediaId}] episode ${episodeNumber}! Refresh the page to reflect changes`);
+											$app.invalidateClientQuery(["ANIME-ENTRIES-get-anime-entry", "ANIME-get-anime-episode-collection"]);
+											ctx.toast.success(`Deleted custom metadata for [${mediaId}] episode ${episodeNumber}!`);
 											state.deleting.set(false);
 											ctx.screen.loadCurrent();
 											tray.close();
-										}, 5_000);
+										}, 1_500);
 									} catch (error) {
 										ctx.setTimeout(() => {
 											ctx.toast.error((error as Error).message);
 											state.deleting.set(false);
-										}, 5_000);
+										}, 1_500);
 									}
 								}),
 							}),
@@ -479,16 +491,17 @@ function init() {
 										storage.save(data);
 										ctx.anime.clearEpisodeMetadataCache();
 										ctx.setTimeout(() => {
-											ctx.toast.success(`Saved custom metadata for [${mediaId}] episode ${episodeNumber}! Refresh the page to reflect changes`);
+											$app.invalidateClientQuery(["ANIME-ENTRIES-get-anime-entry", "ANIME-get-anime-episode-collection"]);
+											ctx.toast.success(`Saved custom metadata for [${mediaId}] episode ${episodeNumber}!`);
 											state.saving.set(false);
 											ctx.screen.loadCurrent();
 											tray.close();
-										}, 5_000);
+										}, 1_500);
 									} catch (error) {
 										ctx.setTimeout(() => {
 											ctx.toast.error((error as Error).message);
 											state.saving.set(false);
-										}, 5_000);
+										}, 1_500);
 									}
 								}),
 							}),
@@ -694,13 +707,14 @@ function init() {
 		});
 
 		ctx.screen.loadCurrent();
+		storage.init();
 	});
 
 	$app.onAnimeMetadata((e) => {
 		if (!e.animeMetadata) return e.next();
 		if (!e.animeMetadata?.episodes) e.animeMetadata.episodes = {};
 
-		const entry = $storage.get("CUSTOM_EPISODE_METADATA_STORAGE")[e.mediaId] as CEM.Entry;
+		const entry = $store.get("CUSTOM_EPISODE_METADATA_STORAGE")[e.mediaId] as CEM.Entry;
 		if (!entry) return e.next();
 		for (const type of ["main", "special"] as const) {
 			for (const episode of Object.values(entry[type])) {
