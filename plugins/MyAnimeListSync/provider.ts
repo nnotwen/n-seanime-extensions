@@ -1759,6 +1759,7 @@ function init() {
 				buildBody: (data, entry) => {
 					const body: $malsync.ListUpdateBodyBase = {};
 					if (data.progress && data.progress === data.totalCount) data.status = "COMPLETED";
+					if (data.status === "COMPLETED") body.finish_date = new Date().toISOString().substring(0, 10);
 
 					if (entry.type === "Anime") {
 						return {
