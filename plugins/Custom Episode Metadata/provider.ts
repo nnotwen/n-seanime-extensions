@@ -110,7 +110,7 @@ function init() {
 			},
 			get(mediaId: number, mediaTitle?: string) {
 				return (
-					(($storage.get(this.key) ?? {}) as Record<number, CEM.Entry>)[mediaId] ?? {
+					(($store.get(this.key) ?? {}) as Record<number, CEM.Entry>)[mediaId] ?? {
 						mediaId,
 						mediaTitle,
 						main: {},
