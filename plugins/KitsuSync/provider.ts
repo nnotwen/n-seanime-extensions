@@ -1292,7 +1292,7 @@ function init() {
 			const month = startedAt.month ?? 1; // default to January if missing
 			const day = startedAt.day ?? 1; // default to 1st if missing
 
-			const date = new Date(year, month - 1, day);
+			const date = new Date(Date.UTC(year, month - 1, day));
 
 			return date.toISOString();
 		}
