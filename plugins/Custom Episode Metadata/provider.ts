@@ -165,7 +165,9 @@ function init() {
 					},
 				});
 
-				return tray.div([banner, tray.div(container, { style: { position: "relative" } })], { style: { position: "relative", height: "30rem" } });
+				return tray.div([banner, tray.div(container, { style: { position: "relative", height: "100%" } })], {
+					style: { position: "relative", height: "33.5rem" },
+				});
 			},
 
 			[Tab.Library]() {
@@ -186,7 +188,7 @@ function init() {
 						tray.stack(
 							[
 								tray.text("Custom Episode Metadata", { style: { fontSize: "1.2rem", fontWeight: "bold" } }),
-								tray.text("Navigate to an anime page to edit their episode metadata", { style: { fontSize: "0.9rem" } }),
+								tray.text("Navigate to an anime page to edit their episode metadata", { style: { fontSize: "0.8rem", color: "#818181" } }),
 							],
 							{
 								style: {
@@ -195,7 +197,7 @@ function init() {
 							}
 						),
 					],
-					{ gap: 4 }
+					{ gap: 4, style: { padding: "0.5rem 0" } }
 				);
 			},
 
@@ -205,7 +207,18 @@ function init() {
 				const header = tray.div(
 					[
 						tray.text("Custom Episode Metadata for", { style: { fontSize: "13px" } }),
-						tray.text(String(state.currentMediaTitle.get() ?? ""), { style: { fontWeight: "bold", fontSize: "1.2em", wordBreak: "break-word" } }),
+						tray.text(String(state.currentMediaTitle.get() ?? ""), {
+							style: {
+								fontWeight: "bold",
+								fontSize: "1.2em",
+								wordBreak: "break-word",
+								overflow: "hidden",
+								textOverflow: "ellipsis",
+								display: "-webkit-box",
+								"-webkit-line-clamp": "3",
+								"-webkit-box-orient": "vertical",
+							},
+						}),
 					],
 					{
 						style: {
@@ -219,7 +232,7 @@ function init() {
 				const entries = (["main", "special"] as const)
 					.map((type) => Object.values(storage.get(state.currentMediaId.get()!)[type]).sort((A, B) => A!.episodeNumber - B!.episodeNumber))
 					.flat()
-					.map((e, i) =>
+					.map((e, i, arr) =>
 						tray.flex(
 							[
 								tray.stack(
@@ -305,29 +318,51 @@ function init() {
 									width: "100%",
 									lineHeight: "1rem",
 									background: `rgb(${i % 2 === 0 ? "var(--color-gray-900)" : "var(--color-gray-800)"})`,
+									paddingTop: i % 2 === 0 ? "1.5rem" : "",
+									paddingBottom: i === arr.length - 1 ? "1.5rem" : "",
 								},
 							}
 						)
 					);
 
 				if (!entries.length) {
-					entries.push(tray.text("You have no custom episode metadata for this entry.", { style: { width: "fit-content" } }));
+					entries.push(
+						tray.text("You have no custom episode metadata for this entry.", {
+							style: {
+								height: "100%",
+								width: "100%",
+								alignContent: "center",
+								textAlign: "center",
+							},
+						})
+					);
+				} else {
+					entries.push(
+						tray.div([], {
+							style: {
+								height: "100%",
+								width: "100%",
+								background: `rgb(var(--color-gray-${entries.length % 2 === 0 ? "800" : "900"}))`,
+							},
+						})
+					);
 				}
 
 				const content = tray.stack(entries, {
 					gap: 0,
 					style: {
-						marginTop: "3em",
-						alignItems: "center",
 						background: "rgb(var(--color-gray-900))",
+						alignItems: "center",
 						borderRadius: "1em",
-						minHeight: "22rem",
+						minHeight: "25rem",
 						border: "1px solid var(--border)",
-						padding: "1.2rem 0",
+						overflowY: "scroll",
 					},
 				});
 
-				return this.withBanner([tray.stack([header, content], { gap: 2, style: { padding: "0.75rem" } })]);
+				return this.withBanner([
+					tray.stack([header, content], { gap: 2, style: { padding: "0.75rem", height: "33.5rem", justifyContent: "space-between" } }),
+				]);
 			},
 
 			[Tab.EpisodeEditor]() {
@@ -552,72 +587,82 @@ function init() {
 					{ gap: 0 }
 				);
 
-				const form = tray.stack([
-					// tray.flex(
-					// 	[
-					// 		tray.text("Display Title", { style: labelStyle }),
-					// 		tray.input({
-					// 			placeholder: fieldRefs.base.displayTitle.current,
-					// 			fieldRef: fieldRefs.custom.displayTitle,
-					// 			disabled: state.saving.get() || state.deleting.get(),
-					// 			style: inputStyle,
-					// 		}),
-					// 	],
-					// 	{ gap: 0 }
-					// ),
-					tray.flex(
-						[
-							tray.text("Episode Title", { style: labelStyle }),
-							tray.input({
-								placeholder: fieldRefs.base.episodeTitle.current,
-								fieldRef: fieldRefs.custom.episodeTitle,
-								disabled: state.saving.get() || state.deleting.get(),
-								style: inputStyle,
-							}),
-						],
-						{ gap: 0 }
-					),
-					tray.flex(
-						[
-							tray.text("Duration (minutes)", { style: labelStyle }),
-							tray.input({
-								placeholder: fieldRefs.base.length.current,
-								fieldRef: fieldRefs.custom.length,
-								disabled: state.saving.get() || state.deleting.get(),
-								style: inputStyle,
-							}),
-						],
-						{ gap: 0 }
-					),
-					airDate,
-					tray.flex(
-						[
-							tray.text("Overview", { style: labelStyle }),
-							tray.input({
-								placeholder: fieldRefs.base.overview.current,
-								fieldRef: fieldRefs.custom.overview,
-								disabled: state.saving.get() || state.deleting.get(),
-								textarea: true,
-								style: inputStyle,
-							}),
-						],
-						{ gap: 0 }
-					),
-					tray.flex(
-						[
-							tray.text("Image URL", { style: labelStyle }),
-							tray.input({
-								placeholder: fieldRefs.base.image.current,
-								fieldRef: fieldRefs.custom.image,
-								disabled: state.saving.get() || state.deleting.get(),
-								style: inputStyle,
-							}),
-						],
-						{ gap: 0 }
-					),
-				]);
+				const form = tray.stack(
+					[
+						// tray.flex(
+						// 	[
+						// 		tray.text("Display Title", { style: labelStyle }),
+						// 		tray.input({
+						// 			placeholder: fieldRefs.base.displayTitle.current,
+						// 			fieldRef: fieldRefs.custom.displayTitle,
+						// 			disabled: state.saving.get() || state.deleting.get(),
+						// 			style: inputStyle,
+						// 		}),
+						// 	],
+						// 	{ gap: 0 }
+						// ),
+						tray.flex(
+							[
+								tray.text("Episode Title", { style: labelStyle }),
+								tray.input({
+									placeholder: fieldRefs.base.episodeTitle.current,
+									fieldRef: fieldRefs.custom.episodeTitle,
+									disabled: state.saving.get() || state.deleting.get(),
+									style: inputStyle,
+								}),
+							],
+							{ gap: 0 }
+						),
+						tray.flex(
+							[
+								tray.text("Duration (minutes)", { style: labelStyle }),
+								tray.input({
+									placeholder: fieldRefs.base.length.current,
+									fieldRef: fieldRefs.custom.length,
+									disabled: state.saving.get() || state.deleting.get(),
+									style: inputStyle,
+								}),
+							],
+							{ gap: 0 }
+						),
+						airDate,
+						tray.flex(
+							[
+								tray.text("Overview", { style: labelStyle }),
+								tray.input({
+									placeholder: fieldRefs.base.overview.current,
+									fieldRef: fieldRefs.custom.overview,
+									disabled: state.saving.get() || state.deleting.get(),
+									textarea: true,
+									style: inputStyle,
+								}),
+							],
+							{ gap: 0 }
+						),
+						tray.flex(
+							[
+								tray.text("Image URL", { style: labelStyle }),
+								tray.input({
+									placeholder: fieldRefs.base.image.current,
+									fieldRef: fieldRefs.custom.image,
+									disabled: state.saving.get() || state.deleting.get(),
+									style: inputStyle,
+								}),
+							],
+							{ gap: 0 }
+						),
+					],
+					{
+						style: {
+							minHeight: "25rem",
+							overflowY: "scroll",
+						},
+					}
+				);
 
-				return this.withBanner([tray.stack([headerGroup, form], { gap: 2, style: { padding: "0.75rem" } })]);
+				return this.withBanner([
+					tray.stack([headerGroup, form], { gap: 2, style: { padding: "0.75rem", height: "100%", justifyContent: "space-between" } }),
+				]);
 			},
 			get() {
 				return this[this.current.get()]();
