@@ -106,11 +106,11 @@ function init() {
 		const storage = {
 			key: "CUSTOM_EPISODE_METADATA_STORAGE",
 			getAll() {
-				return Object.values(($store.get(this.key) ?? {}) as Record<number, CEM.Entry>);
+				return Object.values(($storage.get(this.key) ?? {}) as Record<number, CEM.Entry>);
 			},
 			get(mediaId: number, mediaTitle?: string) {
 				return (
-					(($store.get(this.key) ?? {}) as Record<number, CEM.Entry>)[mediaId] ?? {
+					(($storage.get(this.key) ?? {}) as Record<number, CEM.Entry>)[mediaId] ?? {
 						mediaId,
 						mediaTitle,
 						main: {},
@@ -120,17 +120,17 @@ function init() {
 				);
 			},
 			_set(mediaId: number, data: CEM.Entry) {
-				const obj = $store.get(this.key) ?? {};
+				const obj = $storage.get(this.key) ?? {};
 				obj[mediaId] = data;
 				try {
-					$store.set(this.key, obj);
+					$storage.set(this.key, obj);
 					return data;
 				} catch (e) {
 					return null;
 				}
 			},
 			has(mediaId: number) {
-				return mediaId in ($store.get(this.key) ?? {});
+				return mediaId in ($storage.get(this.key) ?? {});
 			},
 			save(data: CEM.CustomEpisodeMetadata) {
 				const entry = this.get(data.mediaId);
@@ -143,10 +143,6 @@ function init() {
 				delete entry[type][episodeNumber];
 				this._set(mediaId, entry);
 				return this.get(mediaId);
-			},
-			init() {
-				$store.set(this.key, $storage.get(this.key));
-				ctx.setTimeout(() => $store.watch(this.key, (e) => $storage.set(this.key, e)), 1_000);
 			},
 		};
 
@@ -707,14 +703,13 @@ function init() {
 		});
 
 		ctx.screen.loadCurrent();
-		storage.init();
 	});
 
 	$app.onAnimeMetadata((e) => {
 		if (!e.animeMetadata) return e.next();
 		if (!e.animeMetadata?.episodes) e.animeMetadata.episodes = {};
 
-		const entry = $store.get("CUSTOM_EPISODE_METADATA_STORAGE")[e.mediaId] as CEM.Entry;
+		const entry = $storage.get("CUSTOM_EPISODE_METADATA_STORAGE")[e.mediaId] as CEM.Entry;
 		if (!entry) return e.next();
 		for (const type of ["main", "special"] as const) {
 			for (const episode of Object.values(entry[type])) {
