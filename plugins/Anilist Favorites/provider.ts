@@ -4,6 +4,7 @@
 /// <reference path="./core.d.ts" />
 /// <reference path="./anilist-favorites.d.ts" />
 
+// @ts-ignore
 function init() {
 	$ui.register(async (ctx) => {
 		// BUTTON-STYLES
@@ -15,6 +16,8 @@ function init() {
 			backgroundPosition: "center",
 			backgroundSize: "21.5px 21.5px",
 			width: "40px",
+			padding: "0",
+			paddingInlineStart: "0.5rem",
 		};
 
 		// prettier-ignore
@@ -204,12 +207,18 @@ function init() {
 		 * @param disabled Whether to enable or disable the button
 		 */
 		function updateFavoriteTag(disabled: boolean) {
-			const styles = { ...btnIconStyles };
 			if (disabled) {
-				styles.opacity = "0.5";
-				styles.pointerEvents = "none";
+				favoriteBtn.setStyle({
+					...btnIconStyles,
+					backgroundImage: "",
+				});
+			} else {
+				favoriteBtn.setStyle({
+					...btnIconStyles,
+					backgroundImage: heartIcon,
+				});
 			}
-			favoriteBtn.setStyle(styles);
+			favoriteBtn.setLoading(disabled);
 			favoriteBtn.setIntent(isCurentMediaFavorite.get() ? "alert" : "gray-subtle");
 		}
 
@@ -440,21 +449,20 @@ function init() {
 		favoriteBtn.onClick(async (event) => {
 			updateFavoriteTag(true);
 
+			const mediaTitle = event.media.title?.userPreferred || "current entry";
 			const response = await updateAnilistFavoriteEntry(event.media.id);
 			await $_wait(2000); // short pause to avoid rate limits
 
-			if (!response.data) return updateFavoriteTag(false);
+			if (!response.data) {
+				updateFavoriteTag(false);
+				return ctx.toast.error(`Failed to update ${mediaTitle}!\n\n${response.error}`);
+			}
 
 			// Verify actual state with single query
 			const verified = await checkIsFavourite(event.media.id);
 
 			// Update cache based on verified state
 			updateCache(event.media.id, verified.title, verified.coverImage, verified.isFavourite);
-
-			// Update UI
-			ctx.toast.success(
-				verified.isFavourite ? `Added ${verified.title} to Favorites!` : `Removed ${verified.title} from Favorites!`
-			);
 
 			isCurentMediaFavorite.set(verified.isFavourite);
 			updateFavoriteTag(false);
