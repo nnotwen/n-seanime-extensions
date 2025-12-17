@@ -19,8 +19,14 @@
 	},
 	"userConfig": {
 		"requiresConfig": true,
-		"version": 1,
+		"version": 2,
 		"fields": [
+			{
+				"name": "hidediscord",
+				"label": "Hide discord activity for untracked entries",
+				"type": "switch",
+				"default": "true"
+			},
 			{
 				"name": "hentai",
 				"label": "Disable tracking progress for all Hentai",

@@ -4,6 +4,7 @@
 /// <reference path="./core.d.ts" />
 /// <reference path="./untracked.d.ts" />
 
+// @ts-ignore
 function init() {
 	$ui.register((ctx) => {
 		// prettier-ignore
@@ -14,11 +15,16 @@ function init() {
 			textIndent: "1.8em",
 		};
 
-		// states
-		const dropdownItemLabel = ctx.state<"Untrack" | "Track">("Untrack");
-		const isCurrentMediaUntracked = ctx.state<boolean>(false);
-		const isAllHentaiUntracked = $getUserPreference("hentai") === "true";
-		const isAllEcchiUntracked = $getUserPreference("ecchi") === "true";
+		const preference = {
+			isAllEcchiUntracked: $getUserPreference("ecchi") === "true",
+			isAllHentaiUntracked: $getUserPreference("hentai") === "true",
+		};
+
+		const state = {
+			dropdownItemLabel: ctx.state<"Untrack" | "Track">("Untrack"),
+			pageReloadDueToMissedDom: ctx.state<number>(2_000),
+			isCurrentMediaUntracked: ctx.state<boolean>(false),
+		};
 
 		const storage = {
 			key: "899bb401-e9bb-4796-ab11-971be4c4f6c0",
@@ -50,56 +56,60 @@ function init() {
 		};
 
 		const dropdownItem = ctx.action.newAnimePageDropdownItem({
-			label: dropdownItemLabel.get(),
+			label: state.dropdownItemLabel.get(),
 			style: { ...iconStyles, backgroundImage: `url(${trackIcon})` },
 		});
 
 		dropdownItem.mount();
-
 		dropdownItem.onClick(({ media }) => {
 			if (storage.isUntracked(media.id)) {
-				dropdownItemLabel.set("Track");
+				state.dropdownItemLabel.set("Track");
 				storage.retrack(media.id);
 			} else {
-				dropdownItemLabel.set("Untrack");
+				state.dropdownItemLabel.set("Untrack");
 				storage.untrack(media.id);
 			}
 			ctx.screen.loadCurrent();
 		});
 
 		ctx.effect(() => {
-			dropdownItem.setLabel(dropdownItemLabel.get());
-		}, [dropdownItemLabel]);
+			dropdownItem.setLabel(state.dropdownItemLabel.get());
+		}, [state.dropdownItemLabel]);
 
 		ctx.screen.onNavigate(async (e) => {
 			if (e.pathname !== "/entry" || !e.searchParams.id) return;
 			const mediaId = parseInt(e.searchParams.id);
 
 			const anime = $anilist.getAnime(mediaId);
-			if (anime && anime.isAdult?.valueOf() && isAllHentaiUntracked) {
-				isCurrentMediaUntracked.set(true);
+			if (anime && anime.isAdult?.valueOf() && preference.isAllHentaiUntracked) {
+				state.isCurrentMediaUntracked.set(true);
 				dropdownItem.unmount();
-			} else if (anime && anime.genres?.some((g) => g.trim().toLowerCase() === "ecchi") && isAllEcchiUntracked) {
-				isCurrentMediaUntracked.set(true);
+			} else if (anime && anime.genres?.some((g) => g.trim().toLowerCase() === "ecchi") && preference.isAllEcchiUntracked) {
+				state.isCurrentMediaUntracked.set(true);
 				dropdownItem.unmount();
 			} else {
-				isCurrentMediaUntracked.set(storage.isUntracked(mediaId));
-				dropdownItemLabel.set(isCurrentMediaUntracked.get() ? "Track" : "Untrack");
+				state.isCurrentMediaUntracked.set(storage.isUntracked(mediaId));
+				state.dropdownItemLabel.set(state.isCurrentMediaUntracked.get() ? "Track" : "Untrack");
 				dropdownItem.mount();
 			}
 
 			const container = await ctx.dom.queryOne("[data-media-page-header-entry-details-date-container]");
 			if (!container) {
 				// retry loading the current page after several seconds
-				ctx.setTimeout(() => ctx.screen.loadCurrent(), 2_000);
+				ctx.setTimeout(() => {
+					ctx.screen.loadCurrent();
+					state.pageReloadDueToMissedDom.set(state.pageReloadDueToMissedDom.get() + 2_000);
+				}, 2_000);
 				return console.log("Error: Unable to get page header entry details container. Reoading page in 2 seconds.");
 			}
 
-			if (!isCurrentMediaUntracked.get()) {
-				const tag = await container.queryOne(`[data-untracked]`);
-				if (tag) tag.remove();
+			state.pageReloadDueToMissedDom.set(2_000);
+
+			if (!state.isCurrentMediaUntracked.get()) {
+				const tags = await container.query(`[data-untracked]`);
+				for (const tag of tags) tag.remove();
 			} else {
-				// Check the page if tag already exists (early return if it is)
+				// Check the page if tag already exists (early return if it does)
 				const existing = await container.queryOne(`[data-untracked]`);
 				if (existing) return;
 
@@ -117,12 +127,10 @@ function init() {
 		ctx.screen.loadCurrent();
 	});
 
-	// $app.onPreUpdateEntry is called when user edits so do not
-	// modify it, just use these two
 	$app.onPreUpdateEntryProgress((e) => {
 		if (!e.mediaId) return;
 
-		if ($storage.get("899bb401-e9bb-4796-ab11-971be4c4f6c0")?.includes(e.mediaId)) {
+		if (($storage.get("899bb401-e9bb-4796-ab11-971be4c4f6c0") as Array<number> | undefined)?.map(Number).includes(Number(e.mediaId))) {
 			console.log(`[Untracked:Record]: Skipping entry progress update for ${e.mediaId}`);
 			e.preventDefault();
 			return;
@@ -156,7 +164,7 @@ function init() {
 	$app.onPreUpdateEntryRepeat((e) => {
 		if (!e.mediaId) return;
 
-		if ($storage.get("899bb401-e9bb-4796-ab11-971be4c4f6c0")?.includes(e.mediaId)) {
+		if (($storage.get("899bb401-e9bb-4796-ab11-971be4c4f6c0") as Array<number> | undefined)?.map(Number).includes(Number(e.mediaId))) {
 			console.log(`[Untracked:Record]: Skipping entry progress update for ${e.mediaId}`);
 			e.preventDefault();
 			return;
@@ -184,6 +192,28 @@ function init() {
 			} catch (err) {}
 		}
 
+		e.next();
+	});
+
+	$app.onDiscordPresenceAnimeActivityRequested((e) => {
+		if ($getUserPreference("hidediscord") === "true") {
+			if (($storage.get("899bb401-e9bb-4796-ab11-971be4c4f6c0") as Array<number> | undefined)?.map(Number).includes(Number(e?.animeActivity?.id))) {
+				console.log(`[Untracked:Record]: Skipping entry progress update for ${e?.animeActivity?.id}`);
+				e.preventDefault();
+				return;
+			}
+		}
+		e.next();
+	});
+
+	$app.onDiscordPresenceMangaActivityRequested((e) => {
+		if ($getUserPreference("hidediscord") === "true") {
+			if (($storage.get("899bb401-e9bb-4796-ab11-971be4c4f6c0") as Array<number> | undefined)?.map(Number).includes(Number(e?.mangaActivity?.id))) {
+				console.log(`[Untracked:Record]: Skipping entry progress update for ${e?.mangaActivity?.id}`);
+				e.preventDefault();
+				return;
+			}
+		}
 		e.next();
 	});
 }
