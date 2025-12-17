@@ -4,6 +4,7 @@
 /// <reference path="./core.d.ts" />
 /// <reference path="./anilist-private.d.ts" />
 
+// @ts-ignore
 function init() {
 	$ui.register((ctx) => {
 		const storeId = "anilist-private";
@@ -16,6 +17,8 @@ function init() {
 			backgroundPosition: "center",
 			backgroundSize: "21.5px 21.5px",
 			width: "40px",
+			padding: "0",
+			paddingInlineStart: "0.5rem",
 		};
 
 		// FUNCTIONS
@@ -83,13 +86,19 @@ function init() {
 		 * or not (Red background if private, regular if not private)
 		 */
 		function updatePrivateTag(disabled: boolean) {
-			const styles = { ...btnIconStyles };
 			if (disabled) {
-				styles.opacity = "0.5";
-				styles.pointerEvents = "none";
+				privateButton.setStyle({
+					...btnIconStyles,
+					backgroundImage: "",
+				});
+			} else {
+				privateButton.setStyle({
+					...btnIconStyles,
+					backgroundImage: privateIcon,
+				});
 			}
-			pivateButton.setStyle(styles);
-			pivateButton.setIntent(isCurrentMediaPrivate.get() ? "alert" : "gray-subtle");
+			privateButton.setLoading(disabled);
+			privateButton.setIntent(isCurrentMediaPrivate.get() ? "alert" : "gray-subtle");
 		}
 
 		/**
@@ -101,13 +110,13 @@ function init() {
 			return new Promise((resolve) => ctx.setTimeout(resolve, ms));
 		}
 
-		const pivateButton = ctx.action.newAnimePageButton({
+		const privateButton = ctx.action.newAnimePageButton({
 			label: "\u200b\u200b",
 			intent: "gray-subtle",
 			style: btnIconStyles,
 		});
 
-		pivateButton.onClick(async (event) => {
+		privateButton.onClick(async (event) => {
 			updatePrivateTag(true);
 
 			const key = `${storeId}.${event.media.id}`;
@@ -115,8 +124,6 @@ function init() {
 			const next = !current;
 
 			const mediaTitle = event.media.title?.userPreferred || "current entry";
-
-			ctx.toast.info(`Updating ${mediaTitle}...`);
 			const response = await updateAnilistPrivateEntry(event.media.id, next);
 
 			// Wait for several seconds (helps avoid hitting ratelimit)
@@ -131,16 +138,6 @@ function init() {
 			isCurrentMediaPrivate.set(response.data.SaveMediaListEntry.private);
 			updatePrivateTag(false);
 
-			ctx.toast.success(
-				response.data.SaveMediaListEntry.private ? `Set ${mediaTitle} to private!` : `Removed ${mediaTitle} from private!`
-			);
-
-			// Warning: If you use `updateLocalStore` again after you saved this data
-			// the cache will be overwritten by the old data. To always be up to date
-			// with the cache, we will need the function to update a single entry only
-			// to the local collection. However, this function is yet to be available
-			// in the app, the other solution would be to always update the entire
-			// local collection everytime we save the changes.
 			$store.set(key, response.data.SaveMediaListEntry.private);
 			return;
 		});
@@ -155,7 +152,7 @@ function init() {
 
 		if ($database.anilist.getToken()) {
 			updateLocalStore(false);
-			pivateButton.mount();
+			privateButton.mount();
 			ctx.screen.loadCurrent();
 		}
 	});
