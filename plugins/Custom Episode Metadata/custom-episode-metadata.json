@@ -1,7 +1,7 @@
 {
 	"id": "custom-episode-metadata",
 	"name": "Custom Episode Metadata",
-	"version": "1.0.5",
+	"version": "1.0.6",
 	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Custom%20Episode%20Metadata/custom-episode-metadata.json",
 	"language": "typescript",
 	"type": "plugin",

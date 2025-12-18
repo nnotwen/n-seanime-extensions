@@ -318,8 +318,8 @@ function init() {
 									width: "100%",
 									lineHeight: "1rem",
 									background: `rgb(${i % 2 === 0 ? "var(--color-gray-900)" : "var(--color-gray-800)"})`,
-									paddingTop: i % 2 === 0 ? "1.5rem" : "",
-									paddingBottom: i === 0 ? "1.5rem" : "",
+									paddingTop: i === 0 ? "1.5rem" : "",
+									paddingBottom: i === arr.length - 1 ? "1.5rem" : "",
 								},
 							}
 						)
