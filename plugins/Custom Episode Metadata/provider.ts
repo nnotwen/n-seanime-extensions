@@ -754,7 +754,7 @@ function init() {
 		if (!e.animeMetadata) return e.next();
 		if (!e.animeMetadata?.episodes) e.animeMetadata.episodes = {};
 
-		const entry = $storage.get("CUSTOM_EPISODE_METADATA_STORAGE")[e.mediaId] as CEM.Entry;
+		const entry = $storage.get("CUSTOM_EPISODE_METADATA_STORAGE")?.[e.mediaId] as CEM.Entry;
 		if (!entry) return e.next();
 		for (const type of ["main", "special"] as const) {
 			for (const episode of Object.values(entry[type])) {
