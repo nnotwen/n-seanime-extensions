@@ -99,7 +99,7 @@ function init() {
 				ctx.setTimeout(() => {
 					ctx.screen.loadCurrent();
 					state.pageReloadDueToMissedDom.set(state.pageReloadDueToMissedDom.get() + 2_000);
-				}, 2_000);
+				}, state.pageReloadDueToMissedDom.get());
 				return console.log("Error: Unable to get page header entry details container. Reoading page in 2 seconds.");
 			}
 
