@@ -1,0 +1,20 @@
+{
+	"id": "notes",
+	"name": "Notes",
+	"version": "1.0.0",
+	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/refs/heads/master/plugins/Notes/notes.json",
+	"language": "typescript",
+	"type": "plugin",
+	"description": "An example plugin",
+	"author": "nnotwen",
+	"icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/refs/heads/master/plugins/Notes/icon.png",
+	"website": "https://github.com/nnotwen/n-seanime-extensions",
+	"lang": "en",
+	"payloadURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/refs/heads/master/plugins/Notes/provider.ts",
+	"plugin": {
+		"version": "1",
+		"permissions": {
+			"scopes": ["anilist", "database", "anilist-token", "storage"]
+		}
+	}
+}
