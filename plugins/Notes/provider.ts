@@ -1673,8 +1673,17 @@ function init() {
 				.some((entry) => unwrap(entry?.media?.id) === mediaId);
 		}
 
+		function isCustomSource(mediaId?: number) {
+			return (mediaId ?? 0) >= 2 ** 31;
+		}
+
 		function onEditBtnClicked({ media }: { media: $app.AL_BaseAnime | $app.AL_BaseManga }) {
 			const mediaId = media.id;
+
+			if (isCustomSource(mediaId)) {
+				return ctx.toast.warning("Custom sources are not supported!");
+			}
+
 			const currentMedia = notes.get(mediaId) ?? {
 				mediaId,
 				mediaTitle: media.title?.userPreferred,
@@ -1728,12 +1737,22 @@ function init() {
 			// Anime
 			if (e.pathname === "/entry") {
 				const mediaId = Number(e.searchParams.id);
+				if (isCustomSource(mediaId)) {
+					return animeBtn.unmount();
+				} else {
+					animeBtn.mount();
+				}
 				const note = notes.get(mediaId);
 				animeBtn.setLabel(!!note ? "Edit Note" : "Add Note");
 			}
 
 			if (e.pathname === "/manga/entry") {
 				const mediaId = Number(e.searchParams.id);
+				if (isCustomSource(mediaId)) {
+					return mangaBtn.unmount();
+				} else {
+					mangaBtn.mount();
+				}
 				const note = notes.get(mediaId);
 				mangaBtn.setLabel(!!note ? "Edit Note" : "Add Note");
 			}
