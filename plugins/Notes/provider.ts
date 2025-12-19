@@ -663,6 +663,7 @@ function init() {
 							style: {
 								width: "2.5rem",
 								height: "2.5rem",
+								marginTop: "-0.3rem",
 								backgroundImage: `url(${iconUrl})`,
 								backgroundSize: "contain",
 								backgroundRepeat: "no-repeat",
@@ -917,25 +918,16 @@ function init() {
 					[
 						tray.flex(
 							[
-								tray.div([], {
-									style: {
-										width: "2.5rem",
-										backgroundColor: "rgb(var(--color-gray-800))",
-										backgroundImage: `url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iI2ZmZiIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBkPSJNNi41IDEzYTYuNDcgNi40NyAwIDAgMCAzLjg0NS0xLjI1OGgtLjAwMXEuMDQ0LjA2LjA5OC4xMTVsMy44NSAzLjg1YTEgMSAwIDAgMCAxLjQxNS0xLjQxNGwtMy44NS0zLjg1YTEgMSAwIDAgMC0uMTE1LS4xQTYuNDcgNi40NyAwIDAgMCAxMyA2LjUgNi41IDYuNSAwIDAgMCA2LjUgMGE2LjUgNi41IDAgMSAwIDAgMTNtMC04LjUxOGMxLjY2NC0xLjY3MyA1LjgyNSAxLjI1NCAwIDUuMDE4LTUuODI1LTMuNzY0LTEuNjY0LTYuNjkgMC01LjAxOCIvPjwvc3ZnPg==)`,
-										backgroundSize: "50%",
-										backgroundRepeat: "no-repeat",
-										backgroundPosition: "center",
-										flexGrow: "0",
-										flexShrink: "0",
-										borderRadius: "0.5rem 0 0 0.5rem",
-									},
-								}),
 								tray.input({
 									placeholder: "Search notes...",
 									value: state.searchQuery.get(),
 									style: {
-										borderRadius: "0",
-										marginLeft: "-1px",
+										borderRadius: "0.5rem 0 0 0.5rem",
+										paddingInlineStart: "2.5rem",
+										backgroundImage: `url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9IiM1YTVhNWEiIGhlaWdodD0iNTEyIiB3aWR0aD0iNTEyIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI+PHBhdGggZD0iTTQ5NSA0NjYuMiAzNzcuMiAzNDguNGMyOS4yLTM1LjYgNDYuOC04MS4yIDQ2LjgtMTMwLjlDNDI0IDEwMy41IDMzMS41IDExIDIxNy41IDExIDEwMy40IDExIDExIDEwMy41IDExIDIxNy41UzEwMy40IDQyNCAyMTcuNSA0MjRjNDkuNyAwIDk1LjItMTcuNSAxMzAuOC00Ni43TDQ2Ni4xIDQ5NWM4IDggMjAuOSA4IDI4LjkgMCA4LTcuOSA4LTIwLjkgMC0yOC44bS0yNzcuNS04My4zQzEyNi4yIDM4Mi45IDUyIDMwOC43IDUyIDIxNy41UzEyNi4yIDUyIDIxNy41IDUyQzMwOC43IDUyIDM4MyAxMjYuMyAzODMgMjE3LjVzLTc0LjMgMTY1LjQtMTY1LjUgMTY1LjQiLz48L3N2Zz4=)`,
+										backgroundSize: "1rem",
+										backgroundRepeat: "no-repeat",
+										backgroundPosition: "calc(0% + 0.75rem) center",
 									},
 									onChange: ctx.eventHandler("search-notes", (e) => {
 										state.searchQuery.set(String(e.value));
@@ -953,8 +945,9 @@ function init() {
 										backgroundPosition: "calc(100% - 0.5rem) center",
 										backgroundSize: "25%",
 										backgroundRepeat: "no-repeat",
-										paddingRight: "2.5rem",
-										paddingLeft: "0.5rem",
+										paddingRight: "2rem",
+										paddingLeft: "0.75rem",
+										justifyContent: "start",
 									},
 									onClick: ctx.eventHandler("mediatype-filter", function () {
 										const mediaType = state.listMediaType.get();
@@ -1178,6 +1171,7 @@ function init() {
 							style: {
 								width: "2.5rem",
 								height: "2.5rem",
+								marginTop: "-0.3rem",
 								backgroundImage: `url(${iconUrl})`,
 								backgroundSize: "contain",
 								backgroundRepeat: "no-repeat",
