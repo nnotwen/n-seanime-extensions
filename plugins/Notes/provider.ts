@@ -645,10 +645,11 @@ function init() {
 								height: "10rem",
 								borderRadius: "0.75rem 0.75rem 0 0",
 								pointerEvents: "none",
-								background: `url(${state.currentMedia.get()?.bannerImage})`,
+								background: `url(${state.currentMedia.get()?.bannerImage ?? state.currentMedia.get()?.coverImage})`,
 								backgroundPosition: "center",
 								backgroundSize: "cover",
 								maskImage: "linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 100%)",
+								filter: !!state.currentMedia.get()?.bannerImage ? "" : "blur(4px)",
 							},
 					  });
 				return tray.div([banner, tray.div(container, { style: { position: "relative", height: "100%" } })], {
@@ -774,6 +775,7 @@ function init() {
 										maskImage: settings.appearance.hideBannerOnList.current ? "" : "linear-gradient(to left, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.1) 100%)",
 										pointerEvents: "none",
 										borderRadius: "0.5rem",
+										filter: !!entry.bannerImage ? "" : "blur(2px)",
 									},
 								}),
 								tray.flex(
@@ -909,6 +911,8 @@ function init() {
 									padding: "0.5rem",
 									borderRadius: "0.5rem",
 									border: "1px solid var(--border)",
+									overflow: "hidden",
+									minHeight: "fit-content",
 								},
 							}
 						)
@@ -1785,7 +1789,7 @@ function init() {
 		ctx.dom.onReady(async () => {
 			const style = await ctx.dom.createElement("style");
 			style.setText(
-				".notes-tab-general-entry-card-background { transition: filter ease-in-out 0.2s; filter: blur(0px)  } .note-tab-general-container:hover .notes-tab-general-entry-card-background { mask-image: linear-gradient(to left, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 100%)!important; filter: blur(2px) }"
+				".notes-tab-general-entry-card-background { transition: transform ease-in-out 0.2s;  } .note-tab-general-container:hover .notes-tab-general-entry-card-background { mask-image: linear-gradient(to left, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 100%)!important; transform: scale(1.1) }"
 			);
 		});
 

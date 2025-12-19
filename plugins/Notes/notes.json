@@ -1,7 +1,7 @@
 {
 	"id": "notes",
 	"name": "Notes",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/refs/heads/master/plugins/Notes/notes.json",
 	"language": "typescript",
 	"type": "plugin",
