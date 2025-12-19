@@ -674,7 +674,7 @@ function init() {
 						tray.stack(
 							[
 								tray.text("Notes", { style: { fontSize: "1.2em", fontWeight: "bold" } }),
-								tray.text("Your thoughts, saved here!", { style: { fontSize: "0.8em", color: "#666" } }),
+								tray.text("Your thoughts, saved here!", { style: { fontSize: "0.8em" }, className: "opacity-30" }),
 							],
 							{
 								style: {
@@ -782,8 +782,8 @@ function init() {
 												tray.text(String(entry.mediaTitle ?? ""), {
 													style: {
 														color: "#fff",
-														fontWeight: "bold",
 														wordBreak: "break-word",
+														fontWeight: "500",
 														overflow: "hidden",
 														textOverflow: "ellipsis",
 														display: "-webkit-box",
@@ -791,13 +791,12 @@ function init() {
 														"-webkit-box-orient": "vertical",
 													},
 												}),
-												tray.text(String(entry.notes), {
+												tray.text(`\u201c${entry.notes}\u201d`, {
 													style: {
-														color: "#ccc",
 														fontSize: "0.8rem",
-														fontWeight: "bold",
 														wordBreak: "break-word",
 														overflow: "hidden",
+														fontStyle: "italic",
 														textOverflow: "ellipsis",
 														display: "-webkit-box",
 														"-webkit-line-clamp": "3",
@@ -807,7 +806,7 @@ function init() {
 											],
 											{
 												style: {
-													lineHeight: "1rem",
+													lineHeight: "1.15rem",
 													width: "100%",
 													textShadow: "0 0 4px black",
 													pointerEvents: "none",
@@ -943,6 +942,7 @@ function init() {
 									}),
 								}),
 								tray.button(state.listMediaType.get(), {
+									intent: "gray-subtle",
 									style: {
 										height: "initial",
 										width: "8rem",
@@ -1006,7 +1006,7 @@ function init() {
 					[
 						tray.stack(
 							[
-								tray.text(`${state.currentMedia.get()?.notes.length ? "Edit" : "Add"} Notes`, {
+								tray.text(`${state.currentMedia.get()?.notes.toString().length ? "Edit" : "Add"} Notes`, {
 									style: { fontSize: "1.5em", fontWeight: "bold", color: "#fff" },
 								}),
 								tray.text(`${state.currentMedia.get()?.mediaTitle}`, {
@@ -1030,10 +1030,10 @@ function init() {
 								},
 							}
 						),
-						tray.flex(
-							[
-								state.isEditInvokedFromTray.get()
-									? tray.button("\u200b", {
+						tray.stack(
+							state.isEditInvokedFromTray.get()
+								? [
+										tray.button("\u200b", {
 											intent: "gray-subtle",
 											style: {
 												width: "2.5rem",
@@ -1048,46 +1048,9 @@ function init() {
 											onClick: ctx.eventHandler(`notes-goback`, () => {
 												tabs.current.set(Tabs.General);
 											}),
-									  })
-									: [],
-								state.currentMedia.get()?.notes?.length
-									? tray.button("\u200b", {
-											intent: "alert",
-											disabled: state.isFetching.get() || state.isSaving.get(),
-											loading: state.isDeleting.get(),
-											style: {
-												width: "2.4rem",
-												height: "2.4rem",
-												borderRadius: "50%",
-												// prettier-ignore
-												backgroundImage: state.isDeleting.get() ? "" : "url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iI2ZmZiIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBkPSJNMTEgMS41djFoMy41YS41LjUgMCAwIDEgMCAxaC0uNTM4bC0uODUzIDEwLjY2QTIgMiAwIDAgMSAxMS4xMTUgMTZoLTYuMjNhMiAyIDAgMCAxLTEuOTk0LTEuODRMMi4wMzggMy41SDEuNWEuNS41IDAgMCAxIDAtMUg1di0xQTEuNSAxLjUgMCAwIDEgNi41IDBoM0ExLjUgMS41IDAgMCAxIDExIDEuNW0tNSAwdjFoNHYtMWEuNS41IDAgMCAwLS41LS41aC0zYS41LjUgMCAwIDAtLjUuNU00LjUgNS4wMjlsLjUgOC41YS41LjUgMCAxIDAgLjk5OC0uMDZsLS41LTguNWEuNS41IDAgMSAwLS45OTguMDZtNi41My0uNTI4YS41LjUgMCAwIDAtLjUyOC40N2wtLjUgOC41YS41LjUgMCAwIDAgLjk5OC4wNThsLjUtOC41YS41LjUgMCAwIDAtLjQ3LS41MjhNOCA0LjVhLjUuNSAwIDAgMC0uNS41djguNWEuNS41IDAgMCAwIDEgMFY1YS41LjUgMCAwIDAtLjUtLjUiLz48L3N2Zz4=)",
-												backgroundRepeat: "no-repeat",
-												backgroundPosition: "center",
-												backgroundSize: "1rem 1rem",
-												padding: "0",
-												paddingInlineStart: "0.5rem",
-											},
-											onClick: ctx.eventHandler(`delete-current-note`, () => {
-												state.isDeleting.set(true);
-												const entry = state.currentMedia.get();
-												if (!entry) return ctx.toast.error("Note GET error: Could not retrieve the current note!");
-												const currentEntry = { ...entry, notes: "" };
-												ctx.setTimeout(() => {
-													notes
-														.save(entry.mediaId, currentEntry)
-														.then(() => {
-															ctx.toast.success(`Deleted notes for ${entry.mediaTitle}!`);
-															fieldRefs.textArea.setValue("");
-															state.currentMedia.set(currentEntry);
-															ctx.screen.loadCurrent();
-														})
-														.catch((err) => ctx.toast.error(`An error occured while deleting your note: ${err.message}`))
-														.finally(() => state.isDeleting.set(false));
-												}, 1_500);
-											}),
-									  })
-									: [],
-							],
+										}),
+								  ]
+								: [],
 							{
 								style: {
 									alignItems: "center",
@@ -1119,40 +1082,81 @@ function init() {
 								wordBreak: "no-break",
 							},
 						}),
-						tray.button({
-							label: state.isSaving.get() ? "Saving" : "Save",
-							loading: state.isSaving.get(),
-							disabled: state.isDeleting.get() || state.isFetching.get(),
-							size: "md",
-							intent: "success",
-							onClick: ctx.eventHandler("save-note", () => {
-								const currentMedia = state.currentMedia.get();
-								if (!currentMedia) return ctx.toast.error(`Error saving notes: Unable to get current media information.`);
+						tray.flex(
+							[
+								tray.button({
+									label: state.isSaving.get() ? "Saving" : "Save",
+									loading: state.isSaving.get(),
+									disabled: state.isDeleting.get() || state.isFetching.get(),
+									size: "md",
+									intent: "success",
+									style: { width: "100%" },
+									onClick: ctx.eventHandler("save-note", () => {
+										const currentMedia = state.currentMedia.get();
+										if (!currentMedia) return ctx.toast.error(`Error saving notes: Unable to get current media information.`);
 
-								if (currentMedia.isAdult && settings.preference.warnAdult.current) {
-									state.warnReason.set("isAdult");
-									return tabs.current.set(Tabs.WarnBeforeSaving);
-								}
+										if (currentMedia.isAdult && settings.preference.warnAdult.current) {
+											state.warnReason.set("isAdult");
+											return tabs.current.set(Tabs.WarnBeforeSaving);
+										}
 
-								if (settings.preference.warnMissing.current && !isMediaInUserCollection(currentMedia.mediaId, currentMedia.type)) {
-									state.warnReason.set("isMissing");
-									return tabs.current.set(Tabs.WarnBeforeSaving);
-								}
-								state.isSaving.set(true);
-								const updateMedia = { ...currentMedia, notes: fieldRefs.textArea.current };
-								ctx.setTimeout(() => {
-									notes
-										.save(currentMedia.mediaId, updateMedia)
-										.then(() => {
-											ctx.toast.success(`Successfully saved notes!`);
-											state.currentMedia.set(updateMedia);
-											ctx.screen.loadCurrent();
-										})
-										.catch((e) => ctx.toast.error(`Error saving notes: ${e.message}`))
-										.finally(() => state.isSaving.set(false));
-								}, 1_500);
-							}),
-						}),
+										if (settings.preference.warnMissing.current && !isMediaInUserCollection(currentMedia.mediaId, currentMedia.type)) {
+											state.warnReason.set("isMissing");
+											return tabs.current.set(Tabs.WarnBeforeSaving);
+										}
+										state.isSaving.set(true);
+										const updateMedia = { ...currentMedia, notes: fieldRefs.textArea.current };
+										ctx.setTimeout(() => {
+											notes
+												.save(currentMedia.mediaId, updateMedia)
+												.then(() => {
+													ctx.toast.success(`Successfully saved notes!`);
+													state.currentMedia.set(updateMedia);
+													ctx.screen.loadCurrent();
+												})
+												.catch((e) => ctx.toast.error(`Error saving notes: ${e.message}`))
+												.finally(() => state.isSaving.set(false));
+										}, 1_500);
+									}),
+								}),
+								tray.button("\u200b", {
+									intent: "alert",
+									disabled: state.isFetching.get() || state.isSaving.get() || !state.currentMedia.get()?.notes.toString().length,
+									loading: state.isDeleting.get(),
+									style: {
+										width: "2.753rem",
+										height: "100%",
+										borderRadius: "0.5rem",
+										// prettier-ignore
+										backgroundImage: state.isDeleting.get() ? "" : "url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iI2ZmZiIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBkPSJNMTEgMS41djFoMy41YS41LjUgMCAwIDEgMCAxaC0uNTM4bC0uODUzIDEwLjY2QTIgMiAwIDAgMSAxMS4xMTUgMTZoLTYuMjNhMiAyIDAgMCAxLTEuOTk0LTEuODRMMi4wMzggMy41SDEuNWEuNS41IDAgMCAxIDAtMUg1di0xQTEuNSAxLjUgMCAwIDEgNi41IDBoM0ExLjUgMS41IDAgMCAxIDExIDEuNW0tNSAwdjFoNHYtMWEuNS41IDAgMCAwLS41LS41aC0zYS41LjUgMCAwIDAtLjUuNU00LjUgNS4wMjlsLjUgOC41YS41LjUgMCAxIDAgLjk5OC0uMDZsLS41LTguNWEuNS41IDAgMSAwLS45OTguMDZtNi41My0uNTI4YS41LjUgMCAwIDAtLjUyOC40N2wtLjUgOC41YS41LjUgMCAwIDAgLjk5OC4wNThsLjUtOC41YS41LjUgMCAwIDAtLjQ3LS41MjhNOCA0LjVhLjUuNSAwIDAgMC0uNS41djguNWEuNS41IDAgMCAwIDEgMFY1YS41LjUgMCAwIDAtLjUtLjUiLz48L3N2Zz4=)",
+										backgroundRepeat: "no-repeat",
+										backgroundPosition: "center",
+										backgroundSize: "1rem 1rem",
+										padding: "0",
+										paddingInlineStart: "0.5rem",
+									},
+									onClick: ctx.eventHandler(`delete-current-note`, () => {
+										state.isDeleting.set(true);
+										const entry = state.currentMedia.get();
+										if (!entry) return ctx.toast.error("Note GET error: Could not retrieve the current note!");
+										const currentEntry = { ...entry, notes: "" };
+										ctx.setTimeout(() => {
+											notes
+												.save(entry.mediaId, currentEntry)
+												.then(() => {
+													ctx.toast.success(`Deleted notes for ${entry.mediaTitle}!`);
+													fieldRefs.textArea.setValue("");
+													state.currentMedia.set(currentEntry);
+													ctx.screen.loadCurrent();
+												})
+												.catch((err) => ctx.toast.error(`An error occured while deleting your note: ${err.message}`))
+												.finally(() => state.isDeleting.set(false));
+										}, 1_500);
+									}),
+								}),
+							],
+							{}
+						),
 					],
 					{}
 				);
@@ -1506,6 +1510,7 @@ function init() {
 								tray.switch("Update my notes to MAL when I save them.", {
 									fieldRef: fieldRefs.syncToMAL,
 									disabled: !providers.mal.authorized.get(),
+									style: { "--color-brand-500": "47 82 161" },
 									onChange: ctx.eventHandler("notes:mal-sync", (v) => {
 										$storage.set(Keys.Settings.SyncToMAL, v.value);
 										fieldRefs.syncToMAL.setValue(v.value);
@@ -1535,6 +1540,7 @@ function init() {
 								tray.switch("Update my notes to Kitsu when I save them.", {
 									fieldRef: fieldRefs.syncToKitsu,
 									disabled: !providers.kitsu.authorized.get(),
+									style: { "--color-brand-500": "231 94 69" },
 									onChange: ctx.eventHandler("notes:kitsu-sync", (v) => {
 										$storage.set(Keys.Settings.SyncToKitsu, v.value);
 										fieldRefs.syncToKitsu.setValue(v.value);
@@ -1555,6 +1561,7 @@ function init() {
 							overflowY: "scroll",
 							maxHeight: "28rem",
 							paddingRight: "0.2rem",
+							"--color-brand-500": "0 155 187",
 						},
 					}
 				);
