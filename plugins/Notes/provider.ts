@@ -1342,7 +1342,7 @@ function init() {
 										size: "md",
 										loading: state.isKitsuLoggingIn.get(),
 										style: { width: "100%" },
-										onClick: ctx.eventHandler("mal:signed-out", () => {
+										onClick: ctx.eventHandler("kitsu:signed-out", () => {
 											state.isKitsuLoggingIn.set(true);
 											ctx.setTimeout(() => {
 												providers.kitsu.logOut();
