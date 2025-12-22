@@ -1,11 +1,11 @@
 {
 	"id": "anilist-favorites",
 	"name": "Anilist Favorites",
-	"version": "1.1.1",
+	"version": "1.2.0",
 	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/refs/heads/master/plugins/Anilist%20Favorites/anilist-favorites.json",
 	"language": "typescript",
 	"type": "plugin",
-	"description": "Add functionality to favorite an anime in AniList inside Seanime.",
+	"description": "Add functionality to favorite anime/manga in AniList inside Seanime.",
 	"author": "nnotwen",
 	"icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Anilist%20Favorites/icon.png",
 	"website": "https://github.com/nnotwen/n-seanime-extensions",
