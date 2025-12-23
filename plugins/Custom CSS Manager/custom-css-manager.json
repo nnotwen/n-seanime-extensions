@@ -5,7 +5,7 @@
 	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Custom%20CSS%20Manager/custom-css-manager.json",
 	"language": "typescript",
 	"type": "plugin",
-	"description": "Manage styles more effeciently",
+	"description": "Manage styles more efficiently",
 	"author": "nnotwen",
 	"icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Custom%20CSS%20Manager/icon.png",
 	"website": "https://github.com/nnotwen/n-seanime-extensions",
