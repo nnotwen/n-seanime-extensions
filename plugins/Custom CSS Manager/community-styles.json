@@ -7,8 +7,7 @@
 		"style": {
 			"desktop": "::-webkit-scrollbar {\n\twidth: 2px;\n\theight: 6px;\n}",
 			"mobile": "::-webkit-scrollbar {\n\twidth: 2px;\n\theight: 6px;\n}"
-		},
-		"link": "https://discord.com/channels/1224767201551192224/1446383540823658628"
+		}
 	},
 	{
 		"name": "Hide anime spoilers",
@@ -174,5 +173,16 @@
 			"mobile": ""
 		},
 		"link": "https://discord.com/channels/1224767201551192224/1400105892858560512"
+	},
+	{
+		"name": "Circular characters in character page",
+		"author": "nnotwen",
+		"uuid": "18a43db4-4791-450e-b77e-879449deedc1",
+		"enabled": true,
+		"style": {
+			"desktop": "[data-media-entry-characters-section-grid-item-image-container=\"true\"] {\n\tborder-radius: 50%;\n}",
+			"mobile": "[data-media-entry-characters-section-grid-item-image-container=\"true\"] {\n\tborder-radius: 50%;\n}"
+		},
+		"link": "https://discord.com/channels/1224767201551192224/1446383540823658628"
 	}
 ]
