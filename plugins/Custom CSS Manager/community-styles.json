@@ -2,6 +2,8 @@
 	{
 		"name": "Thin scrollbars",
 		"author": "nnotwen",
+		"uuid": "a7a222a3-545d-40df-ac06-9e9076b435ce",
+		"enabled": true,
 		"style": {
 			"desktop": "::-webkit-scrollbar { width: 2px; height: 6px; }",
 			"mobile": "::-webkit-scrollbar { width: 2px; height: 6px; }"
