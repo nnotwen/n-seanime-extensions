@@ -1,0 +1,10 @@
+[
+	{
+		"name": "Thin scrollbars",
+		"author": "nnotwen",
+		"style": {
+			"desktop": "::-webkit-scrollbar { width: 2px; height: 6px; }",
+			"mobile": "::-webkit-scrollbar { width: 2px; height: 6px; }"
+		}
+	}
+]
