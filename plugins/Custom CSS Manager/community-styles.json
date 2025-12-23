@@ -8,5 +8,155 @@
 			"desktop": "::-webkit-scrollbar { width: 2px; height: 6px; }",
 			"mobile": "::-webkit-scrollbar { width: 2px; height: 6px; }"
 		}
+	},
+	{
+		"name": "Hide anime spoilers",
+		"author": "kRYstall9",
+		"uuid": "1137f91f-0278-414e-bcdd-5b61a6ff38ed",
+		"enabled": true,
+		"style": {
+			"desktop": "/* Hide anime spoilers */ /* Hide thumbnail */ [data-episode-grid-item]:not([data-is-watched=\"true\"]) [data-episode-grid-item-image], [data-episode-card-image] { filter: blur(12px); } /* Hide description, title, filename */ [data-episode-grid-item]:not([data-is-watched=\"true\"]) [data-episode-grid-item-episode-title], [data-episode-grid-item]:not([data-is-watched=\"true\"]) [data-episode-grid-item-episode-description], [data-episode-grid-item]:not([data-is-watched=\"true\"]) [data-episode-grid-item-filename], [data-undownloaded-episode-list=\"true\"] [data-episode-grid-item-image-background], [data-undownloaded-episode-list=\"true\"] [data-episode-grid-item-episode-description], [data-undownloaded-episode-list=\"true\"] [data-episode-grid-item-episode-title] { filter: blur(3px); margin-left: -2px; mask-image: linear-gradient(90deg, transparent, black 2ch, black calc(100% - 3ch), transparent); } [data-episode-card-title=\"true\"] { filter: blur(4px); } /* Only disable episode info button */ [data-episode-grid-item]:not([data-is-watched=\"true\"]) [data-episode-grid-item-action] > [type=\"button\"][aria-haspopup=\"dialog\"] { opacity: 0.1; pointer-events: none; }",
+			"mobile": ""
+		}
+	},
+	{
+		"name": "Fix UI Bug",
+		"author": "folfoẚ",
+		"uuid": "aa4238d7-4056-4a77-901f-81727e7904a7",
+		"enabled": true,
+		"style": {
+			"desktop": "body[data-scroll-locked] .scroll-locked-offset { padding-right: 0; } body[data-scroll-locked] [data-custom-library-banner-container] { width: 100vw !important; } [data-episode-card-image-container].rounded-xl { --border-radius-xl: 0.85rem; clip-path: inset(0 round var(--border-radius-xl)); }",
+			"mobile": ""
+		}
+	},
+	{
+		"name": "Filter torrent streaming",
+		"author": "folfoẚ",
+		"uuid": "a1be84d9-bc43-43b8-9bac-2312a7d6c6a7",
+		"enabled": true,
+		"style": {
+			"desktop": "/* Filter Torrent Streaming */\n[data-torrent-name*=\"AV1\"],\n[data-torrent-name*=\"mini\"],\n[data-release-group=\"EMBER\"],\n[data-release-group=\"ASW\"],\n[data-release-group=\"Ohys-Raws\"],\n[data-release-group=\"DKB\"],\n[data-release-group=\"Cleo\"],\n[data-release-group=\"Anime Time\"],\n[data-release-group=\"Tenrai-Sensei\"],\n[data-release-group=\"AniDL\"],\n[data-release-group=\"Exiled-Destiny\"],\n[data-release-group=\"DeadFish\"],\n[data-release-group=\"DB\"],\n[data-release-group=\"Kirion\"],\n[data-release-group=\"neoDESU\"],\n[data-release-group=\"neoHEVC\"],\n[data-release-group=\"Judas\"] {\n  display: none !important;\n}",
+			"mobile": ""
+		}
+	},
+	{
+		"name": "Make best releases stand out",
+		"author": "folfoẚ",
+		"uuid": "22c4e6eb-5a6c-431e-aac5-cba513c27335",
+		"enabled": true,
+		"style": {
+			"desktop": "/* Make Best Releases Stand Out */\n[data-is-best-release=\"true\"] {\n  background-color: rgba(14,50,80,0.2) !important;\n  box-shadow: 0 0 3px 1px #247fcc;\n}",
+			"mobile": ""
+		}
+	},
+	{
+		"name": "Mouse-over enlarge character image",
+		"author": "folfoẚ",
+		"uuid": "2b5604f27-600c-40a7-960d-9b9580c62a56",
+		"enabled": true,
+		"style": {
+			"desktop": "[data-media-entry-characters-section-grid-item-image-container] { transition: 0.4s ease-in-out; &:hover { transform: scale(3); z-index: 99999 !important; } &:hover [data-media-entry-characters-section-grid-item-image-background=\"true\"] { background: unset !important; } &:hover [data-media-entry-characters-section-grid-item-image] { object-fit: contain !important; } }",
+			"mobile": ""
+		}
+	},
+	{
+		"name": "Remove fade-in effect on loading anime or manga entry",
+		"author": "Rinkerbel",
+		"uuid": "85a112ea-0134-4af4-8944-29797e391ade",
+		"enabled": true,
+		"style": {
+			"desktop": "[data-media-page-header-entry-details-cover-image-container] *, [data-media-page-header-details-motion-container], [data-media-page-header-details-container], [data-media-page-header-banner-image], [data-media-page-header], [data-page-wrapper][data-anime-entry-page-content], [data-media-page-header-entry-details-title-container] span { opacity: 1 !important; transform: none !important }",
+			"mobile": ""
+		}
+	},
+	{
+		"name": "Show Multi-Sub | Dual Audio Torrents Only",
+		"author": "kRYstall9",
+		"uuid": "b44883ab-0f04-4f56-9c76-8c37347d1db3",
+		"enabled": true,
+		"style": {
+			"desktop": "/* Display only [Multi Sub | Dual Audio] Torrents */ [data-torrent-preview-item=\"true\"]:not([data-subtitle*=\"Multi-Subs\"]):not([data-subtitle*=\"Dual Audio\"]){ display: none; }",
+			"mobile": ""
+		}
+	},
+	{
+		"name": "Alternative compact episode card (6 row per column)",
+		"author": "folfoẚ",
+		"uuid": "3a8b6d93-e45f-415d-98d6-64c24b20bad6",
+		"enabled": true,
+		"style": {
+			"desktop": "/*Seanime compact grid card (6) */ [data-episode-list-grid] /* container */{ grid-template-columns: repeat(6,minmax(0,1fr)); display: grid !important; } [data-episode-grid-item-image-container] /* thumb */{ border-radius: 4px; width: 100%; } [data-episode-grid-item-image-overlay] { box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.5); } [data-episode-grid-item-content] { display: grid; position: absolute; bottom: 2px; right: 4px; text-shadow: 0px 0px 3px rgb(0,0,0), 0px 0px 1px rgb(255,255,255); } [data-episode-grid-item-episode-title] { font-size: 0.9rem !important; bottom: 2px; right: 4px; text-align: right; text-wrap: balance; } [data-episode-grid-item-title] { font-size: 0.9rem; bottom: 2px; right: 2px; text-align: right; } [data-episode-grid-item-episode-description], [data-episode-grid-item-filename] { display: none !important; }",
+			"mobile": ""
+		}
+	},
+	{
+		"name": "Alternative compact episode card (4 row per column)",
+		"author": "folfoẚ",
+		"uuid": "22e59eff-f8d3-440a-8c51-e588fe062aaa",
+		"enabled": true,
+		"style": {
+			"desktop": "/*Seanime compact grid card (4) */ [data-episode-list-grid] /* container */{ grid-template-columns: repeat(4,minmax(0,1fr)); display: grid !important; } [data-episode-grid-item-image-container] /* thumb */{ border-radius: 4px; width: 100%; height: 9rem !important; } [data-episode-grid-item-image-overlay] { box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.5); } [data-episode-grid-item-content] { display: grid; position: absolute; bottom: 2px; right: 4px; text-shadow: 0px 0px 3px rgb(0,0,0), 0px 0px 1px rgb(255,255,255); } [data-episode-grid-item-episode-title] { font-size: 0.9rem !important; bottom: 2px; right: 4px; text-align: right; text-wrap: balance; } [data-episode-grid-item-title] { font-size: 0.9rem; bottom: 2px; right: 2px; text-align: right; } [data-episode-grid-item-episode-description], [data-episode-grid-item-filename] { display: none !important; }",
+			"mobile": ""
+		}
+	},
+	{
+		"name": "Hide Scrollbar (Invisible)",
+		"author": "MrQuix",
+		"uuid": "94282793-b7a2-412e-bffb-1945b338a750",
+		"enabled": true,
+		"style": {
+			"desktop": "body::-webkit-scrollbar { width: 0px; background: transparent; } *::-webkit-scrollbar { width: 0px; background: transparent; }",
+			"mobile": ""
+		}
+	},
+	{
+		"name": "Show tray plugin only when hovering",
+		"author": "folfoẚ",
+		"uuid": "1afad07b-8c63-4e59-aa32-ae02092109b3",
+		"enabled": true,
+		"style": {
+			"desktop": "[data-plugin-sidebar-tray], [data-plugin-tray-icon-tooltip]:hover { opacity: 0 !important; } [data-plugin-sidebar-tray]:hover, [data-plugin-tray-icon-tooltip] { opacity: 1 !important; transition: opacity 0.3s ease-in-out; }",
+			"mobile": ""
+		}
+	},
+	{
+		"name": "Disable media page animation",
+		"author": "folfoẚ",
+		"uuid": "f54b2170-ad03-4630-a620-3a89aefd140d",
+		"enabled": true,
+		"style": {
+			"desktop": ".z-[4], .object-center, [data-media-page-header-banner] > div { transform: none !important; }",
+			"mobile": ""
+		}
+	},
+	{
+		"name": "Hide discovery page banner",
+		"author": "Rinkerbel",
+		"uuid": "73490e1c-4f56-4ff3-b83c-cc48494095e5",
+		"enabled": true,
+		"style": {
+			"desktop": "[data-discover-page-header-banner-image-container=\"true\"] { display: none !important; }",
+			"mobile": ""
+		}
+	},
+	{
+		"name": "Hide Library Page Banner",
+		"author": "Bas1874",
+		"uuid": "18dc4fb4-7c92-4a7c-b693-d588b210614a",
+		"enabled": true,
+		"style": {
+			"desktop": "[data-library-header-container\"true\"] { display: none !important; }",
+			"mobile": ""
+		}
+	},
+	{
+		"name": "Hide Anime Entry Page Banner",
+		"author": "Bas1874",
+		"uuid": "0eb40665-a3ec-48e9-8c35-e33a9f812109",
+		"enabled": true,
+		"style": {
+			"desktop": "[data-media-page-header-banner=\"true\"] { display: none !important; }",
+			"mobile": ""
+		}
 	}
 ]
