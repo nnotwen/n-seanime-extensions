@@ -356,8 +356,8 @@ function init() {
 										display: "-webkit-box",
 										"-webkit-line-clamp": "2",
 										"-webkit-box-orient": "vertical",
-										fontWeight: "400",
-										wordBreak: "normal",
+										fontWeight: "600",
+										wordBreak: "break-word",
 									},
 								}),
 								tray.text(`${item.author}`, {
@@ -366,9 +366,8 @@ function init() {
 										opacity: "0.7rem",
 										fontWeight: "bold",
 										width: "fit-content",
-										backgroundColor: "rgb(var(--color-gray-950))",
 										border: "1px solid var(--border)",
-										borderRadius: "0.5rem",
+										borderRadius: "0.4rem",
 										padding: "0 0.5rem",
 									},
 								}),
@@ -376,7 +375,6 @@ function init() {
 							{
 								style: {
 									justifyContent: "space-around",
-									padding: "0 0.5rem",
 								},
 							}
 						),
@@ -404,7 +402,7 @@ function init() {
 											...buttonStyles,
 											backgroundSize: "1.2rem",
 											backgroundImage:
-												"url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGUvPjxnIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2NhY2FjYSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2Utd2lkdGg9IjIiPjxwYXRoIGQ9Ik0yMCAxNnY0YTIgMiAwIDAgMS0yIDJINGEyIDIgMCAwIDEtMi0yVjZhMiAyIDAgMCAxIDItMmg0Ii8+PHBhdGggZD0iTTEyLjUgMTUuOCAyMiA2LjIgMTcuOCAybC05LjUgOS41TDggMTZ6Ii8+PC9nPjwvc3ZnPg==)",
+												"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNjZmMyZmYiIGZpbGw9Im5vbmUiIHN0cm9rZS13aWR0aD0iMiIgdmlld0JveD0iMCAwIDI0IDI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGhlaWdodD0iMWVtIiB3aWR0aD0iMWVtIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik03IDdINmEyIDIgMCAwIDAtMiAydjlhMiAyIDAgMCAwIDIgMmg5YTIgMiAwIDAgMCAyLTJ2LTEiLz48cGF0aCBkPSJNMjAuMzg1IDYuNTg1YTIuMSAyLjEgMCAwIDAtMi45Ny0yLjk3TDkgMTJ2M2gzek0xNiA1bDMgMyIvPjwvc3ZnPg==)",
 										},
 										onClick: ctx.eventHandler(`edit-${item.uuid}`, () => {
 											state.currentStyle.set(item);
@@ -429,6 +427,7 @@ function init() {
 										disabled: index === 0,
 										style: {
 											...buttonStyles,
+											backgroundSize: "1.2rem",
 											backgroundImage:
 												"url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBmaWxsPSJub25lIj48cGF0aCBzdHJva2U9IiNjYWNhY2EiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIyIiBkPSJtMTYgMTMtNi02LTYgNiIvPjwvc3ZnPg==)",
 										},
@@ -443,6 +442,7 @@ function init() {
 										disabled: index && array?.length ? index >= array?.length - 1 : false,
 										style: {
 											...buttonStyles,
+											backgroundSize: "1.2rem",
 											backgroundImage:
 												"url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBmaWxsPSJub25lIj48cGF0aCBzdHJva2U9IiNjYWNhY2EiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIyIiBkPSJtNCA3IDYgNiA2LTYiLz48L3N2Zz4=)",
 										},
@@ -457,6 +457,27 @@ function init() {
 								}
 							),
 						]),
+						// tray.button("\u200b", {
+						// 	intent: "alert",
+						// 	style: {
+						// 		width: "1rem",
+						// 		height: "1rem",
+						// 		position: "absolute",
+						// 		top: "calc(0px - 0.25rem)",
+						// 		right: "calc(0px - 0.25rem)",
+						// 		padding: "0",
+						// 		borderRadius: "50%",
+						// 		backgroundImage:
+						// 			"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNmZmYiIGZpbGw9IiNmZmYiIHN0cm9rZS13aWR0aD0iMCIgdmlld0JveD0iMCAwIDE2IDE2IiBjbGFzcz0idGV4dC1bMC45NXJlbV0iIGhlaWdodD0iMWVtIiB3aWR0aD0iMWVtIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJtNy4xMTYgOC00LjU1OCA0LjU1OC44ODQuODg0TDggOC44ODRsNC41NTggNC41NTguODg0LS44ODRMOC44ODQgOGw0LjU1OC00LjU1OC0uODg0LS44ODRMOCA3LjExNiAzLjQ0MiAyLjU1OGwtLjg4NC44ODR6IiBzdHJva2U9Im5vbmUiLz48L3N2Zz4=)",
+						// 		backgroundSize: "0.65rem",
+						// 		backgroundRepeat: "no-repeat",
+						// 		backgroundPosition: "center",
+						// 	},
+						// 	onClick: ctx.eventHandler(`delete:${item.uuid}`, () => {
+						// 		manager.remove(item.uuid);
+						// 		tray.update();
+						// 	}),
+						// }),
 					],
 					{
 						style: {
@@ -464,7 +485,8 @@ function init() {
 							border: "1px solid var(--border)",
 							backgroundColor: "rgb(var(--color-gray-900))",
 							justifyContent: "space-between",
-							padding: "0.5rem",
+							padding: "0.75rem",
+							position: "relative",
 						},
 					}
 				);
@@ -482,19 +504,18 @@ function init() {
 										display: "-webkit-box",
 										"-webkit-line-clamp": "2",
 										"-webkit-box-orient": "vertical",
-										fontWeight: "400",
-										wordBreak: "normal",
+										fontWeight: "600",
+										wordBreak: "break-word",
 									},
 								}),
 								tray.text(`${item.author}`, {
 									style: {
 										fontSize: "0.7rem",
 										opacity: "0.7rem",
-										fontWeight: "bold",
+										fontWeight: "600",
 										width: "fit-content",
-										backgroundColor: "rgb(var(--color-gray-950))",
 										border: "1px solid var(--border)",
-										borderRadius: "0.5rem",
+										borderRadius: "0.4rem",
 										padding: "0 0.5rem",
 									},
 								}),
@@ -502,21 +523,20 @@ function init() {
 							{
 								style: {
 									justifyContent: "space-around",
-									padding: "0 0.5rem",
 								},
 							}
 						),
 						tray.stack([
 							tray.button("\u200b", {
 								intent: "gray-subtle",
-								className: alreadyDownloaded ? "" : "bg-transparent",
+								// className: alreadyDownloaded ? "" : "bg-transparent",
 								disabled: alreadyDownloaded,
 								style: {
 									width: "2rem",
 									height: "2rem",
 									backgroundRepeat: "no-repeat",
 									backgroundPosition: "center",
-									backgroundSize: "1.5rem",
+									backgroundSize: "1.2rem",
 									backgroundImage: alreadyDownloaded
 										? "url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJtNyAxMyAzIDMgNy03IiBzdHJva2U9IiMyMzgwNTkiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+)"
 										: "url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNiY2I3ZjAiIGZpbGw9Im5vbmUiIHN0cm9rZS13aWR0aD0iMiIgdmlld0JveD0iMCAwIDI0IDI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGhlaWdodD0iMWVtIiB3aWR0aD0iMWVtIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0yMSAxNXY0YTIgMiAwIDAgMS0yIDJINWEyIDIgMCAwIDEtMi0ydi00bTQtNSA1IDUgNS01bS01IDVWMyIvPjwvc3ZnPg==)",
@@ -533,7 +553,7 @@ function init() {
 							}),
 							item.link
 								? tray.anchor("\u200b", {
-										className: "bg-transparent hover:bg-gray-200 dark:bg-opacity-10 dark:hover:bg-opacity-20",
+										className: "bg-gray-300 hover:bg-gray-200 dark:bg-opacity-10 dark:hover:bg-opacity-20",
 										href: item.link,
 										style: {
 											width: "2rem",
@@ -541,7 +561,7 @@ function init() {
 											borderRadius: "0.5rem",
 											backgroundRepeat: "no-repeat",
 											backgroundPosition: "center",
-											backgroundSize: "1.2rem",
+											backgroundSize: "1rem",
 											backgroundImage:
 												"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNjYWNhY2EiIGZpbGw9IiNjYWNhY2EiIHN0cm9rZS13aWR0aD0iMCIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGhlaWdodD0iMWVtIiB3aWR0aD0iMWVtIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0zMjYuNjEyIDE4NS4zOTFjNTkuNzQ3IDU5LjgwOSA1OC45MjcgMTU1LjY5OC4zNiAyMTQuNTktLjExLjEyLS4yNC4yNS0uMzYuMzdsLTY3LjIgNjcuMmMtNTkuMjcgNTkuMjctMTU1LjY5OSA1OS4yNjItMjE0Ljk2IDAtNTkuMjctNTkuMjYtNTkuMjctMTU1LjcgMC0yMTQuOTZsMzcuMTA2LTM3LjEwNmM5Ljg0LTkuODQgMjYuNzg2LTMuMyAyNy4yOTQgMTAuNjA2LjY0OCAxNy43MjIgMy44MjYgMzUuNTI3IDkuNjkgNTIuNzIxIDEuOTg2IDUuODIyLjU2NyAxMi4yNjItMy43ODMgMTYuNjEybC0xMy4wODcgMTMuMDg3Yy0yOC4wMjYgMjguMDI2LTI4LjkwNSA3My42Ni0xLjE1NSAxMDEuOTYgMjguMDI0IDI4LjU3OSA3NC4wODYgMjguNzQ5IDEwMi4zMjUuNTFsNjcuMi02Ny4xOWMyOC4xOTEtMjguMTkxIDI4LjA3My03My43NTcgMC0xMDEuODMtMy43MDEtMy42OTQtNy40MjktNi41NjQtMTAuMzQxLTguNTY5YTE2LjA0IDE2LjA0IDAgMCAxLTYuOTQ3LTEyLjYwNmMtLjM5Ni0xMC41NjcgMy4zNDgtMjEuNDU2IDExLjY5OC0yOS44MDZsMjEuMDU0LTIxLjA1NWM1LjUyMS01LjUyMSAxNC4xODItNi4xOTkgMjAuNTg0LTEuNzMxYTE1Mi41IDE1Mi41IDAgMCAxIDIwLjUyMiAxNy4xOTdNNDY3LjU0NyA0NC40NDljLTU5LjI2MS01OS4yNjItMTU1LjY5LTU5LjI3LTIxNC45NiAwbC02Ny4yIDY3LjJjLS4xMi4xMi0uMjUuMjUtLjM2LjM3LTU4LjU2NiA1OC44OTItNTkuMzg3IDE1NC43ODEuMzYgMjE0LjU5YTE1Mi41IDE1Mi41IDAgMCAwIDIwLjUyMSAxNy4xOTZjNi40MDIgNC40NjggMTUuMDY0IDMuNzg5IDIwLjU4NC0xLjczMWwyMS4wNTQtMjEuMDU1YzguMzUtOC4zNSAxMi4wOTQtMTkuMjM5IDExLjY5OC0yOS44MDZhMTYuMDQgMTYuMDQgMCAwIDAtNi45NDctMTIuNjA2Yy0yLjkxMi0yLjAwNS02LjY0LTQuODc1LTEwLjM0MS04LjU2OS0yOC4wNzMtMjguMDczLTI4LjE5MS03My42MzkgMC0xMDEuODNsNjcuMi02Ny4xOWMyOC4yMzktMjguMjM5IDc0LjMtMjguMDY5IDEwMi4zMjUuNTEgMjcuNzUgMjguMyAyNi44NzIgNzMuOTM0LTEuMTU1IDEwMS45NmwtMTMuMDg3IDEzLjA4N2MtNC4zNSA0LjM1LTUuNzY5IDEwLjc5LTMuNzgzIDE2LjYxMiA1Ljg2NCAxNy4xOTQgOS4wNDIgMzQuOTk5IDkuNjkgNTIuNzIxLjUwOSAxMy45MDYgMTcuNDU0IDIwLjQ0NiAyNy4yOTQgMTAuNjA2bDM3LjEwNi0zNy4xMDZjNTkuMjcxLTU5LjI1OSA1OS4yNzEtMTU1LjY5OS4wMDEtMjE0Ljk1OSIgc3Ryb2tlPSJub25lIi8+PC9zdmc+)",
 										},
@@ -555,7 +575,7 @@ function init() {
 							border: "1px solid var(--border)",
 							backgroundColor: "rgb(var(--color-gray-900))",
 							justifyContent: "space-between",
-							padding: "0.5rem",
+							padding: "0.75rem",
 						},
 					}
 				);
@@ -633,7 +653,7 @@ function init() {
 				const body = tray.div(
 					[
 						storage.length
-							? tray.stack(storage.map(this.formatManagerItem), { style: { marginRight: "0.25rem" } })
+							? tray.stack(storage.map(this.formatManagerItem), { style: { marginRight: "0.25rem", marginTop: "0.25rem" } })
 							: tray.text("No styles yet!", {
 									style: {
 										alignContent: "center",
@@ -837,11 +857,11 @@ function init() {
 						.catch((e) => ctx.toast.error(e.message));
 				}
 
-				const body = tray.stack(
+				const body = tray.div(
 					[
 						marketplace
-							? marketplace.sort((A, B) => A.name.localeCompare(B.name)).map(this.formatMarketplaceItem)
-							: Array.from({ length: 5 }).map(() => this.loadingItem()),
+							? tray.stack(marketplace.sort((A, B) => A.name.localeCompare(B.name)).map(this.formatMarketplaceItem), { style: { marginRight: "0.25rem" } })
+							: tray.stack(Array.from({ length: 5 }).map(() => this.loadingItem())),
 					],
 					{
 						style: { height: "28rem", overflow: "scroll" },
