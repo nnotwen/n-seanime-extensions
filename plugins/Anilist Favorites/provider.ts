@@ -468,6 +468,7 @@ function init() {
 										"-webkit-box-orient": "vertical",
 										fontSize: "0.8rem",
 										lineHeight: "normal",
+										wordBreak: "normal",
 									},
 								}),
 							],
@@ -540,6 +541,7 @@ function init() {
 								textAlign: "center",
 								lineHeight: "normal",
 								fontWeight: "bold",
+								wordBreak: "normal",
 							},
 						}),
 						tray.div(
@@ -555,6 +557,7 @@ function init() {
 										opacity: "0.6",
 										textAlign: "center",
 										lineHeight: "normal",
+										wordBreak: "normal",
 									},
 								}),
 							],
@@ -1035,7 +1038,7 @@ function init() {
 					}),
 				});
 
-				const entries = tray.flex(
+				const entries = tray.div(
 					[
 						...Object.values(favorite.cache)
 							.filter((a) =>
@@ -1044,13 +1047,12 @@ function init() {
 							.sort((A, B) => A.title.userPreferred!.localeCompare(B.title.userPreferred!))
 							.map(this.formatMediaCard),
 						state.isFetching.get() ? Array.from({ length: 6 }).map(this.loadingRect) : [],
-						Array.from({ length: 4 }).map((x) => tray.div([], { style: { width: tabs.styles.media.minWidth } })),
 					],
 					{
-						gap: 2,
 						style: {
-							flexWrap: "wrap",
-							justifyContent: "center",
+							display: "grid",
+							gridTemplateColumns: `repeat(auto-fit, minmax(${this.styles.media.minWidth}, 1fr))`,
+							gap: "0.5rem",
 						},
 					}
 				);
@@ -1181,7 +1183,7 @@ function init() {
 					}),
 				});
 
-				const entries = tray.flex(
+				const entries = tray.div(
 					[
 						(type === "CHARACTERS"
 							? [
@@ -1196,13 +1198,12 @@ function init() {
 							  ]
 						).map(this.formatPeopleCard),
 						state.isFetching.get() ? Array.from({ length: 6 }).map(this.loadingRect) : [],
-						Array.from({ length: 4 }).map((x) => tray.div([], { style: { width: tabs.styles.media.minWidth } })),
 					],
 					{
-						gap: 2,
 						style: {
-							flexWrap: "wrap",
-							justifyContent: "center",
+							display: "grid",
+							gridTemplateColumns: `repeat(auto-fit, minmax(${this.styles.media.minWidth}, 1fr))`,
+							gap: "0.5rem",
 						},
 					}
 				);
