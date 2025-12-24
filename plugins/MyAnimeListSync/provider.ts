@@ -1331,44 +1331,50 @@ function init() {
 
 		async function filterExistingMalIds(malIds: number[]) {
 			const endpoint = "https://graphql.anilist.co";
-			const chunkSize = 50;
 			const existing: { id: number; idMal: number; title: string }[] = [];
 
-			// Split MAL IDs into chunks of 50
-			const chunks: number[][] = [];
-			for (let i = 0; i < malIds.length; i += chunkSize) {
-				chunks.push(malIds.slice(i, i + chunkSize));
-			}
+			let page = 1;
+			const perPage = 50;
 
-			// Query AniList sequentially to avoid rate limits
-			for (const chunk of chunks) {
-				let page = 1;
+			while (true) {
+				const query =
+					"query ($page: Int, $perPage: Int, $malIds: [Int]) { Page(page: $page, perPage: $perPage) { media(idMal_in: $malIds) { id idMal title { userPreferred } } } }";
 
-				while (true) {
-					// prettier-ignore
-					const query = "query ($page: Int, $perPage: Int, $malIds: [Int]) { Page(page: $page, perPage: $perPage) { media(idMal_in: $malIds) { id idMal title { userPreferred }} } }";
-					const variables = { page, perPage: 50, malIds: chunk };
+				const variables = { page, perPage, malIds };
 
-					const res = await fetch(endpoint, {
-						method: "POST",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({ query, variables }),
-					});
+				const res = await fetch(endpoint, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ query, variables }),
+				});
 
-					await $_wait(1_500);
-
-					const json = await res.json();
-					const media = json.data.Page.media;
-
-					for (const m of media) {
-						if (m.idMal != null) {
-							existing.push({ id: m.id, idMal: m.idMal, title: m.title.userPreferred });
-						}
+				await $_wait(2000);
+				if (!res.ok) {
+					let err = null;
+					try {
+						err = res.json();
+					} catch {
+						err = null;
 					}
-
-					if (media.length < 50) break;
-					page++;
+					throw new Error(err?.errors?.map((m: any) => m.message).join(" ") ?? res.statusText);
 				}
+
+				const json = await res.json();
+				if (!json.data) throw new Error(json.errors?.join("\n"));
+
+				const media = json.data.Page.media;
+				for (const m of media) {
+					if (m.idMal != null) {
+						existing.push({
+							id: m.id,
+							idMal: m.idMal,
+							title: m.title.userPreferred,
+						});
+					}
+				}
+
+				if (media.length < perPage) break;
+				page++;
 			}
 
 			return existing;
@@ -1612,7 +1618,7 @@ function init() {
 					await anilistQuery(query, body)
 						.then(() => log.sendSuccess(`[SYNCLIST] Added ${title ?? entry.title} to Anilist.`))
 						.catch((e) => log.sendError(`[SYNCLIST] Failed to add ${title ?? entry.title} to Anilist ${(e as Error).message} ${body}`));
-					await $_wait(1_500);
+					await $_wait(2_000);
 				}
 
 				if (syncType === ManageListSyncType.FullSync && state.syncing.get()) {
@@ -1641,7 +1647,7 @@ function init() {
 								log.sendError(`[SYNCLIST] Failed to remove ${mediaTitle ?? "anilist-id/" + anilistEntry.id} from Anilist: ${(e as Error).message}`)
 							);
 
-						await $_wait(1_500);
+						await $_wait(2_000);
 					}
 				}
 			}
