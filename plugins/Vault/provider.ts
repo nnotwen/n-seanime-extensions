@@ -4,685 +4,869 @@
 /// <reference path="./core.d.ts" />
 /// <reference path="./vault.d.ts" />
 
-// @ts-ignore
+//@ts-ignore
 function init() {
-	$ui.register(async (ctx) => {
-		// states
-		const currentTrayPage = ctx.state<number>(1);
-		// prettier-ignore
-		const currentMedia = ctx.state<$app.AL_BaseAnime|$app.AL_BaseManga | null>(null);
-		const currentShelf = ctx.state<string | null>(null);
-
-		// Field Refs
-		const newShelfName = ctx.fieldRef<string>("");
-		// prettier-ignore
+	$ui.register((ctx) => {
 		const iconUrl = "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Vault/icon.png";
-		// prettier-ignore
-		const shelfIcon = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iI2NhY2FjYSIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBkPSJNMiAyYTIgMiAwIDAgMSAyLTJoOGEyIDIgMCAwIDEgMiAydjEzLjVhLjUuNSAwIDAgMS0uNzc3LjQxNkw4IDEzLjEwMWwtNS4yMjMgMi44MTVBLjUuNSAwIDAgMSAyIDE1LjV6bTItMWExIDEgMCAwIDAtMSAxdjEyLjU2Nmw0LjcyMy0yLjQ4MmEuNS41IDAgMCAxIC41NTQgMEwxMyAxNC41NjZWMmExIDEgMCAwIDAtMS0xeiIvPjxwYXRoIGQ9Ik04IDRhLjUuNSAwIDAgMSAuNS41VjZIMTBhLjUuNSAwIDAgMSAwIDFIOC41djEuNWEuNS41IDAgMCAxLTEgMFY3SDZhLjUuNSAwIDAgMSAwLTFoMS41VjQuNUEuNS41IDAgMCAxIDggNCIvPjwvc3ZnPg==";
-		// prettier-ignore
-		const deleteIcon = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iI2NhY2FjYSIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBkPSJNMi41IDFhMSAxIDAgMCAwLTEgMXYxYTEgMSAwIDAgMCAxIDFIM3Y5YTIgMiAwIDAgMCAyIDJoNmEyIDIgMCAwIDAgMi0yVjRoLjVhMSAxIDAgMCAwIDEtMVYyYTEgMSAwIDAgMC0xLTFIMTBhMSAxIDAgMCAwLTEtMUg3YTEgMSAwIDAgMC0xIDF6bTMgNGEuNS41IDAgMCAxIC41LjV2N2EuNS41IDAgMCAxLTEgMHYtN2EuNS41IDAgMCAxIC41LS41TTggNWEuNS41IDAgMCAxIC41LjV2N2EuNS41IDAgMCAxLTEgMHYtN0EuNS41IDAgMCAxIDggNW0zIC41djdhLjUuNSAwIDAgMS0xIDB2LTdhLjUuNSAwIDAgMSAxIDAiLz48L3N2Zz4=";
-		const iconStyles = {
-			backgroundRepeat: "no-repeat",
-			backgroundPosition: "0.65em center",
-			textIndent: "1.8em",
+		const tray = ctx.newTray({ iconUrl, withContent: true });
+
+		enum Tabs {
+			Vault = 1,
+			Shelf = 2,
+			AddToShelf = 3,
+		}
+
+		const fieldRef = {
+			shelfCreate: {
+				name: ctx.fieldRef<string>(""),
+				type: ctx.fieldRef<$app.AL_MediaType>("ANIME"),
+				reset() {
+					this.name.setValue("");
+					this.type.setValue("ANIME");
+				},
+			},
 		};
 
-		const Vault = {
-			storageId: "ee67ab39-47e3-4e19-be06-d55ccaf50f36",
+		const state = {
+			vaultSearch: ctx.state<string>(""),
+			shelfSearch: ctx.state<string>(""),
+			currentShelfId: ctx.state<string | null>(null),
+			currentMedia: ctx.state<$app.AL_BaseAnime | $app.AL_BaseManga | null>(null),
+		};
 
-			init() {
-				if (!$storage.get(this.storageId)) {
-					$storage.set(this.storageId, []);
-				}
+		const vault = {
+			id: "fbefd050-7a20-469f-ade9-12ea803d7149",
+			get storage() {
+				return ($storage.get(this.id) || {}) as Record<string, Shelf>;
 			},
+			createShelf(name: string, type: $app.AL_MediaType) {
+				const uuid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+					const r = (Math.random() * 16) | 0;
+					const v = c === "x" ? r : (r & 0x3) | 0x8;
+					return v.toString(16);
+				});
 
-			getCollection(): Map<string, VaultItem> {
-				this.init();
-				const items: VaultItem[] = $storage.get(this.storageId)!;
-				return new Map(items.map((e) => [e.name, e]));
+				const storage = this.storage;
+				storage[uuid] = { uuid, name, type, entries: [] };
+				$storage.set(this.id, storage);
+				return storage[uuid];
 			},
+			editShelfName(uuid: string, name: string) {
+				const storage = this.storage;
+				const shelf = storage[uuid];
+				if (!shelf) throw new Error(`Could not find shelf with uuid ${uuid}`);
 
-			persist(collection: Map<string, VaultItem>) {
-				$storage.set(this.storageId, Array.from(collection.values()));
+				shelf.name = name;
+				storage[uuid] = shelf;
+				return shelf;
 			},
-
-			getOrCreateShelf(shelfName: string, type: "ANIME" | "MANGA") {
-				const collection = this.getCollection();
-				if (!collection.has(shelfName)) {
-					collection.set(shelfName, { name: shelfName, type, entries: [] });
-					this.persist(collection);
-				}
-				return collection.get(shelfName)!;
+			deleteShelf(uuid: string) {
+				const storage = this.storage;
+				const deleted = delete storage[uuid];
+				$storage.set(this.id, storage);
+				return deleted;
 			},
+			addToShelf(uuid: string, media: $app.AL_BaseAnime | $app.AL_BaseManga) {
+				const storage = this.storage;
+				const shelf = storage[uuid];
+				if (!shelf) throw new Error(`Could not find shelf with uuid ${uuid}!`);
+				if (shelf.type !== media.type) throw new Error(`Type mismatch: Cannot upsert media with type ${media.type} to shelf with type ${shelf.type}!`);
 
-			removeShelf(shelfName: string) {
-				const collection = this.getCollection();
-				collection.delete(shelfName);
-				this.persist(collection);
-			},
-
-			// prettier-ignore
-			addToShelf(shelfName: string, data: VaultItem["entries"][number], type: "ANIME" | "MANGA") {
-				const collection = this.getCollection();
-				const shelf = this.getOrCreateShelf(shelfName, type);
-				shelf.entries = Array.from(new Map(shelf.entries.map(s => [s.id,s])).set(data.id, data).values());
-				collection.set(shelfName, shelf);
-				this.persist(collection);
-			},
-
-			removeFromShelf(
-				shelfName: string,
-				mediaId: number,
-				type: "ANIME" | "MANGA"
-			) {
-				const collection = this.getCollection();
-				const shelf = this.getOrCreateShelf(shelfName, type);
-				shelf.entries = shelf.entries.filter((e) => e.id !== mediaId);
-				collection.set(shelfName, shelf);
-				this.persist(collection);
-			},
-
-			// prettier-ignore
-			normalizeMediaToVaultItem(media: $app.AL_BaseAnime | $app.AL_BaseManga): VaultItem["entries"][number]{
-				return {
+				const data: Shelf["entries"][number] = {
 					id: media.id,
 					title: {
-						userPreferred: media.title?.userPreferred ?? "",
-						synonyms: [
-							media.title?.english ?? "",
-							media.title?.romaji ?? "",
-							media.title?.native ?? "",
-							...(media.synonyms ?? []),
-						].filter(Boolean),
+						userPreferred: media.title?.userPreferred!,
+						synonyms: [...(media.synonyms ?? []), ...Object.values(media.title ?? {}).filter(Boolean)],
 					},
 					coverImage: media.coverImage?.large ?? "",
 					season: media.season ?? null,
 					seasonYear: "seasonYear" in media ? media.seasonYear ?? null : null,
 				};
+
+				shelf.entries = [...new Map(shelf.entries.map((e) => [e.id, e])).set(data.id, data).values()];
+				storage[uuid] = shelf;
+				$storage.set(this.id, storage);
+				return shelf;
+			},
+			removeFromShelf(uuid: string, mediaId: number) {
+				const storage = this.storage;
+				const shelf = storage[uuid];
+				if (!shelf) throw new Error(`Could not find shelf with uuid ${uuid}`);
+
+				shelf.entries = shelf.entries.filter((x) => x.id !== mediaId);
+				storage[uuid] = shelf;
+				$storage.set(this.id, storage);
+				return shelf.entries.some((x) => x.id === mediaId);
+			},
+			// Imports entries from old version if they exist
+			import() {
+				const array: Shelf[] | undefined = $storage.get("ee67ab39-47e3-4e19-be06-d55ccaf50f36");
+				if (!array) return;
+
+				for (const shelf of array) {
+					const { uuid } = this.createShelf(shelf.name, shelf.type);
+					for (const entry of shelf.entries) {
+						this.addToShelf(uuid, {
+							id: entry.id,
+							title: {
+								userPreferred: entry.title.userPreferred,
+							},
+							synonyms: entry.title.synonyms,
+							coverImage: {
+								large: entry.coverImage,
+							},
+							season: entry.season ?? undefined,
+							seasonYear: entry.seasonYear ?? undefined,
+							type: shelf.type,
+						});
+					}
+				}
+
+				$storage.remove("ee67ab39-47e3-4e19-be06-d55ccaf50f36");
 			},
 		};
 
-		const dropdownItem = ctx.action.newAnimePageDropdownItem({
-			label: "Add to shelf",
-			style: { ...iconStyles, backgroundImage: `url(${shelfIcon})` },
-		});
-
-		const animeButton = ctx.action.newAnimePageButton({
-			label: "Add to shelf",
-		});
-
-		animeButton.mount();
-		animeButton.onClick(handleClick);
-
-		dropdownItem.mount();
-		dropdownItem.onClick(handleClick);
-
-		function handleClick(e: { media: $app.AL_BaseAnime }) {
-			currentMedia.set(e.media);
-			currentTrayPage.set(0);
-			ctx.setTimeout(() => tray.open(), 500);
-		}
-
-		const tray = ctx.newTray({
-			iconUrl,
-			withContent: true,
-			width: "45rem",
-		});
-
-		tray.render(() => {
-			const pluginIcon = tray.div([], {
-				style: {
-					width: "2.5em",
-					height: "2.5em",
-					backgroundImage: `url(${iconUrl})`,
-					backgroundSize: "contain",
-					backgroundRepeat: "no-repeat",
-					backgroundPosition: "center",
-					flexGrow: "0",
-					flexShrink: "0",
-				},
-			});
-
-			const header_text = tray.text("Vault", {
-				style: {
-					fontSize: "1.2em",
-					"font-weight": "700",
-					"user-select": "none",
-				},
-			});
-
-			const header_subtext = tray.text(
-				"Create, Edit, and View your personal curated lists!",
-				{
-					style: {
-						fontSize: "13px",
-						color: "#666",
-						lineHeight: "normal",
-						wordBreak: "unset",
-						"user-select": "none",
-						fontWeight: "500",
-					},
-				}
-			);
-
-			if (currentTrayPage.get() === 0 && currentMedia.get() !== null) {
-				const media = currentMedia.get()!;
-
-				const header = tray.flex(
-					[
-						pluginIcon,
-						tray.flex([header_text, header_subtext], {
-							direction: "column",
-							gap: 1,
-						}),
-					],
-					{ direction: "row", gap: 3 }
-				);
-
-				const body = tray.stack(
-					[
-						tray.text(`Add ${media.title?.userPreferred} to a shelf:`),
-						tray.flex([formatShelves()], {
-							gap: 1,
-							direction: "row",
+		const tabs = {
+			current: ctx.state<Tabs>(Tabs.Vault),
+			currentOverlay: ctx.state<any[] | null>(null),
+			overlay() {
+				const overlay = this.currentOverlay.get();
+				return overlay
+					? tray.div([tray.flex(overlay, { style: { justifyContent: "center", alignItems: "center", width: "100%", height: "100%" } })], {
+							className: "fixed bg-black/80 z-[50]",
 							style: {
-								flexWrap: "wrap",
+								width: "calc(100%)",
+								height: "calc(100% - 1rem)",
+								top: "0%",
+								left: "0%",
+								borderRadius: "0.5rem",
+								border: "1px solid var(--border)",
+							},
+					  })
+					: ([] as any[]);
+			},
+			header(primary: string, subtext?: string, additionalComponents?: any[]) {
+				return tray.flex(
+					[
+						tray.div([], {
+							style: {
+								width: "2.5rem",
+								height: "2.5rem",
+								marginTop: "-0.3rem",
+								backgroundImage: `url(${iconUrl})`,
+								backgroundSize: "contain",
+								backgroundRepeat: "no-repeat",
+								backgroundPosition: "center",
+								flexGrow: "0",
+								flexShrink: "0",
 							},
 						}),
-						tray.flex([
-							tray.div([], { style: { flex: "1" } }),
-							tray.button("New shelf", {
-								intent: "gray-subtle",
-								size: "md",
-								onClick: ctx.eventHandler("create-new-shelf", () => {
-									currentTrayPage.set(3);
-									tray.update();
-								}),
-							}),
-						]),
+						tray.stack(
+							[
+								tray.text(`${primary}`, { style: { fontSize: "1.2em", fontWeight: "bold" } }),
+								subtext
+									? tray.text(`${subtext}`, {
+											style: {
+												fontSize: "0.8em",
+												overflow: "hidden",
+												textOverflow: "ellipsis",
+												display: "-webkit-box",
+												"-webkit-line-clamp": "1",
+												"-webkit-box-orient": "vertical",
+												wordBreak: "break-word",
+											},
+											className: "opacity-30",
+									  })
+									: [],
+							],
+							{
+								style: {
+									lineHeight: "1em",
+									width: "100%",
+								},
+							}
+						),
+						tray.div(additionalComponents ?? []),
 					],
-					{ style: { padding: "10px" }, gap: 5 }
-				);
-
-				return tray.stack([header, body], { gap: 1 });
-			}
-
-			// Page when user clicks on the tray icon
-			if (currentTrayPage.get() === 1) {
-				const header = tray.flex(
-					[
-						pluginIcon,
-						tray.flex([header_text, header_subtext], {
-							direction: "column",
-							gap: 1,
-						}),
-					],
-					{ direction: "row", gap: 3 }
-				);
-				const body = tray.stack(
-					[
-						tray.text(`Explore your vault`),
-						tray.flex([formatShelves()], {
-							gap: 1,
-							direction: "row",
-							style: {
-								flexWrap: "wrap",
-							},
-						}),
-						tray.flex([
-							tray.div([], { style: { flex: "1" } }),
-							tray.button("New shelf", {
-								intent: "gray-subtle",
-								size: "md",
-								onClick: ctx.eventHandler("create-new-shelf", () => {
-									currentTrayPage.set(3);
-									tray.update();
-								}),
-							}),
-						]),
-					],
-					{ style: { padding: "10px" }, gap: 5 }
-				);
-
-				return tray.stack([header, body], { gap: 1 });
-			}
-
-			// Page when user clicks a shelf
-			if (currentTrayPage.get() === 2) {
-				const header = tray.flex(
-					[
-						pluginIcon,
-						tray.flex([header_text, header_subtext], {
-							direction: "column",
-							gap: 1,
-						}),
-					],
-					{ direction: "row", gap: 3 }
-				);
-				const body = tray.stack(
-					[
-						tray.text(currentShelf.get() ?? "", {
-							style: {
-								fontSize: "1.2em",
-							},
-						}),
-						tray.flex([formatEntries()], {
-							gap: 1,
-							direction: "row",
-							style: {
-								flexWrap: "wrap",
-							},
-						}),
-						tray.flex([
-							tray.div([], { style: { flex: "1" } }),
-							tray.button("Go Back", {
-								intent: "gray-subtle",
-								size: "md",
-								onClick: ctx.eventHandler("go-back", () => {
-									currentMedia.set(null);
-									currentTrayPage.set(1);
-									currentShelf.set(null);
-									tray.update();
-								}),
-							}),
-							tray.button("Delete Shelf", {
-								intent: "alert",
-								size: "md",
-								onClick: ctx.eventHandler("delete-shelf", () => {
-									Vault.removeShelf(currentShelf.get() ?? "");
-									currentMedia.set(null);
-									currentTrayPage.set(1);
-									currentShelf.set(null);
-									tray.update();
-								}),
-							}),
-						]),
-					],
-					{ style: { padding: "10px" }, gap: 5 }
-				);
-
-				return tray.stack([header, body], { gap: 1 });
-			}
-
-			// Page for when creating a new shelf
-			if (currentTrayPage.get() === 3) {
-				const header = tray.flex(
-					[
-						pluginIcon,
-						tray.flex([header_text, header_subtext], {
-							direction: "column",
-							gap: 1,
-						}),
-					],
-					{ direction: "row", gap: 3 }
-				);
-
-				const body = tray.stack(
-					[
-						tray.input({
-							placeholder: "Shelf name",
-							size: "md",
-							fieldRef: newShelfName,
-						}),
-						tray.flex([
-							tray.div([], { style: { flex: "1" } }),
-							tray.button("Go Back", {
-								intent: "gray-subtle",
-								size: "md",
-								onClick: ctx.eventHandler("go-back", () => {
-									currentMedia.set(null);
-									currentTrayPage.set(1);
-									currentShelf.set(null);
-									tray.update();
-								}),
-							}),
-							tray.button("Create new shelf", {
-								intent: "gray-subtle",
-								size: "md",
-								onClick: ctx.eventHandler("saveNewShelf", () => {
-									const shelfName = newShelfName.current;
-									if (!shelfName.length) {
-										ctx.toast.error("Please input a shelf name");
-										return;
-									}
-
-									if (Vault.getCollection().has(shelfName)) {
-										ctx.toast.error(`Shelf [${shelfName}] already exists!`);
-										return;
-									}
-
-									const newShelf = Vault.getOrCreateShelf(shelfName, "ANIME");
-									const media = currentMedia.get();
-									if (media !== null) {
-										Vault.addToShelf(
-											newShelf.name,
-											Vault.normalizeMediaToVaultItem(media),
-											"ANIME"
-										);
-										ctx.toast.success(
-											`Added [${media.title?.userPreferred}] to [${newShelf.name}]`
-										);
-									} else {
-										ctx.toast.success(
-											`Successfully created new shelf: [${newShelf.name}]`
-										);
-									}
-									currentMedia.set(null);
-									currentTrayPage.set(1);
-									currentShelf.set(null);
-									newShelfName.setValue("");
-									tray.update();
-								}),
-							}),
-						]),
-					],
-					{ style: { padding: "10px" } }
-				);
-
-				return tray.stack([header, body], { gap: 1 });
-			}
-
-			return tray.text("something");
-		});
-
-		tray.onClose(() => {
-			currentMedia.set(null);
-			currentTrayPage.set(1);
-			currentShelf.set(null);
-		});
-
-		function formatShelves() {
-			const shelves = Array.from(Vault.getCollection().values());
-			const noShelves = tray.text("No Shelves", {
-				// prettier-ignore
-				className: "bg-gray-900 border border-[rgb(255_255_255_/_5%)] rounded-xl text-center",
-				style: {
-					padding: "25px 0",
-					fontSize: "1.5em",
-					fontWeight: "500",
-					color: "#666",
-				},
-			});
-			if (!shelves.length) return [noShelves];
-
-			return Array.from(shelves)
-				.sort((a, b) => a.name.localeCompare(b.name))
-				.map((shelf) => {
-					// prettier-ignore
-					const coverImage = shelf.entries.length ? shelf.entries[Math.floor(Math.random() * shelf.entries.length)].coverImage : ""
-
-					const cover = tray.div([], {
-						className: "coverImage",
+					{
+						gap: 3,
 						style: {
-							width: "100%",
-							height: "6em",
-							flexShrink: "0",
-							flexGrow: "0",
-							backgroundImage: `url(${coverImage})`,
-							backgroundSize: "cover",
-							backgroundPosition: "center",
-							backgroundRepeat: "no-repeat",
+							marginBottom: "1rem",
 						},
-					});
+					}
+				);
+			},
+			createShelf() {
+				fieldRef.shelfCreate.reset();
+				return tray.stack(
+					[
+						tray.text("Create Shelf", {
+							className: "font-semibold",
+							style: { borderBottom: "1px solid var(--border)", fontSize: "1.25rem", paddingBottom: "0.25rem" },
+						}),
+						tray.text("Shelf Name", { className: "text-base font-semibold self-start w-fit" }),
+						tray.input({
+							fieldRef: fieldRef.shelfCreate.name,
+							style: {
+								borderRadius: "0.5rem",
+							},
+						}),
+						tray.flex(
+							[
+								tray.text("Type", {
+									className: "px-2 bg-gray-800 border",
+									style: {
+										width: "fit-content",
+										wordBreak: "normal",
+										borderRadius: "0.5rem 0 0 0.5rem",
+										height: "2rem",
+										alignContent: "center",
+										fontSize: "0.8rem",
+									},
+								}),
+								tray.select("", {
+									value: "ANIME",
+									fieldRef: fieldRef.shelfCreate.type,
+									options: [
+										{ label: "Anime", value: "ANIME" },
+										{ label: "Manga", value: "MANGA" },
+									],
+									style: {
+										height: "2rem",
+										borderRadius: "0 0.5rem 0.5rem 0",
+										marginLeft: "-1px",
+									},
+									onChange: ctx.eventHandler("create-shelf-type", ({ value }) => fieldRef.shelfCreate.type.setValue(value)),
+								}),
+							],
+							{ gap: 0, style: { alignItems: "center" } }
+						),
+						tray.flex(
+							[
+								tray.button("Cancel", {
+									intent: "gray-subtle",
+									size: "md",
+									style: { width: "100%", borderRadius: "0.5rem" },
+									onClick: ctx.eventHandler("create-shelf-dismiss", () => this.currentOverlay.set(null)),
+								}),
+								tray.button("Create", {
+									intent: "success-subtle",
+									size: "md",
+									style: { width: "100%", borderRadius: "0.5rem" },
+									onClick: ctx.eventHandler("create-shelf-save", () => {
+										const name = fieldRef.shelfCreate.name.current;
+										const type = fieldRef.shelfCreate.type.current;
 
-					const backdrop = tray.div([], {
-						className: "backdrop",
+										if (!name.length) return ctx.toast.error(`The name field cannot be blank!`);
+
+										vault.createShelf(name, type);
+										this.currentOverlay.set(null);
+										ctx.toast.success(`Successfully created shelf ${name}`);
+									}),
+								}),
+							],
+							{ style: { marginTop: "1rem" } }
+						),
+					],
+					{
+						className: "bg-gray-900 rounded-xl p-5",
+						style: { boxShadow: "0 0 10px black", width: "25rem", margin: "1rem" },
+					}
+				);
+			},
+			deleteItem(name: string, type: "shelf" | "media", uuid: string, id?: number) {
+				const headerText = type === "shelf" ? `Delete shelf?` : `Remove entry from this shelf?`;
+
+				const bodyTextProps = { className: "text-base self-start w-fit", style: { wordBreak: "break-word", display: "inline" } };
+				const bodyText =
+					type === "shelf"
+						? [
+								tray.text("Are you sure you want to delete ", bodyTextProps),
+								tray.text(`${name}`, {
+									className: `${bodyTextProps.className} font-semibold`,
+									style: {
+										...bodyTextProps.style,
+										color: "#fca5a5",
+									},
+								}),
+								tray.text("?", bodyTextProps),
+						  ]
+						: [
+								tray.text("Are you sure you want to remove ", bodyTextProps),
+								tray.text(`${name}`, {
+									className: `${bodyTextProps.className} font-semibold`,
+									style: {
+										...bodyTextProps.style,
+										color: "#fca5a5",
+									},
+								}),
+								tray.text(" from this shelf?", bodyTextProps),
+						  ];
+
+				return tray.stack(
+					[
+						tray.text(headerText, {
+							className: "font-semibold",
+							style: { borderBottom: "1px solid var(--border)", fontSize: "1.25rem", paddingBottom: "0.25rem", wordBreak: "break-word" },
+						}),
+						tray.div(bodyText),
+						tray.text("This action cannot be undone."),
+						tray.flex(
+							[
+								tray.button("Cancel", {
+									intent: "gray-subtle",
+									size: "md",
+									style: { width: "100%", borderRadius: "0.5rem" },
+									onClick: ctx.eventHandler("create-shelf-dismiss", () => this.currentOverlay.set(null)),
+								}),
+								tray.button("Delete", {
+									intent: "alert-subtle",
+									size: "md",
+									style: { width: "100%", borderRadius: "0.5rem" },
+									onClick: ctx.eventHandler("action:delete:item", () => {
+										try {
+											if (type === "shelf") {
+												vault.deleteShelf(uuid);
+												tabs.current.set(Tabs.Vault);
+												ctx.toast.success(`Successfully deleted shelf ${name}!`);
+											} else {
+												if (!id) return ctx.toast.error(`Cannot delete entry. Missing parameters: mediaId.`);
+												vault.removeFromShelf(uuid, id);
+												ctx.toast.success(`Successfully removed ${name} from current shelf!`);
+											}
+										} catch (e) {
+											ctx.toast.error((e as Error).message);
+										} finally {
+											tabs.currentOverlay.set(null);
+										}
+									}),
+								}),
+							],
+							{ style: { marginTop: "1rem" } }
+						),
+					],
+					{
+						className: "bg-gray-900 rounded-xl p-5",
+						style: { boxShadow: "0 0 10px black", margin: "0 1rem" },
+					}
+				);
+			},
+			formatShelfItem(shelf: Shelf) {
+				const covers = shelf.entries.map((x) => x.coverImage).filter(Boolean);
+
+				const background = tray.flex(
+					[
+						tray.div([], {
+							className: "vault-shelf-entry-card-background",
+							style: {
+								height: "100%",
+								width: "100%",
+								maxWidth: "15rem",
+								backgroundImage: `url(${covers[Math.floor(Math.random() * covers.length)]})`,
+								backgroundSize: "cover",
+								backgroundRepeat: "no-repeat",
+								backgroundPosition: "center",
+								maskImage: "linear-gradient(to left, rgba(0,0,0,0.7) 0%, transparent 100%)",
+							},
+						}),
+					],
+					{
 						style: {
-							background:
-								"linear-gradient( to right, rgb(var(--color-gray-900)) 10%, rgba(16,16,16,0.8) 50%, rgba(16,16,16,0.5) 100% )",
 							width: "100%",
 							height: "100%",
+							pointerEvents: "none",
 							position: "absolute",
-							top: "0",
 							left: "0",
+							right: "0",
+							justifyContent: "end",
 						},
-					});
+					}
+				);
 
-					const image = tray.flex([cover, backdrop], {
-						style: { position: "relative", width: "15em", overflow: "hidden" },
-					});
-
-					const text = tray.flex(
-						[
-							tray.text(shelf.name, {
+				const content = tray.stack(
+					[
+						tray.text(`${shelf.name}`, {
+							className: "font-semibold",
+							style: {
+								overflow: "hidden",
+								textOverflow: "ellipsis",
+								display: "-webkit-box",
+								"-webkit-line-clamp": "2",
+								"-webkit-box-orient": "vertical",
+								wordBreak: "break-word",
+								maxWidth: "24rem",
+							},
+						}),
+						tray.flex([
+							tray.text(`${shelf.type}`, {
 								style: {
-									fontWeight: "600",
-									fontSize: "1.2em",
-									zIndex: "1",
-									overflow: "hidden",
-									display: "-webkit-box",
-									WebkitBoxOrient: "vertical",
-									WebkitLineClamp: "2",
-									wordBreak: "break-word",
-									lineHeight: "normal",
+									width: "fit-content",
+									wordBreak: "normal",
+									fontSize: "0.7rem",
+									borderRadius: "999px",
+									padding: "0 0.75rem",
+									backgroundColor: `var(${shelf.type === "ANIME" ? "--indigo-800" : "--amber-700"})`,
 								},
 							}),
-							tray.div([], { style: { flex: "1" } }),
-							tray.text(
-								`${shelf.entries.length} ${
-									shelf.entries.length > 1 ? "entries" : "entry"
-								}`,
-								{
-									style: { fontSize: "14px", color: "#666", zIndex: "1" },
-								}
-							),
-						],
-						{
-							gap: 1,
-							direction: "column",
-							style: { padding: "0.75em", height: "6em", width: "100%" },
-						}
-					);
+							tray.text(`${shelf.entries.length > 0 ? `${shelf.entries.length} entries` : `${shelf.entries.length} entry`}`, {
+								style: {
+									width: "fit-content",
+									wordBreak: "normal",
+									fontSize: "0.7rem",
+									opacity: "0.7",
+								},
+							}),
+						]),
+					],
+					{ style: { justifyContent: "space-between", padding: "0.75rem", minHeight: "6rem", position: "relative" } }
+				);
 
-					const background = tray.flex(
-						[tray.div([], { style: { flex: "1" } }), image],
-						{
-							direction: "row",
-							className: "bg-gray-900 rounded-xl",
-							style: {
-								overflow: "hidden",
-								position: "absolute",
-								width: "100%",
-								left: "0",
-								top: "0",
-							},
-						}
-					);
-
-					const button = tray.button("", {
-						onClick: ctx.eventHandler(`shelf-navigate-${shelf.name}`, () => {
-							if (currentMedia.get() !== null) {
-								const media = currentMedia.get()!;
-								Vault.addToShelf(
-									shelf.name,
-									Vault.normalizeMediaToVaultItem(media),
-									media.type ?? "ANIME"
-								);
-								currentTrayPage.set(1);
-								currentShelf.set(null);
-								currentMedia.set(null);
-								tray.close();
-								ctx.toast.success(
-									`Added ${media.title?.userPreferred} to ${shelf.name}!`
-								);
-								return;
-							} else {
-								currentTrayPage.set(2);
-								currentShelf.set(shelf.name);
-								tray.update();
-							}
-							// tray.close();
-						}),
-						style: {
-							background: "transparent",
-							border: "none",
-							color: "transparent",
-							cursor: "pointer",
-							height: "100%",
-							left: "0px",
-							position: "absolute",
-							top: "0px",
-							width: "100%",
-							zIndex: "2",
-						},
-					});
-
-					return tray.flex([background, text, button], {
-						direction: "row",
-						className: "bg-gray-900 rounded-xl vault-shelf-btn",
-						style: {
-							overflow: "hidden",
-							position: "relative",
-							flex: "0.5",
-							minWidth: "18em",
-						},
-					});
-				});
-		}
-
-		function formatEntries() {
-			const noEntries = tray.text("No Entries", {
-				// prettier-ignore
-				className: "bg-gray-900 border border-[rgb(255_255_255_/_5%)] rounded-xl text-center",
-				style: {
-					padding: "25px 0",
-					fontSize: "1.5em",
-					fontWeight: "500",
-					color: "#666",
-				},
-			});
-
-			const collection = Vault.getCollection();
-			const shelfName = currentShelf.get();
-
-			if (!shelfName || !collection.has(shelfName)) return [noEntries];
-			const entries = collection.get(shelfName)?.entries ?? [];
-
-			if (!entries.length) return [noEntries];
-
-			return entries
-				.sort((a, b) =>
-					a.title.userPreferred.localeCompare(b.title.userPreferred)
-				)
-				.map((media) => {
-					const buttonStyle = {
-						background: "transparent",
-						border: "none",
-						color: "transparent",
-						cursor: "pointer",
-						height: "100%",
-						left: "0px",
+				const button = tray.button("\u200b", {
+					style: {
+						background: "none",
 						position: "absolute",
-						top: "0px",
 						width: "100%",
-					};
+						height: "100%",
+						top: "0",
+						padding: "0",
+					},
+					onClick: ctx.eventHandler(`vault-clicked:${shelf.uuid}`, () => {
+						state.currentShelfId.set(shelf.uuid);
+						tabs.current.set(Tabs.Shelf);
+					}),
+				});
 
-					const coverImage = tray.div([], {
-						className: "coverImage",
-						style: {
-							width: "100%",
-							height: "15rem",
-							flexShrink: "0",
-							flexGrow: "0",
-							backgroundImage: `url(${media.coverImage})`,
-							backgroundSize: "cover",
-							backgroundRepeat: "no-repeat",
-						},
-					});
+				return tray.div([background, content, button], {
+					className: "vault-shelf-entry-card-container bg-gray-900",
+					style: { position: "relative", borderRadius: "0.5rem", border: "1px solid var(--border)", minHeight: "fit-content", overflow: "hidden" },
+				});
+			},
+			formatShelfItemForSelection(shelf: Shelf) {
+				const media = state.currentMedia.get();
+				if (!media) return ctx.toast.error(`Could not find media to add to ${shelf.name}!`);
 
-					const backdrop = tray.div([], {
-						className: "backdrop",
+				const covers = shelf.entries.map((x) => x.coverImage).filter(Boolean);
+
+				const background = tray.flex(
+					[
+						tray.div([], {
+							className: "vault-shelf-entry-card-background",
+							style: {
+								height: "100%",
+								width: "100%",
+								maxWidth: "15rem",
+								backgroundImage: `url(${covers[Math.floor(Math.random() * covers.length)]})`,
+								backgroundSize: "cover",
+								backgroundRepeat: "no-repeat",
+								backgroundPosition: "center",
+								maskImage: "linear-gradient(to left, rgba(0,0,0,0.7) 0%, transparent 100%)",
+							},
+						}),
+					],
+					{
 						style: {
-							background:
-								"linear-gradient(to top, rgba(0,0,0,1)0%, rgba(0,0,0,1)15%, rgba(0,0,0,0)100%)",
 							width: "100%",
 							height: "100%",
+							pointerEvents: "none",
 							position: "absolute",
-							top: "0",
 							left: "0",
+							right: "0",
+							justifyContent: "end",
 						},
-					});
+					}
+				);
 
-					const title = tray.text(
-						String(media.title.userPreferred) || "\u200b",
-						{
+				const content = tray.stack(
+					[
+						tray.text(`Add ${media.title?.userPreferred ?? "media"}`, {
 							style: {
-								userSelect: "none",
-								padding: "0 10px",
-								lineHeight: "1.2",
-								fontWeight: "600",
-								fontSize: "14px",
-								whiteSpace: "normal",
-								wordBreak: "break-word",
-
-								display: "-webkit-box",
-								WebkitBoxOrient: "vertical",
-								WebkitLineClamp: "3",
 								overflow: "hidden",
-
-								maxHeight: "calc(1.2em * 3)",
-								position: "absolute",
-								bottom: "10px",
-								left: "0",
-								width: "100%",
+								textOverflow: "ellipsis",
+								display: "-webkit-box",
+								"-webkit-line-clamp": "1",
+								"-webkit-box-orient": "vertical",
+								wordBreak: "break-word",
+								maxWidth: "24rem",
+								fontSize: "0.85rem",
+								color: "rgb(var(--color-gray-400))",
 							},
-						}
-					);
+						}),
+						tray.text(`to ${shelf.name}`, {
+							className: "font-semibold",
+							style: {
+								overflow: "hidden",
+								textOverflow: "ellipsis",
+								display: "-webkit-box",
+								"-webkit-line-clamp": "2",
+								"-webkit-box-orient": "vertical",
+								wordBreak: "break-word",
+								maxWidth: "24rem",
+							},
+						}),
+					],
+					{ gap: 0, style: { padding: "0.75rem", minHeight: "6rem", position: "relative" } }
+				);
 
-					const goToPageBtn = tray.button("", {
-						onClick: ctx.eventHandler(`note-navigate-${media.id}`, () => {
-							ctx.screen.navigateTo("/entry", { id: media.id.toString() });
-							currentTrayPage.set(1);
-							currentShelf.set(null);
-							currentMedia.set(null);
+				const button = tray.button("\u200b", {
+					style: {
+						background: "none",
+						position: "absolute",
+						width: "100%",
+						height: "100%",
+						top: "0",
+						padding: "0",
+					},
+					onClick: ctx.eventHandler(`shelf-clicked:${shelf.uuid}`, () => {
+						try {
+							vault.addToShelf(shelf.uuid, media);
+							ctx.toast.success(`Added ${media.title?.userPreferred ?? "current media"} to ${shelf.name}!`);
 							tray.close();
-						}),
-						intent: "gray-subtle",
-						style: { ...buttonStyle },
-					});
+						} catch (e) {
+							ctx.toast.error((e as Error).message);
+						}
+					}),
+				});
 
-					const deleteButton = tray.button("\u200b\u2000\u200b", {
-						onClick: ctx.eventHandler(`remove-from-shelf-${media.id}`, () => {
-							Vault.removeFromShelf(shelfName, media.id, "ANIME");
-							tray.update();
+				return tray.div([background, content, button], {
+					className: "vault-shelf-entry-card-container bg-gray-900",
+					style: { position: "relative", borderRadius: "0.5rem", border: "1px solid var(--border)", minHeight: "fit-content", overflow: "hidden" },
+				});
+			},
+			formatMediaItem(entry: Shelf["entries"][number], type: $app.AL_MediaType, uuid: string) {
+				const background = tray.div([], {
+					className: "vault-shelf-entry-card-media-background",
+					style: {
+						height: "100%",
+						width: "100%",
+						backgroundImage: `url(${entry.coverImage})`,
+						backgroundSize: "cover",
+						backgroundRepeat: "no-repeat",
+						backgroundPosition: "center",
+						maskImage: "linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 100%)",
+						position: "absolute",
+					},
+				});
+
+				const content = tray.stack(
+					[
+						tray.text(`${entry.title.userPreferred}`, {
+							style: {
+								overflow: "hidden",
+								textOverflow: "ellipsis",
+								display: "-webkit-box",
+								"-webkit-line-clamp": "3",
+								"-webkit-box-orient": "vertical",
+								fontSize: "0.8rem",
+								wordBreak: "break-word",
+								lineHeight: "normal",
+							},
 						}),
-						intent: "alert",
+					],
+					{
 						style: {
-							position: "absolute",
-							top: "5px",
-							right: "5px",
-							backgroundImage: `url(${deleteIcon})`,
+							justifyContent: "end",
+							height: "100%",
+							padding: "0.5rem",
+							position: "relative",
+						},
+					}
+				);
+
+				const button = tray.button("\u200b", {
+					style: {
+						background: "none",
+						position: "absolute",
+						width: "100%",
+						height: "100%",
+						top: "0",
+						padding: "0",
+					},
+					onClick: ctx.eventHandler(`entry-clicked:${entry.id}`, () => {
+						tray.close();
+						ctx.screen.navigateTo(type === "ANIME" ? "/entry" : "/entry/manga", { id: `${entry.id}` });
+						tabs.current.set(Tabs.Vault);
+					}),
+				});
+
+				const closeBtn = tray.button("\u200b", {
+					intent: "alert",
+					style: {
+						position: "absolute",
+						width: "2rem",
+						height: "2rem",
+						padding: "0",
+						top: "0.255rem",
+						right: "0.25rem",
+						zIndex: "3",
+						borderRadius: "50%",
+						backgroundImage:
+							"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNjYWNhY2EiIGZpbGw9IiNjYWNhY2EiIHN0cm9rZS13aWR0aD0iMCIgdmlld0JveD0iMCAwIDI0IDI0IiBoZWlnaHQ9IjFlbSIgd2lkdGg9IjFlbSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNNSAyMGEyIDIgMCAwIDAgMiAyaDEwYTIgMiAwIDAgMCAyLTJWOGgyVjZoLTRWNGEyIDIgMCAwIDAtMi0ySDlhMiAyIDAgMCAwLTIgMnYySDN2Mmgyek05IDRoNnYySDl6TTggOGg5djEySDdWOHoiPjwvcGF0aD48cGF0aCBkPSJNOSAxMGgydjhIOXptNCAwaDJ2OGgtMnoiPjwvcGF0aD48L3N2Zz4=)",
+						backgroundRepeat: "no-repeat",
+						backgroundPosition: "center",
+						backgroundSize: "1.2rem",
+					},
+					onClick: ctx.eventHandler(`entry-delete:${entry.id}`, () => {
+						tabs.currentOverlay.set([this.deleteItem(entry.title.userPreferred, "media", uuid, entry.id)]);
+					}),
+				});
+
+				return tray.div([background, content, button, closeBtn], {
+					className: "vault-shelf-entry-card-media-container",
+					style: { position: "relative", borderRadius: "0.5rem", border: "1px solid var(--border)", width: "8rem", height: "12rem", overflow: "hidden" },
+				});
+			},
+			noEntries() {
+				return tray.text("No entries", {
+					style: {
+						backgroundColor: "rgb(var(--color-gray-900))",
+						borderRadius: "0.5rem",
+						border: "1px solid var(--border)",
+						width: "100%",
+						height: "100%",
+						textAlign: "center",
+						alignContent: "center",
+						opacity: "0.7",
+						fontSize: "1.2rem",
+					},
+				});
+			},
+			backButton() {
+				return tray.button("\u200b", {
+					intent: "gray-subtle",
+					className: "bg-transparent",
+					style: {
+						width: "2.5rem",
+						height: "2.5rem",
+						borderRadius: "50%",
+						backgroundImage:
+							"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNjYWNhY2EiIGZpbGw9IiNjYWNhY2EiIHN0cm9rZS13aWR0aD0iMCIgdmlld0JveD0iMCAwIDI1NiAyNTYiIGhlaWdodD0iMWVtIiB3aWR0aD0iMWVtIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0xMjggMjRhMTA0IDEwNCAwIDEgMCAxMDQgMTA0QTEwNC4xMSAxMDQuMTEgMCAwIDAgMTI4IDI0bTAgMTkyYTg4IDg4IDAgMSAxIDg4LTg4IDg4LjEgODguMSAwIDAgMS04OCA4OG00OC04OGE4IDggMCAwIDEtOCA4aC02MC42OWwxOC4zNSAxOC4zNGE4IDggMCAwIDEtMTEuMzIgMTEuMzJsLTMyLTMyYTggOCAwIDAgMSAwLTExLjMybDMyLTMyYTggOCAwIDAgMSAxMS4zMiAxMS4zMkwxMDcuMzEgMTIwSDE2OGE4IDggMCAwIDEgOCA4IiBzdHJva2U9Im5vbmUiLz48L3N2Zz4=)",
+						backgroundRepeat: "no-repeat",
+						backgroundPosition: "center",
+						backgroundSize: "1.5rem",
+					},
+					onClick: ctx.eventHandler("goto:back", () => {
+						// clear fieldrefs
+						tabs.current.set(Tabs.Vault);
+						state.shelfSearch.set("");
+					}),
+				});
+			},
+			[Tabs.Vault]() {
+				const header = this.header("Vault", "Create, edit, and view your personal curated list", [
+					tray.button("\u200b", {
+						intent: "gray-subtle",
+						className: "bg-transparent",
+						style: {
+							width: "2.5rem",
+							height: "2.5rem",
+							borderRadius: "50%",
+							backgroundImage:
+								"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNjYWNhY2EiIGZpbGw9IiNjYWNhY2EiIHN0cm9rZS13aWR0aD0iMCIgdmlld0JveD0iMCAwIDI0IDI0IiBoZWlnaHQ9IjFlbSIgd2lkdGg9IjFlbSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTkgMTFoLTZWNWgtMnY2SDV2Mmg2djZoMnYtNmg2eiI+PC9wYXRoPjwvc3ZnPg==)",
 							backgroundRepeat: "no-repeat",
 							backgroundPosition: "center",
-							opacity: "1",
+							backgroundSize: "1.5rem",
+							padding: "0",
+							paddingInlineStart: "0.5rem",
 						},
-					});
+						onClick: ctx.eventHandler("goto:create", () => {
+							tabs.currentOverlay.set([this.createShelf()]);
+						}),
+					}),
+				]);
 
-					return tray.flex(
-						[coverImage, backdrop, title, goToPageBtn, deleteButton],
-						{
-							className:
-								"bg-gray-900 border border-[rgb(255_255_255_/_5%)] rounded-xl vault-entries",
-							direction: "column",
-							style: {
-								overflow: "hidden",
-								position: "relative",
-								width: "10rem",
-								borderRadius: "0.75em",
-							},
-						}
-					);
+				const search = tray.input({
+					placeholder: `Search...`,
+					value: state.vaultSearch.get(),
+					style: {
+						borderRadius: "0.5rem",
+						paddingInlineStart: "2.5rem",
+						backgroundImage: `url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9IiM1YTVhNWEiIGhlaWdodD0iNTEyIiB3aWR0aD0iNTEyIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI+PHBhdGggZD0iTTQ5NSA0NjYuMiAzNzcuMiAzNDguNGMyOS4yLTM1LjYgNDYuOC04MS4yIDQ2LjgtMTMwLjlDNDI0IDEwMy41IDMzMS41IDExIDIxNy41IDExIDEwMy40IDExIDExIDEwMy41IDExIDIxNy41UzEwMy40IDQyNCAyMTcuNSA0MjRjNDkuNyAwIDk1LjItMTcuNSAxMzAuOC00Ni43TDQ2Ni4xIDQ5NWM4IDggMjAuOSA4IDI4LjkgMCA4LTcuOSA4LTIwLjkgMC0yOC44bS0yNzcuNS04My4zQzEyNi4yIDM4Mi45IDUyIDMwOC43IDUyIDIxNy41UzEyNi4yIDUyIDIxNy41IDUyQzMwOC43IDUyIDM4MyAxMjYuMyAzODMgMjE3LjVzLTc0LjMgMTY1LjQtMTY1LjUgMTY1LjQiLz48L3N2Zz4=)`,
+						backgroundSize: "1rem",
+						backgroundRepeat: "no-repeat",
+						backgroundPosition: "calc(0% + 0.75rem) center",
+					},
+					onChange: ctx.eventHandler("search-query", (e) => {
+						state.vaultSearch.set(String(e.value));
+					}),
 				});
+
+				const entries = Object.values(vault.storage)
+					.filter((x) =>
+						state.vaultSearch.get().length
+							? `${x.name} ${x.entries.map((e) => e.title.synonyms).flat()}`.toLowerCase().includes(state.vaultSearch.get().toLowerCase())
+							: true
+					)
+					.sort((A, B) => A.name.localeCompare(B.name))
+					.map(this.formatShelfItem);
+
+				const body = tray.stack(entries.length ? entries : [this.noEntries()], { style: { height: "25rem", overflowY: "scroll" } });
+
+				return tray.stack([this.overlay(), header, search, body], { style: { padding: "0.5rem" } });
+			},
+			[Tabs.Shelf]() {
+				const uuid = state.currentShelfId.get();
+				if (!uuid) {
+					tabs.current.set(Tabs.Vault);
+					return ctx.toast.error(`Could not get shelf information: uiid is ${uuid}`);
+				}
+				const shelf = vault.storage[uuid];
+				if (!shelf) {
+					tabs.current.set(Tabs.Vault);
+					return ctx.toast.error(`Shelf with uuid (${uuid}) could not be retrieved.`);
+				}
+
+				const header = this.header("Vault", `Viewing: ${shelf.name}`, [
+					tray.flex([
+						this.backButton(),
+						tray.button("\u200b", {
+							intent: "alert-subtle",
+							className: "bg-transparent",
+							style: {
+								width: "2.5rem",
+								height: "2.5rem",
+								borderRadius: "50%",
+								backgroundImage:
+									"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNmY2E1YTUiIGZpbGw9IiNmY2E1YTUiIHN0cm9rZS13aWR0aD0iMCIgdmlld0JveD0iMCAwIDI0IDI0IiBoZWlnaHQ9IjFlbSIgd2lkdGg9IjFlbSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNNSAyMGEyIDIgMCAwIDAgMiAyaDEwYTIgMiAwIDAgMCAyLTJWOGgyVjZoLTRWNGEyIDIgMCAwIDAtMi0ySDlhMiAyIDAgMCAwLTIgMnYySDN2Mmgyek05IDRoNnYySDl6TTggOGg5djEySDdWOHoiPjwvcGF0aD48cGF0aCBkPSJNOSAxMGgydjhIOXptNCAwaDJ2OGgtMnoiPjwvcGF0aD48L3N2Zz4=)",
+								backgroundRepeat: "no-repeat",
+								backgroundPosition: "center",
+								backgroundSize: "1.5rem",
+								padding: "0",
+								paddingInlineStart: "0.5rem",
+							},
+							onClick: ctx.eventHandler("action-delete", () => {
+								tabs.currentOverlay.set([this.deleteItem(shelf.name, "shelf", shelf.uuid)]);
+							}),
+						}),
+					]),
+				]);
+
+				const search = tray.input({
+					placeholder: `Search ${shelf.name}...`,
+					value: state.shelfSearch.get(),
+					style: {
+						borderRadius: "0.5rem",
+						paddingInlineStart: "2.5rem",
+						backgroundImage: `url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9IiM1YTVhNWEiIGhlaWdodD0iNTEyIiB3aWR0aD0iNTEyIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI+PHBhdGggZD0iTTQ5NSA0NjYuMiAzNzcuMiAzNDguNGMyOS4yLTM1LjYgNDYuOC04MS4yIDQ2LjgtMTMwLjlDNDI0IDEwMy41IDMzMS41IDExIDIxNy41IDExIDEwMy40IDExIDExIDEwMy41IDExIDIxNy41UzEwMy40IDQyNCAyMTcuNSA0MjRjNDkuNyAwIDk1LjItMTcuNSAxMzAuOC00Ni43TDQ2Ni4xIDQ5NWM4IDggMjAuOSA4IDI4LjkgMCA4LTcuOSA4LTIwLjkgMC0yOC44bS0yNzcuNS04My4zQzEyNi4yIDM4Mi45IDUyIDMwOC43IDUyIDIxNy41UzEyNi4yIDUyIDIxNy41IDUyQzMwOC43IDUyIDM4MyAxMjYuMyAzODMgMjE3LjVzLTc0LjMgMTY1LjQtMTY1LjUgMTY1LjQiLz48L3N2Zz4=)`,
+						backgroundSize: "1rem",
+						backgroundRepeat: "no-repeat",
+						backgroundPosition: "calc(0% + 0.75rem) center",
+					},
+					onChange: ctx.eventHandler("search-query", (e) => {
+						state.shelfSearch.set(String(e.value));
+					}),
+				});
+
+				const entries = shelf.entries
+					.filter((x) =>
+						state.shelfSearch.get().length ? x.title.synonyms.join(" ").toLowerCase().includes(state.shelfSearch.get().toLowerCase()) : true
+					)
+					.sort((A, B) => A.title.userPreferred.localeCompare(B.title.userPreferred))
+					.map((e) => this.formatMediaItem(e, shelf.type, shelf.uuid));
+
+				const body = tray.div(entries.length ? entries : [this.noEntries()], {
+					style: { height: "25rem", overflowY: "scroll", gap: "0.5rem", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(8rem, 1fr))" },
+				});
+
+				return tray.stack([this.overlay(), header, search, body], { style: { padding: "0.5rem" } });
+			},
+			[Tabs.AddToShelf]() {
+				const media = state.currentMedia.get();
+				if (!media) {
+					ctx.toast.error("Unable to retrieve media");
+					tray.close();
+					return tabs.current.set(Tabs.Vault);
+				}
+
+				const header = this.header("Add to Shelf", `Adding ${media.title?.userPreferred} to a shelf `, [
+					tray.button("\u200b", {
+						intent: "gray-subtle",
+						className: "bg-transparent",
+						style: {
+							width: "2.5rem",
+							height: "2.5rem",
+							borderRadius: "50%",
+							backgroundImage:
+								"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNjYWNhY2EiIGZpbGw9IiNjYWNhY2EiIHN0cm9rZS13aWR0aD0iMCIgdmlld0JveD0iMCAwIDI0IDI0IiBoZWlnaHQ9IjFlbSIgd2lkdGg9IjFlbSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTkgMTFoLTZWNWgtMnY2SDV2Mmg2djZoMnYtNmg2eiI+PC9wYXRoPjwvc3ZnPg==)",
+							backgroundRepeat: "no-repeat",
+							backgroundPosition: "center",
+							backgroundSize: "1.5rem",
+							padding: "0",
+							paddingInlineStart: "0.5rem",
+						},
+						onClick: ctx.eventHandler("goto:create", () => {
+							tabs.currentOverlay.set([this.createShelf()]);
+						}),
+					}),
+				]);
+
+				const search = tray.input({
+					placeholder: `Search...`,
+					value: state.vaultSearch.get(),
+					style: {
+						borderRadius: "0.5rem",
+						paddingInlineStart: "2.5rem",
+						backgroundImage: `url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9IiM1YTVhNWEiIGhlaWdodD0iNTEyIiB3aWR0aD0iNTEyIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI+PHBhdGggZD0iTTQ5NSA0NjYuMiAzNzcuMiAzNDguNGMyOS4yLTM1LjYgNDYuOC04MS4yIDQ2LjgtMTMwLjlDNDI0IDEwMy41IDMzMS41IDExIDIxNy41IDExIDEwMy40IDExIDExIDEwMy41IDExIDIxNy41UzEwMy40IDQyNCAyMTcuNSA0MjRjNDkuNyAwIDk1LjItMTcuNSAxMzAuOC00Ni43TDQ2Ni4xIDQ5NWM4IDggMjAuOSA4IDI4LjkgMCA4LTcuOSA4LTIwLjkgMC0yOC44bS0yNzcuNS04My4zQzEyNi4yIDM4Mi45IDUyIDMwOC43IDUyIDIxNy41UzEyNi4yIDUyIDIxNy41IDUyQzMwOC43IDUyIDM4MyAxMjYuMyAzODMgMjE3LjVzLTc0LjMgMTY1LjQtMTY1LjUgMTY1LjQiLz48L3N2Zz4=)`,
+						backgroundSize: "1rem",
+						backgroundRepeat: "no-repeat",
+						backgroundPosition: "calc(0% + 0.75rem) center",
+					},
+					onChange: ctx.eventHandler("search-query", (e) => {
+						state.vaultSearch.set(String(e.value));
+					}),
+				});
+
+				const entries = Object.values(vault.storage)
+					.filter((x) => x.type === media.type)
+					.filter((x) => (state.vaultSearch.get().length ? x.name.toLowerCase().includes(state.vaultSearch.get().toLowerCase()) : true))
+					.sort((A, B) => A.name.localeCompare(B.name))
+					.map((x) => this.formatShelfItemForSelection(x));
+
+				const body = tray.stack(entries.length ? entries : [this.noEntries()], { style: { height: "25rem", overflowY: "scroll" } });
+
+				return tray.stack([this.overlay(), header, search, body], { style: { padding: "0.5rem" } });
+			},
+			get() {
+				return this[tabs.current.get()]();
+			},
+		};
+
+		const animePageButton = ctx.action.newAnimePageButton({
+			label: "Add to shelf",
+			intent: "gray-subtle",
+		});
+
+		const mangaPageButton = ctx.action.newMangaPageButton({
+			label: "Add to shelf",
+			intent: "gray-subtle",
+		});
+
+		for (const button of [animePageButton, mangaPageButton]) {
+			button.mount();
+			button.onClick((e) => {
+				state.currentMedia.set(e.media);
+				tabs.current.set(Tabs.AddToShelf);
+				tray.open();
+			});
 		}
 
-		ctx.dom.onReady(() =>
-			ctx.dom
-				.createElement("style")
-				.then((e) =>
-					e.setInnerHTML(
-						`.vault-shelf-btn:hover .coverImage { transform: scale(1.1); transition: transform 0.3s ease; } .vault-shelf-btn:hover .backdrop { background: linear-gradient(to right, rgba(16,16,16,1)10%, rgba(16,16,16,0.5)50%, rgba(0,0,0,0)90%)!important; } .vault-entries:hover .coverImage { transform: scale(1.05); transition: transform 0.3s ease; } .vault-entries:hover .backdrop { background: linear-gradient(to top, rgba(0,0,0,1)0%, rgba(0,0,0,0.8)15%, rgba(0,0,0,0)50%)!important; }`
-					)
-				)
-		);
+		ctx.dom.onReady(async () => {
+			const style = await ctx.dom.createElement("style");
+			style.setText(
+				".vault-shelf-entry-card-background, .vault-shelf-entry-card-media-background { transition: transform ease-in-out 0.2s;  } .vault-shelf-entry-card-container:hover .vault-shelf-entry-card-background { transform: scale(1.1); mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, transparent 100%)!important } .vault-shelf-entry-card-media-container:hover .vault-shelf-entry-card-media-background { transform: scale(1.1); }"
+			);
+		});
+
+		tray.render(() => tabs.get());
+		tray.onClose(() => {
+			tabs.currentOverlay.set(null);
+			if (state.currentMedia.get()) {
+				state.currentMedia.set(null);
+				state.vaultSearch.set("");
+				tabs.current.set(Tabs.Vault);
+			}
+		});
+
+		// For older versions
+		vault.import();
 	});
 }
