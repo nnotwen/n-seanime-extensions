@@ -138,7 +138,6 @@ function init() {
 				if (!res.ok) return [];
 
 				const json = res.json();
-				console.log(json);
 				if (json.cssvalidation.errors) {
 					return json.cssvalidation.errors.map((x: any) => `Error at line ${x.line}: ${x.message}`);
 				}
