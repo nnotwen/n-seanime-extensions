@@ -48,8 +48,8 @@ function init() {
 			has(uuid: string) {
 				return this.storage.some((x) => x.uuid.toString() === uuid.toString());
 			},
-			add(style: Omit<$cssm.Style, "uuid" | "enabled">) {
-				const errors = this.validateCSS(`${style.style.desktop ?? ""} ${style.style.mobile ?? ""}`);
+			async add(style: Omit<$cssm.Style, "uuid" | "enabled">) {
+				const errors = await this.validateCSS(`${style.style.desktop ?? ""} ${style.style.mobile ?? ""}`);
 				if (errors.length) throw new Error(errors.join("\n"));
 
 				const uuid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
@@ -63,13 +63,11 @@ function init() {
 				return this.storage;
 			},
 			addFromMarketplace(style: $cssm.Style) {
-				const errors = this.validateCSS(`${style.style.desktop ?? ""} ${style.style.mobile ?? ""}`);
-
 				$storage.set(this.id, [...this.storage, style]);
 				this.updateCSS();
 				return this.storage;
 			},
-			edit(uuid: string, { name, mobile, desktop }: { name?: string; mobile?: string; desktop?: string }) {
+			async edit(uuid: string, { name, mobile, desktop }: { name?: string; mobile?: string; desktop?: string }) {
 				const arr = [...this.storage];
 				const index = arr.findIndex((x) => x.uuid.toString() === uuid.toString());
 				if (index === -1) throw new Error("Could not find style with uuid " + uuid);
@@ -80,7 +78,7 @@ function init() {
 				if (mobile !== undefined) style.style.mobile = mobile;
 				if (desktop !== undefined) style.style.desktop = desktop;
 
-				const errors = this.validateCSS(`${desktop ?? ""} ${mobile ?? ""}`);
+				const errors = await this.validateCSS(`${desktop ?? ""} ${mobile ?? ""}`);
 				if (errors.length) throw new Error(errors.join("\n"));
 
 				arr[index] = style;
@@ -135,53 +133,17 @@ function init() {
 				$store.set(`marketplace:${this.id}`, data);
 				return data;
 			},
-			validateCSS(css: string) {
-				const errors = [];
+			async validateCSS(css: string) {
+				const res = await ctx.fetch(`https://jigsaw.w3.org/css-validator/validator?text=${encodeURIComponent(css)}&lang=en&output=json`);
+				if (!res.ok) return [];
 
-				// Remove comments
-				css = css.replace(/\/\*[\s\S]*?\*\//g, "");
+				const json = res.json();
+				console.log(json);
+				if (json.cssvalidation.errors) {
+					return json.cssvalidation.errors.map((x: any) => `Error at line ${x.line}: ${x.message}`);
+				}
 
-				// Balanced braces
-				const open = (css.match(/{/g) || []).length;
-				const close = (css.match(/}/g) || []).length;
-				if (open !== close) errors.push(`Unbalanced braces: {=${open}, }=${close}`);
-
-				// Balanced quotes
-				if ((css.match(/"/g) || []).length % 2 !== 0) errors.push("Unbalanced double quotes.");
-				if ((css.match(/'/g) || []).length % 2 !== 0) errors.push("Unbalanced single quotes.");
-
-				// Split into rule blocks
-				const blocks = css
-					.split("}")
-					.map((b) => b.trim())
-					.filter(Boolean);
-				blocks.forEach((block, i) => {
-					const parts = block.split("{");
-					if (parts.length !== 2) {
-						errors.push(`Malformed block near #${i + 1}: "${block}"`);
-						return;
-					}
-					const selector = parts[0].trim();
-					const body = parts[1].trim();
-
-					if (!selector) errors.push(`Empty selector in block #${i + 1}.`);
-
-					// Check declarations
-					body.split(";").forEach((decl) => {
-						decl = decl.trim();
-						if (!decl) return;
-						if (!decl.includes(":")) {
-							errors.push(`Invalid declaration "${decl}" in selector "${selector}".`);
-						}
-					});
-
-					// Ensure last declaration ends with ;
-					if (!body.endsWith(";")) {
-						errors.push(`Missing semicolon before closing brace in selector "${selector}".`);
-					}
-				});
-
-				return errors;
+				return [];
 			},
 			async updateCSS() {
 				const style = (await ctx.dom.queryOne(`[data-ccssm="${this.id}"]`)) || (await ctx.dom.createElement("style"));
@@ -278,7 +240,7 @@ function init() {
 						backgroundPosition: "center",
 						backgroundSize: "1rem 1rem",
 					},
-					onClick: ctx.eventHandler("save-entry", () => {
+					onClick: ctx.eventHandler("save-entry", async () => {
 						if (!fieldRef.editor.name.current.length) {
 							return ctx.toast.error("Name is required!");
 						}
@@ -292,7 +254,7 @@ function init() {
 							const mobile = fieldRef.editor.mobile.current;
 
 							try {
-								manager.edit(style.uuid, { desktop, mobile, name: fieldRef.editor.name.current });
+								await manager.edit(style.uuid, { desktop, mobile, name: fieldRef.editor.name.current });
 								ctx.toast.success(`Successfully saved styles for ${style.name}`);
 								tabs.current.set(Tabs.Manager);
 							} catch (error) {
@@ -300,7 +262,7 @@ function init() {
 							}
 						} else {
 							try {
-								manager.add({
+								await manager.add({
 									name: fieldRef.editor.name.current,
 									author: "You",
 									style: {
