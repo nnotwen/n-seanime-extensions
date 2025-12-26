@@ -134,7 +134,7 @@ function init() {
 				return data;
 			},
 			async validateCSS(css: string) {
-				const res = await ctx.fetch(`https://jigsaw.w3.org/css-validator/validator?text=${encodeURIComponent(css)}&lang=en&output=json`);
+				const res = await ctx.fetch(`https://jigsaw.w3.org/css-validator/validator?text=${encodeURIComponent(css)}&profile=latest&lang=en&output=json`);
 				if (!res.ok) return [];
 
 				const json = res.json();
