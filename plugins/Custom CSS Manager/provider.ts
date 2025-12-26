@@ -23,6 +23,7 @@ function init() {
 				mobile: ctx.fieldRef<string>(""),
 				name: ctx.fieldRef<string>(""),
 			},
+			disableCSSValidation: ctx.fieldRef<boolean>($storage.get("options.css.validate-disabled") ?? false),
 		};
 
 		const state = {
@@ -134,6 +135,8 @@ function init() {
 				return data;
 			},
 			async validateCSS(css: string) {
+				if (fieldRef.disableCSSValidation.current) return [];
+
 				const res = await ctx.fetch(`https://jigsaw.w3.org/css-validator/validator?text=${encodeURIComponent(css)}&profile=latest&lang=en&output=json`);
 				if (!res.ok) return [];
 
@@ -168,6 +171,23 @@ function init() {
 
 		const tabs = {
 			current: ctx.state<Tabs>(Tabs.Manager),
+			currentOverlay: ctx.state<any[] | null>(null),
+			overlay() {
+				const overlay = this.currentOverlay.get();
+				return overlay
+					? tray.div([tray.flex(overlay, { style: { justifyContent: "center", alignItems: "center", width: "100%", height: "100%" } })], {
+							className: "fixed bg-black/80 z-[50]",
+							style: {
+								width: "calc(100%)",
+								height: "calc(100% - 1rem)",
+								top: "0%",
+								left: "0%",
+								borderRadius: "0.5rem",
+								border: "1px solid var(--border)",
+							},
+					  })
+					: ([] as any[]);
+			},
 			header(primary: string, subtext?: string, additionalComponents?: any[]) {
 				return tray.flex(
 					[
@@ -552,6 +572,65 @@ function init() {
 					},
 				});
 			},
+			settings() {
+				return tray.stack(
+					[
+						tray.flex(
+							[
+								tray.text("Settings", { className: "font-semibold", style: { alignContent: "center" } }),
+								tray.button("\u200b", {
+									intent: "gray-subtle",
+									className: "bg-transparent",
+									style: {
+										width: "2.5rem",
+										height: "2.5rem",
+										borderRadius: "50%",
+										backgroundImage:
+											"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNjYWNhY2EiIGZpbGw9IiNjYWNhY2EiIHN0cm9rZS13aWR0aD0iMCIgdmlld0JveD0iMCAwIDI1NiAyNTYiIGhlaWdodD0iMWVtIiB3aWR0aD0iMWVtIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0xMjggMjRhMTA0IDEwNCAwIDEgMCAxMDQgMTA0QTEwNC4xMSAxMDQuMTEgMCAwIDAgMTI4IDI0bTAgMTkyYTg4IDg4IDAgMSAxIDg4LTg4IDg4LjEgODguMSAwIDAgMS04OCA4OG00OC04OGE4IDggMCAwIDEtOCA4aC02MC42OWwxOC4zNSAxOC4zNGE4IDggMCAwIDEtMTEuMzIgMTEuMzJsLTMyLTMyYTggOCAwIDAgMSAwLTExLjMybDMyLTMyYTggOCAwIDAgMSAxMS4zMiAxMS4zMkwxMDcuMzEgMTIwSDE2OGE4IDggMCAwIDEgOCA4IiBzdHJva2U9Im5vbmUiLz48L3N2Zz4=)",
+										backgroundRepeat: "no-repeat",
+										backgroundPosition: "center",
+										backgroundSize: "1.5rem",
+										padding: "0",
+										paddingInlineStart: "0.5rem",
+									},
+									onClick: ctx.eventHandler("settings:back", () => this.currentOverlay.set(null)),
+								}),
+							],
+							{ style: { justifyContent: "space-between", borderBottom: "1px solid var(--border)", fontSize: "1.25rem", paddingBottom: "0.25rem" } }
+						),
+						tray.switch("Disable css validation", {
+							fieldRef: fieldRef.disableCSSValidation,
+							onChange: ctx.eventHandler("options.css.validate:switch", ({ value }) => {
+								fieldRef.disableCSSValidation.setValue(value);
+								$storage.set("options.css.validate", value);
+								this.currentOverlay.set([this.settings()]);
+							}),
+						}),
+						fieldRef.disableCSSValidation.current
+							? tray.text(
+									"Saving styles without validation may cause unexpected behavior inside your application. Invalid or unsupported rules may break layout inheritance. It is strongly recommended to validate your CSS before saving changes.",
+									{
+										style: {
+											padding: "0.5rem",
+											fontSize: "0.8rem",
+											wordBreak: "break-word",
+											lineHeight: "normal",
+											border: "1px solid var(--red-500)",
+											borderRadius: "0.5rem",
+											backgroundColor: "var(--red-950)",
+											color: "var(--red)",
+											marginTop: "0.25rem",
+										},
+									}
+							  )
+							: [],
+					],
+					{
+						className: "bg-gray-900 rounded-xl p-5",
+						style: { boxShadow: "0 0 10px black", width: "25rem", margin: "1rem" },
+					}
+				);
+			},
 			[Tabs.Manager]() {
 				const header = this.header("Custom CSS Manager", "Manage styles more effeciently", [
 					tray.flex(
@@ -640,11 +719,33 @@ function init() {
 				const currentStyle = state.currentStyle.get();
 
 				const header = this.header(currentStyle ? "Edit Style" : "Create Style", currentStyle ? "Edit current style" : "Create new style", [
-					tray.flex([this.backButton()], {
-						style: {
-							alignItems: "center",
-						},
-					}),
+					tray.flex(
+						[
+							this.backButton(),
+							tray.button("\u200b", {
+								intent: "gray-subtle",
+								className: "bg-transparent",
+								style: {
+									width: "2.5rem",
+									height: "2.5rem",
+									borderRadius: "50%",
+									backgroundImage:
+										"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNjYWNhY2EiIGZpbGw9Im5vbmUiIHN0cm9rZS13aWR0aD0iMiIgdmlld0JveD0iMCAwIDI0IDI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGhlaWdodD0iMWVtIiB3aWR0aD0iMWVtIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0xMi4yMiAyaC0uNDRhMiAyIDAgMCAwLTIgMnYuMThhMiAyIDAgMCAxLTEgMS43M2wtLjQzLjI1YTIgMiAwIDAgMS0yIDBsLS4xNS0uMDhhMiAyIDAgMCAwLTIuNzMuNzNsLS4yMi4zOGEyIDIgMCAwIDAgLjczIDIuNzNsLjE1LjFhMiAyIDAgMCAxIDEgMS43MnYuNTFhMiAyIDAgMCAxLTEgMS43NGwtLjE1LjA5YTIgMiAwIDAgMC0uNzMgMi43M2wuMjIuMzhhMiAyIDAgMCAwIDIuNzMuNzNsLjE1LS4wOGEyIDIgMCAwIDEgMiAwbC40My4yNWEyIDIgMCAwIDEgMSAxLjczVjIwYTIgMiAwIDAgMCAyIDJoLjQ0YTIgMiAwIDAgMCAyLTJ2LS4xOGEyIDIgMCAwIDEgMS0xLjczbC40My0uMjVhMiAyIDAgMCAxIDIgMGwuMTUuMDhhMiAyIDAgMCAwIDIuNzMtLjczbC4yMi0uMzlhMiAyIDAgMCAwLS43My0yLjczbC0uMTUtLjA4YTIgMiAwIDAgMS0xLTEuNzR2LS41YTIgMiAwIDAgMSAxLTEuNzRsLjE1LS4wOWEyIDIgMCAwIDAgLjczLTIuNzNsLS4yMi0uMzhhMiAyIDAgMCAwLTIuNzMtLjczbC0uMTUuMDhhMiAyIDAgMCAxLTIgMGwtLjQzLS4yNWEyIDIgMCAwIDEtMS0xLjczVjRhMiAyIDAgMCAwLTItMiIvPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjMiLz48L3N2Zz4=)",
+									backgroundRepeat: "no-repeat",
+									backgroundPosition: "center",
+									backgroundSize: "1.5rem",
+								},
+								onClick: ctx.eventHandler("goto:settings", () => {
+									tabs.currentOverlay.set([this.settings()]);
+								}),
+							}),
+						],
+						{
+							style: {
+								alignItems: "center",
+							},
+						}
+					),
 				]);
 
 				function switchTab(target: "desktop" | "mobile") {
@@ -768,7 +869,7 @@ function init() {
 					}
 				);
 
-				return tray.stack([header, body], { style: { padding: "0.5rem" } });
+				return tray.stack([this.overlay(), header, body], { style: { padding: "0.5rem" } });
 			},
 			[Tabs.Marketplace]() {
 				const header = this.header("Community made styles", "Download community made css snippets", [
