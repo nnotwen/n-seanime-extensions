@@ -520,6 +520,8 @@ function init() {
 						try {
 							vault.addToShelf(shelf.uuid, media);
 							ctx.toast.success(`Added ${media.title?.userPreferred ?? "current media"} to ${shelf.name}!`);
+							state.currentMedia.set(null);
+							tabs.current.set(Tabs.Vault);
 							tray.close();
 						} catch (e) {
 							ctx.toast.error((e as Error).message);
@@ -830,18 +832,31 @@ function init() {
 			},
 		};
 
+		const icon =
+			"data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE0IDdWMTNNMTEgMTBIMTdNMTQgMjFDMTEgMjEgOCAyMSA1IDIxQzMuODk1NDMgMjEgMy4wMDAwMSAyMC4xMDY5IDMuMDAwMDEgMTkuMDAyM0MzIDE2LjI4ODggMyAxMS41OTM0IDMgMTBNOSAxN0gxOUMyMC4xMDQ2IDE3IDIxIDE2LjEwNDYgMjEgMTVWNUMyMSAzLjg5NTQzIDIwLjEwNDYgMyAxOSAzSDlDNy44OTU0MyAzIDcgMy44OTU0MyA3IDVWMTVDNyAxNi4xMDQ2IDcuODk1NDMgMTcgOSAxN1oiIHN0cm9rZT0iI2NhY2FjYSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+";
+		const btnstyle = {
+			backgroundImage: `url(${icon})`,
+			backgroundRepeat: "no-repeat",
+			backgroundPosition: "calc(0% + 0.5rem) center",
+			backgroundSize: "1.5rem",
+			paddingInlineStart: "2.3rem",
+		};
+
 		const animePageButton = ctx.action.newAnimePageButton({
 			label: "Add to shelf",
 			intent: "gray-subtle",
+			style: btnstyle,
 		});
 
 		const mangaPageButton = ctx.action.newMangaPageButton({
 			label: "Add to shelf",
 			intent: "gray-subtle",
+			style: btnstyle,
 		});
 
 		for (const button of [animePageButton, mangaPageButton]) {
 			button.mount();
+			//@ts-ignore
 			button.onClick((e) => {
 				state.currentMedia.set(e.media);
 				tabs.current.set(Tabs.AddToShelf);
