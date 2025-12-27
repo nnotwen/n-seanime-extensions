@@ -30,11 +30,12 @@ function init() {
 
 		const buttonStyle = {
 			// prettier-ignore
-			backgroundImage: "url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iI2NhY2FjYSIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik01IDExLjVhLjUuNSAwIDAgMSAuNS0uNWg5YS41LjUgMCAwIDEgMCAxaC05YS41LjUgMCAwIDEtLjUtLjVtMC00YS41LjUgMCAwIDEgLjUtLjVoOWEuNS41IDAgMCAxIDAgMWgtOWEuNS41IDAgMCAxLS41LS41bTAtNGEuNS41IDAgMCAxIC41LS41aDlhLjUuNSAwIDAgMSAwIDFoLTlhLjUuNSAwIDAgMS0uNS0uNSIvPjxwYXRoIGQ9Ik0xLjcxMyAxMS44NjV2LS40NzRIMmMuMjE3IDAgLjM2My0uMTM3LjM2My0uMzE3IDAtLjE4NS0uMTU4LS4zMS0uMzYxLS4zMS0uMjIzIDAtLjM2Ny4xNTItLjM3My4zMWgtLjU5Yy4wMTYtLjQ2Ny4zNzMtLjc4Ny45ODYtLjc4Ny41ODgtLjAwMi45NTQuMjkxLjk1Ny43MDNhLjU5NS41OTUgMCAwIDEtLjQ5Mi41OTR2LjAzM2EuNjE1LjYxNSAwIDAgMSAuNTY5LjYzMWMuMDAzLjUzMy0uNTAyLjgtMS4wNTEuOC0uNjU2IDAtMS0uMzctMS4wMDgtLjc5NGguNTgyYy4wMDguMTc4LjE4Ni4zMDYuNDIyLjMwOS4yNTQgMCAuNDI0LS4xNDUuNDIyLS4zNS0uMDAyLS4xOTUtLjE1NS0uMzQ4LS40MTQtLjM0OGgtLjN6bS0uMDA0LTQuNjk5aC0uNjA0di0uMDM1YzAtLjQwOC4yOTUtLjg0NC45NTgtLjg0NC41ODMgMCAuOTYuMzI2Ljk2Ljc1NiAwIC4zODktLjI1Ny42MTctLjQ3Ni44NDhsLS41MzcuNTcydi4wM2gxLjA1NFY5SDEuMTQzdi0uMzk1bC45NTctLjk5Yy4xMzgtLjE0Mi4yOTMtLjMwNC4yOTMtLjUwOCAwLS4xOC0uMTQ3LS4zMi0uMzQyLS4zMmEuMzMuMzMgMCAwIDAtLjM0Mi4zMzh6TTIuNTY0IDVoLS42MzVWMi45MjRoLS4wMzFsLS41OTguNDJ2LS41NjdsLjYyOS0uNDQzaC42MzV6Ii8+PC9zdmc+)",
+			backgroundImage: "url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNOSA0djltMyAwSDZtNiAxNEg2bTAtN3MzLTMgNSAwLTUgNy01IDdtMCA3LjVzMi0zIDUtMSAwIDQuNSAwIDQuNSAzIDIuNSAwIDQuNS01LTEtNS0xbTUtMy41SDlNOSA0IDYgNm0xNSAxOGgyMk0yMSAzOGgyMk0yMSAxMGgyMiIgc3Ryb2tlPSIjY2FjYWNhIiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg==)",
 			backgroundRepeat: "no-repeat",
 			backgroundPosition: "0.85em center",
-			textIndent: "2em",
+			textIndent: "2.5em",
 			backgroundSize: "21.5px 21.5px",
+			paddingInlineStart: "0.5rem",
 		};
 		const button = ctx.action.newAnimePageButton({
 			label: "Watch Order",
@@ -511,7 +512,16 @@ function init() {
 
 		ctx.effect(() => {
 			// No abortcontroller so do this to avoid parallel api calls
-			button.setStyle(fetching.get() ? { ...buttonStyle, opacity: "0.5", pointerEvents: "none" } : buttonStyle);
+			button.setLoading(fetching.get());
+			button.setStyle({
+				...buttonStyle,
+				...(fetching.get()
+					? {
+							backgroundImage: "",
+							textIndent: "",
+					  }
+					: {}),
+			});
 		}, [fetching]);
 
 		// When users navigate to other page
