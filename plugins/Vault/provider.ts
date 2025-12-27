@@ -25,6 +25,10 @@ function init() {
 					this.type.setValue("ANIME");
 				},
 			},
+			shelfSettings: {
+				name: ctx.fieldRef<string>(""),
+				importString: ctx.fieldRef<string>(""),
+			},
 		};
 
 		const state = {
@@ -274,6 +278,93 @@ function init() {
 					}
 				);
 			},
+			importShelf() {
+				fieldRef.shelfSettings.importString.setValue("");
+				return tray.stack(
+					[
+						tray.flex(
+							[
+								tray.text("Import shelf", { className: "font-semibold", style: { alignContent: "center" } }),
+								tray.button("\u200b", {
+									intent: "alert-subtle",
+									className: "bg-transparent",
+									style: {
+										width: "2.5rem",
+										height: "2.5rem",
+										borderRadius: "50%",
+										backgroundImage:
+											"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNjYWNhY2EiIGZpbGw9IiNjYWNhY2EiIHN0cm9rZS13aWR0aD0iMCIgdmlld0JveD0iMCAwIDE2IDE2IiBoZWlnaHQ9IjFlbSIgd2lkdGg9IjFlbSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGNsaXAtcnVsZT0iZXZlbm9kZCIgZD0ibTcuMTE2IDgtNC41NTggNC41NTguODg0Ljg4NEw4IDguODg0bDQuNTU4IDQuNTU4Ljg4NC0uODg0TDguODg0IDhsNC41NTgtNC41NTgtLjg4NC0uODg0TDggNy4xMTYgMy40NDIgMi41NThsLS44ODQuODg0eiIgc3Ryb2tlPSJub25lIi8+PC9zdmc+)",
+										backgroundRepeat: "no-repeat",
+										backgroundPosition: "center",
+										backgroundSize: "1rem",
+									},
+									onClick: ctx.eventHandler("import:back", () => this.currentOverlay.set(null)),
+								}),
+							],
+							{ style: { justifyContent: "space-between", borderBottom: "1px solid var(--border)", fontSize: "1.25rem", paddingBottom: "0.25rem" } }
+						),
+						tray.input({
+							placeholder: "Import string",
+							fieldRef: fieldRef.shelfSettings.importString,
+							style: {
+								borderRadius: "0.5rem 0 0 0.5rem",
+							},
+						}),
+						tray.button("Import shelf", {
+							intent: "primary-subtle",
+							size: "md",
+							style: { marginTop: "0.5rem" },
+							onClick: ctx.eventHandler("shelf-import-items", async () => {
+								if (!fieldRef.shelfSettings.importString.current.trim().length) {
+									return ctx.toast.error(`Import String is required!`);
+								}
+
+								const importStr = fieldRef.shelfSettings.importString.current.trim();
+								try {
+									const data: VaultItem = JSON.parse(Buffer.from(importStr, "base64").toString("utf8"));
+									if (!data || !data.name || !data.type || !["ANIME", "MANGA"].includes(data.type) || !data.entries || !data.entries.length)
+										throw new Error(`Invalid import string!`);
+
+									for (const entry of data.entries) {
+										if (!entry.id || !entry.title?.userPreferred) throw new Error(`Invalid entry found!`);
+									}
+
+									const shelf = vault.createShelf(data.name, data.type);
+
+									for (const entry of data.entries) {
+										vault.addToShelf(shelf.uuid, {
+											id: entry.id,
+											title: {
+												userPreferred: entry.title.userPreferred,
+											},
+											synonyms: entry.title.synonyms,
+											coverImage: {
+												large: entry.coverImage,
+											},
+											seasonYear: entry.seasonYear ?? undefined,
+											season: entry.season ?? undefined,
+											type: data.type,
+										});
+									}
+
+									ctx.toast.success(`Added ${data.entries.length} entries to ${shelf.name}!`);
+									tabs.currentOverlay.set(null);
+								} catch (e) {
+									if (e instanceof SyntaxError) {
+										ctx.toast.error("Invalid import string");
+									} else {
+										ctx.toast.error((e as Error).message);
+									}
+								}
+							}),
+						}),
+					],
+					{
+						className: "bg-gray-900 rounded-xl p-5",
+						style: { boxShadow: "0 0 10px black", width: "25rem", margin: "1rem" },
+					}
+				);
+			},
 			deleteItem(name: string, type: "shelf" | "media", uuid: string, id?: number) {
 				const headerText = type === "shelf" ? `Delete shelf?` : `Remove entry from this shelf?`;
 
@@ -347,7 +438,171 @@ function init() {
 					],
 					{
 						className: "bg-gray-900 rounded-xl p-5",
-						style: { boxShadow: "0 0 10px black", margin: "0 1rem" },
+						style: { boxShadow: "0 0 10px black", margin: "0 1rem", overflowY: "scroll", maxHeight: "90%" },
+					}
+				);
+			},
+			shelfSettings(uuid: string) {
+				const shelf = vault.storage[uuid];
+				if (!shelf) {
+					ctx.toast.error(`Unable to find shelf with uuid ${uuid}`);
+					return tabs.current.set(Tabs.Shelf);
+				}
+
+				fieldRef.shelfSettings.name.setValue(shelf.name);
+				fieldRef.shelfSettings.importString.setValue("");
+
+				return tray.stack(
+					[
+						tray.flex(
+							[
+								tray.text("Settings", { className: "font-semibold", style: { alignContent: "center" } }),
+								tray.button("\u200b", {
+									intent: "alert-subtle",
+									className: "bg-transparent",
+									style: {
+										width: "2.5rem",
+										height: "2.5rem",
+										borderRadius: "50%",
+										backgroundImage:
+											"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNjYWNhY2EiIGZpbGw9IiNjYWNhY2EiIHN0cm9rZS13aWR0aD0iMCIgdmlld0JveD0iMCAwIDE2IDE2IiBoZWlnaHQ9IjFlbSIgd2lkdGg9IjFlbSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGNsaXAtcnVsZT0iZXZlbm9kZCIgZD0ibTcuMTE2IDgtNC41NTggNC41NTguODg0Ljg4NEw4IDguODg0bDQuNTU4IDQuNTU4Ljg4NC0uODg0TDguODg0IDhsNC41NTgtNC41NTgtLjg4NC0uODg0TDggNy4xMTYgMy40NDIgMi41NThsLS44ODQuODg0eiIgc3Ryb2tlPSJub25lIi8+PC9zdmc+)",
+										backgroundRepeat: "no-repeat",
+										backgroundPosition: "center",
+										backgroundSize: "1rem",
+									},
+									onClick: ctx.eventHandler("settings:back", () => this.currentOverlay.set(null)),
+								}),
+							],
+							{ style: { justifyContent: "space-between", borderBottom: "1px solid var(--border)", fontSize: "1.25rem", paddingBottom: "0.25rem" } }
+						),
+						tray.stack(
+							[
+								tray.text("Rename Shelf", { className: "font-semibold", style: { alignContent: "center" } }),
+								tray.flex(
+									[
+										tray.input({
+											fieldRef: fieldRef.shelfSettings.name,
+											style: {
+												borderRadius: "0.5rem 0 0 0.5rem",
+											},
+										}),
+										tray.button("Save", {
+											intent: "success-subtle",
+											style: {
+												borderRadius: "0 0.5rem 0.5rem 0",
+												height: "auto",
+											},
+											onClick: ctx.eventHandler("shelf-rename", () => {
+												if (!fieldRef.shelfSettings.name.current.trim().length) {
+													return ctx.toast.error(`Shelf name is required!`);
+												}
+												try {
+													const s = vault.editShelfName(shelf.uuid, fieldRef.shelfSettings.name.current);
+													ctx.toast.success(`Successfully renamed shelf to ${s.name}`);
+												} catch (e) {
+													ctx.toast.error((e as Error).message);
+												}
+											}),
+										}),
+									],
+									{ gap: 0 }
+								),
+							],
+							{ gap: 1 }
+						),
+						tray.stack(
+							[
+								tray.text("Import Items to shelf", { className: "font-semibold", style: { alignContent: "center" } }),
+								tray.flex(
+									[
+										tray.input({
+											placeholder: "Import string",
+											fieldRef: fieldRef.shelfSettings.importString,
+											style: {
+												borderRadius: "0.5rem 0 0 0.5rem",
+											},
+										}),
+										tray.button("Import", {
+											intent: "gray-subtle",
+											style: {
+												borderRadius: "0 0.5rem 0.5rem 0",
+												height: "auto",
+											},
+											onClick: ctx.eventHandler("shelf-import-items", async () => {
+												if (!fieldRef.shelfSettings.importString.current.trim().length) {
+													return ctx.toast.error(`Import String is required!`);
+												}
+
+												const importStr = fieldRef.shelfSettings.importString.current.trim();
+												try {
+													const data: VaultItem = JSON.parse(Buffer.from(importStr, "base64").toString("utf8"));
+													if (!data || !data.name || !data.type || !["ANIME", "MANGA"].includes(data.type) || !data.entries || !data.entries.length)
+														throw new Error(`Invalid import string!`);
+
+													if (data.type !== shelf.type) {
+														throw new Error(`Cannot import ${data.type} entries to ${shelf.type}!`);
+													}
+
+													for (const entry of data.entries) {
+														if (!entry.id || !entry.title?.userPreferred) throw new Error(`Invalid entry found!`);
+													}
+
+													for (const entry of data.entries) {
+														vault.addToShelf(shelf.uuid, {
+															id: entry.id,
+															title: {
+																userPreferred: entry.title.userPreferred,
+															},
+															synonyms: entry.title.synonyms,
+															coverImage: {
+																large: entry.coverImage,
+															},
+															seasonYear: entry.seasonYear ?? undefined,
+															season: entry.season ?? undefined,
+															type: data.type,
+														});
+													}
+
+													ctx.toast.success(`Added ${data.entries.length} entries to ${shelf.name}!`);
+													tabs.currentOverlay.set(null);
+												} catch (e) {
+													if (e instanceof SyntaxError) {
+														ctx.toast.error("Invalid import string");
+													} else {
+														ctx.toast.error((e as Error).message);
+													}
+												}
+											}),
+										}),
+									],
+									{ gap: 0 }
+								),
+							],
+							{ gap: 1 }
+						),
+						tray.button("Export shelf", {
+							intent: "primary-subtle",
+							size: "md",
+							style: { marginTop: "0.5rem" },
+							onClick: ctx.eventHandler("export", async () => {
+								try {
+									const data = Buffer.from(JSON.stringify(shelf), "utf8").toString("base64");
+									const script = await ctx.dom.createElement("script");
+									script.setText(`navigator.clipboard.writeText(${JSON.stringify(data).replace(/=+$/, "")})`);
+									ctx.setTimeout(() => {
+										script.remove();
+										tabs.currentOverlay.set(null);
+										ctx.toast.success("Copied the import string to clipboard!");
+									}, 500);
+								} catch (error) {
+									ctx.toast.error((error as Error).message);
+								}
+							}),
+						}),
+					],
+					{
+						className: "bg-gray-900 rounded-xl p-5",
+						style: { boxShadow: "0 0 10px black", width: "25rem", margin: "1rem" },
 					}
 				);
 			},
@@ -655,25 +910,45 @@ function init() {
 			},
 			[Tabs.Vault]() {
 				const header = this.header("Vault", "Create, edit, and view your personal curated list", [
-					tray.button("\u200b", {
-						intent: "gray-subtle",
-						className: "bg-transparent",
-						style: {
-							width: "2.5rem",
-							height: "2.5rem",
-							borderRadius: "50%",
-							backgroundImage:
-								"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNjYWNhY2EiIGZpbGw9IiNjYWNhY2EiIHN0cm9rZS13aWR0aD0iMCIgdmlld0JveD0iMCAwIDI0IDI0IiBoZWlnaHQ9IjFlbSIgd2lkdGg9IjFlbSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTkgMTFoLTZWNWgtMnY2SDV2Mmg2djZoMnYtNmg2eiI+PC9wYXRoPjwvc3ZnPg==)",
-							backgroundRepeat: "no-repeat",
-							backgroundPosition: "center",
-							backgroundSize: "1.5rem",
-							padding: "0",
-							paddingInlineStart: "0.5rem",
-						},
-						onClick: ctx.eventHandler("goto:create", () => {
-							tabs.currentOverlay.set([this.createShelf()]);
-						}),
-					}),
+					tray.flex(
+						[
+							tray.button("\u200b", {
+								intent: "gray-subtle",
+								className: "bg-transparent",
+								style: {
+									width: "2.5rem",
+									height: "2.5rem",
+									borderRadius: "50%",
+									backgroundImage:
+										"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNjYWNhY2EiIGZpbGw9IiNjYWNhY2EiIHN0cm9rZS13aWR0aD0iMCIgdmlld0JveD0iMCAwIDI0IDI0IiBoZWlnaHQ9IjFlbSIgd2lkdGg9IjFlbSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTkgMTFoLTZWNWgtMnY2SDV2Mmg2djZoMnYtNmg2eiI+PC9wYXRoPjwvc3ZnPg==)",
+									backgroundRepeat: "no-repeat",
+									backgroundPosition: "center",
+									backgroundSize: "1.5rem",
+								},
+								onClick: ctx.eventHandler("goto:create", () => {
+									tabs.currentOverlay.set([this.createShelf()]);
+								}),
+							}),
+							tray.button("\u200b", {
+								intent: "gray-subtle",
+								className: "bg-transparent",
+								style: {
+									width: "2.5rem",
+									height: "2.5rem",
+									borderRadius: "50%",
+									backgroundImage:
+										"url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9IiNjYWNhY2EiIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSJub25lIiBzdHJva2U9IiNjYWNhY2EiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIyIiBkPSJNMTcgMTNoLTZWNyIvPjxwYXRoIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2NhY2FjYSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2Utd2lkdGg9IjIiIGQ9Ik0yMSAzIDExIDEzbTEwIDB2N2ExIDEgMCAwIDEtMSAxSDRhMSAxIDAgMCAxLTEtMVY0YTEgMSAwIDAgMSAxLTFoNyIvPjwvc3ZnPg==)",
+									backgroundRepeat: "no-repeat",
+									backgroundPosition: "center",
+									backgroundSize: "1.2rem",
+								},
+								onClick: ctx.eventHandler("goto:import", () => {
+									tabs.currentOverlay.set([this.importShelf()]);
+								}),
+							}),
+						],
+						{ gap: 0 }
+					),
 				]);
 
 				const search = tray.input({
@@ -720,6 +995,25 @@ function init() {
 				const header = this.header("Vault", `Viewing: ${shelf.name}`, [
 					tray.flex([
 						this.backButton(),
+						tray.button("\u200b", {
+							intent: "gray-subtle",
+							className: "bg-transparent",
+							style: {
+								width: "2.5rem",
+								height: "2.5rem",
+								borderRadius: "50%",
+								backgroundImage:
+									"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNjYWNhY2EiIGZpbGw9Im5vbmUiIHN0cm9rZS13aWR0aD0iMiIgdmlld0JveD0iMCAwIDI0IDI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGhlaWdodD0iMWVtIiB3aWR0aD0iMWVtIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0xMi4yMiAyaC0uNDRhMiAyIDAgMCAwLTIgMnYuMThhMiAyIDAgMCAxLTEgMS43M2wtLjQzLjI1YTIgMiAwIDAgMS0yIDBsLS4xNS0uMDhhMiAyIDAgMCAwLTIuNzMuNzNsLS4yMi4zOGEyIDIgMCAwIDAgLjczIDIuNzNsLjE1LjFhMiAyIDAgMCAxIDEgMS43MnYuNTFhMiAyIDAgMCAxLTEgMS43NGwtLjE1LjA5YTIgMiAwIDAgMC0uNzMgMi43M2wuMjIuMzhhMiAyIDAgMCAwIDIuNzMuNzNsLjE1LS4wOGEyIDIgMCAwIDEgMiAwbC40My4yNWEyIDIgMCAwIDEgMSAxLjczVjIwYTIgMiAwIDAgMCAyIDJoLjQ0YTIgMiAwIDAgMCAyLTJ2LS4xOGEyIDIgMCAwIDEgMS0xLjczbC40My0uMjVhMiAyIDAgMCAxIDIgMGwuMTUuMDhhMiAyIDAgMCAwIDIuNzMtLjczbC4yMi0uMzlhMiAyIDAgMCAwLS43My0yLjczbC0uMTUtLjA4YTIgMiAwIDAgMS0xLTEuNzR2LS41YTIgMiAwIDAgMSAxLTEuNzRsLjE1LS4wOWEyIDIgMCAwIDAgLjczLTIuNzNsLS4yMi0uMzhhMiAyIDAgMCAwLTIuNzMtLjczbC0uMTUuMDhhMiAyIDAgMCAxLTIgMGwtLjQzLS4yNWEyIDIgMCAwIDEtMS0xLjczVjRhMiAyIDAgMCAwLTItMiIvPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjMiLz48L3N2Zz4=)",
+								backgroundRepeat: "no-repeat",
+								backgroundPosition: "center",
+								backgroundSize: "1.5rem",
+								padding: "0",
+								paddingInlineStart: "0.5rem",
+							},
+							onClick: ctx.eventHandler("goto:settings", () => {
+								tabs.currentOverlay.set([this.shelfSettings(shelf.uuid)]);
+							}),
+						}),
 						tray.button("\u200b", {
 							intent: "alert-subtle",
 							className: "bg-transparent",
