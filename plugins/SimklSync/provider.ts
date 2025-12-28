@@ -853,7 +853,10 @@ function init() {
 						const title = entry?.title;
 						state.syncDetail.set(`Processing ${title}`);
 
-						const { anidbId } = (await ctx.anime.getAnimeMetadata("anilist", entry.mediaId))?.mappings ?? {};
+						const anidbId = await ctx.anime
+							.getAnimeMetadata("anilist", entry.mediaId)
+							.then((data) => data?.mappings?.anidbId)
+							.catch(() => undefined);
 
 						if (!anidbId) {
 							log.sendWarning(`[SYNCLIST] Skipping ${title} (no equivalent SIMKL entry)`);
@@ -910,7 +913,7 @@ function init() {
 							historyPayload[entry.format === "MOVIE" ? "movies" : "shows"]!.push(item);
 						}
 					} catch (err) {
-						log.sendError(`[SYNCLIST] ${(err as Error).message}`);
+						log.sendError(`[SYNCLIST] ${(err as Error).message ?? err}`);
 						continue; // skip instead of killing the loop
 					}
 				}
