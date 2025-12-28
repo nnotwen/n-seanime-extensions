@@ -16,6 +16,24 @@ function init() {
 			AddToShelf = 3,
 		}
 
+		enum ShelfSort {
+			NameAscending = "nameasc",
+			NameDescending = "namedesc",
+			CreatedAtAscending = "createasc",
+			CreatedAtDescending = "createdesc",
+			lastUpdateAtAscending = "updateasc",
+			lastUpdateAtDescending = "updatedesc",
+		}
+
+		enum EntrySort {
+			MediaIdAscending = "idasc",
+			MediaIdDescending = "iddesc",
+			NameAscending = "nameasc",
+			NameDescending = "namedesc",
+			AddedAtAscending = "addedasc",
+			AddedAtDescending = "addeddesc",
+		}
+
 		const fieldRef = {
 			shelfCreate: {
 				name: ctx.fieldRef<string>(""),
@@ -29,6 +47,8 @@ function init() {
 				name: ctx.fieldRef<string>(""),
 				importString: ctx.fieldRef<string>(""),
 			},
+			shelfSort: ctx.fieldRef<ShelfSort>($storage.get("settings:shelf-sort") ?? ShelfSort.NameAscending),
+			entrySort: ctx.fieldRef<EntrySort>($storage.get("settings:entry-sort") ?? EntrySort.NameAscending),
 		};
 
 		const state = {
@@ -51,7 +71,8 @@ function init() {
 				});
 
 				const storage = this.storage;
-				storage[uuid] = { uuid, name, type, entries: [] };
+				const date = new Date().toISOString();
+				storage[uuid] = { uuid, name, type, entries: [], createdAt: date, lastUpdateAt: date };
 				$storage.set(this.id, storage);
 				return storage[uuid];
 			},
@@ -61,7 +82,8 @@ function init() {
 				if (!shelf) throw new Error(`Could not find shelf with uuid ${uuid}`);
 
 				shelf.name = name;
-				storage[uuid] = shelf;
+				storage[uuid] = { ...shelf, lastUpdateAt: new Date().toISOString() };
+				$storage.set(this.id, storage);
 				return shelf;
 			},
 			deleteShelf(uuid: string) {
@@ -76,6 +98,7 @@ function init() {
 				if (!shelf) throw new Error(`Could not find shelf with uuid ${uuid}!`);
 				if (shelf.type !== media.type) throw new Error(`Type mismatch: Cannot upsert media with type ${media.type} to shelf with type ${shelf.type}!`);
 
+				const date = new Date().toISOString();
 				const data: Shelf["entries"][number] = {
 					id: media.id,
 					title: {
@@ -85,10 +108,11 @@ function init() {
 					coverImage: media.coverImage?.large ?? "",
 					season: media.season ?? null,
 					seasonYear: "seasonYear" in media ? media.seasonYear ?? null : null,
+					addedAt: date,
 				};
 
 				shelf.entries = [...new Map(shelf.entries.map((e) => [e.id, e])).set(data.id, data).values()];
-				storage[uuid] = shelf;
+				storage[uuid] = { ...shelf, lastUpdateAt: date };
 				$storage.set(this.id, storage);
 				return shelf;
 			},
@@ -98,7 +122,7 @@ function init() {
 				if (!shelf) throw new Error(`Could not find shelf with uuid ${uuid}`);
 
 				shelf.entries = shelf.entries.filter((x) => x.id !== mediaId);
-				storage[uuid] = shelf;
+				storage[uuid] = { ...shelf, lastUpdateAt: new Date().toISOString() };
 				$storage.set(this.id, storage);
 				return shelf.entries.some((x) => x.id === mediaId);
 			},
@@ -127,6 +151,30 @@ function init() {
 				}
 
 				$storage.remove("ee67ab39-47e3-4e19-be06-d55ccaf50f36");
+			},
+			// previous-update-support
+			init() {
+				for (const oldShelf of Object.values(this.storage)) {
+					if (!oldShelf.createdAt) {
+						const shelf = this.createShelf(oldShelf.name, oldShelf.type);
+						for (const entry of oldShelf.entries) {
+							this.addToShelf(shelf.uuid, {
+								id: entry.id,
+								title: {
+									userPreferred: entry.title.userPreferred,
+								},
+								synonyms: entry.title.synonyms,
+								coverImage: {
+									large: entry.coverImage,
+								},
+								season: entry.season ?? undefined,
+								seasonYear: entry.seasonYear ?? undefined,
+								type: shelf.type,
+							});
+						}
+						this.deleteShelf(oldShelf.uuid);
+					}
+				}
 			},
 		};
 
@@ -197,6 +245,72 @@ function init() {
 						style: {
 							marginBottom: "1rem",
 						},
+					}
+				);
+			},
+			sortShelf() {
+				return tray.stack(
+					[
+						tray.flex(
+							[
+								tray.text("Sort shelf", { className: "font-semibold", style: { alignContent: "center" } }),
+								tray.button("\u200b", {
+									intent: "alert-subtle",
+									className: "bg-transparent",
+									style: {
+										width: "2.5rem",
+										height: "2.5rem",
+										borderRadius: "50%",
+										backgroundImage:
+											"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNjYWNhY2EiIGZpbGw9IiNjYWNhY2EiIHN0cm9rZS13aWR0aD0iMCIgdmlld0JveD0iMCAwIDE2IDE2IiBoZWlnaHQ9IjFlbSIgd2lkdGg9IjFlbSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGNsaXAtcnVsZT0iZXZlbm9kZCIgZD0ibTcuMTE2IDgtNC41NTggNC41NTguODg0Ljg4NEw4IDguODg0bDQuNTU4IDQuNTU4Ljg4NC0uODg0TDguODg0IDhsNC41NTgtNC41NTgtLjg4NC0uODg0TDggNy4xMTYgMy40NDIgMi41NThsLS44ODQuODg0eiIgc3Ryb2tlPSJub25lIi8+PC9zdmc+)",
+										backgroundRepeat: "no-repeat",
+										backgroundPosition: "center",
+										backgroundSize: "1rem",
+									},
+									onClick: ctx.eventHandler("import:back", () => this.currentOverlay.set(null)),
+								}),
+							],
+							{ style: { justifyContent: "space-between", borderBottom: "1px solid var(--border)", fontSize: "1.25rem", paddingBottom: "0.25rem" } }
+						),
+						tray.select("Sort Shelves", {
+							size: "md",
+							fieldRef: fieldRef.shelfSort,
+							options: [
+								{
+									label: "Name Ascending",
+									value: ShelfSort.NameAscending,
+								},
+								{
+									label: "Name Descending",
+									value: ShelfSort.NameDescending,
+								},
+								{
+									label: "Created Most Recent",
+									value: ShelfSort.CreatedAtDescending,
+								},
+								{
+									label: "Created Oldest",
+									value: ShelfSort.CreatedAtAscending,
+								},
+								{
+									label: "Updated Most Recent",
+									value: ShelfSort.lastUpdateAtDescending,
+								},
+								{
+									label: "Updated Oldest",
+									value: ShelfSort.lastUpdateAtAscending,
+								},
+							] satisfies { label: string; value: ShelfSort }[],
+							onChange: ctx.eventHandler("sort-changed", ({ value }) => {
+								fieldRef.shelfSort.setValue(value);
+								$storage.set("settings:shelf-sort", value);
+								tabs.currentOverlay.set(null);
+							}),
+						}),
+					],
+					{
+						className: "bg-gray-900 rounded-xl p-5",
+						style: { boxShadow: "0 0 10px black", width: "25rem", margin: "1rem" },
 					}
 				);
 			},
@@ -475,6 +589,40 @@ function init() {
 							],
 							{ style: { justifyContent: "space-between", borderBottom: "1px solid var(--border)", fontSize: "1.25rem", paddingBottom: "0.25rem" } }
 						),
+						tray.select("Sort Entries", {
+							size: "md",
+							fieldRef: fieldRef.entrySort,
+							options: [
+								{
+									label: "Name Ascending",
+									value: EntrySort.NameAscending,
+								},
+								{
+									label: "Name Descending",
+									value: EntrySort.NameDescending,
+								},
+								{
+									label: "Added Most Recent",
+									value: EntrySort.AddedAtDescending,
+								},
+								{
+									label: "Added Oldest",
+									value: EntrySort.AddedAtAscending,
+								},
+								{
+									label: "Media Id Ascending",
+									value: EntrySort.MediaIdAscending,
+								},
+								{
+									label: "Media Id Descending",
+									value: EntrySort.MediaIdDescending,
+								},
+							] satisfies { label: string; value: EntrySort }[],
+							onChange: ctx.eventHandler("sort-changed", ({ value }) => {
+								fieldRef.entrySort.setValue(value);
+								$storage.set("settings:entry-sort", value);
+							}),
+						}),
 						tray.stack(
 							[
 								tray.text("Rename Shelf", { className: "font-semibold", style: { alignContent: "center" } }),
@@ -664,6 +812,22 @@ function init() {
 								},
 							}),
 							tray.text(`${shelf.entries.length > 0 ? `${shelf.entries.length} entries` : `${shelf.entries.length} entry`}`, {
+								style: {
+									width: "fit-content",
+									wordBreak: "normal",
+									fontSize: "0.7rem",
+									opacity: "0.7",
+								},
+							}),
+							tray.text("•", {
+								style: {
+									width: "fit-content",
+									wordBreak: "normal",
+									fontSize: "0.7rem",
+									opacity: "0.7",
+								},
+							}),
+							tray.text(`Last updated: ${formatDate(new Date(shelf.lastUpdateAt))}`, {
 								style: {
 									width: "fit-content",
 									wordBreak: "normal",
@@ -951,21 +1115,42 @@ function init() {
 					),
 				]);
 
-				const search = tray.input({
-					placeholder: `Search...`,
-					value: state.vaultSearch.get(),
-					style: {
-						borderRadius: "0.5rem",
-						paddingInlineStart: "2.5rem",
-						backgroundImage: `url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9IiM1YTVhNWEiIGhlaWdodD0iNTEyIiB3aWR0aD0iNTEyIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI+PHBhdGggZD0iTTQ5NSA0NjYuMiAzNzcuMiAzNDguNGMyOS4yLTM1LjYgNDYuOC04MS4yIDQ2LjgtMTMwLjlDNDI0IDEwMy41IDMzMS41IDExIDIxNy41IDExIDEwMy40IDExIDExIDEwMy41IDExIDIxNy41UzEwMy40IDQyNCAyMTcuNSA0MjRjNDkuNyAwIDk1LjItMTcuNSAxMzAuOC00Ni43TDQ2Ni4xIDQ5NWM4IDggMjAuOSA4IDI4LjkgMCA4LTcuOSA4LTIwLjkgMC0yOC44bS0yNzcuNS04My4zQzEyNi4yIDM4Mi45IDUyIDMwOC43IDUyIDIxNy41UzEyNi4yIDUyIDIxNy41IDUyQzMwOC43IDUyIDM4MyAxMjYuMyAzODMgMjE3LjVzLTc0LjMgMTY1LjQtMTY1LjUgMTY1LjQiLz48L3N2Zz4=)`,
-						backgroundSize: "1rem",
-						backgroundRepeat: "no-repeat",
-						backgroundPosition: "calc(0% + 0.75rem) center",
-					},
-					onChange: ctx.eventHandler("search-query", (e) => {
-						state.vaultSearch.set(String(e.value));
-					}),
-				});
+				const search = tray.flex(
+					[
+						tray.input({
+							placeholder: `Search...`,
+							value: state.vaultSearch.get(),
+							style: {
+								borderRadius: "0.5rem 0 0 0.5rem",
+								paddingInlineStart: "2.5rem",
+								backgroundImage: `url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9IiM1YTVhNWEiIGhlaWdodD0iNTEyIiB3aWR0aD0iNTEyIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI+PHBhdGggZD0iTTQ5NSA0NjYuMiAzNzcuMiAzNDguNGMyOS4yLTM1LjYgNDYuOC04MS4yIDQ2LjgtMTMwLjlDNDI0IDEwMy41IDMzMS41IDExIDIxNy41IDExIDEwMy40IDExIDExIDEwMy41IDExIDIxNy41UzEwMy40IDQyNCAyMTcuNSA0MjRjNDkuNyAwIDk1LjItMTcuNSAxMzAuOC00Ni43TDQ2Ni4xIDQ5NWM4IDggMjAuOSA4IDI4LjkgMCA4LTcuOSA4LTIwLjkgMC0yOC44bS0yNzcuNS04My4zQzEyNi4yIDM4Mi45IDUyIDMwOC43IDUyIDIxNy41UzEyNi4yIDUyIDIxNy41IDUyQzMwOC43IDUyIDM4MyAxMjYuMyAzODMgMjE3LjVzLTc0LjMgMTY1LjQtMTY1LjUgMTY1LjQiLz48L3N2Zz4=)`,
+								backgroundSize: "1rem",
+								backgroundRepeat: "no-repeat",
+								backgroundPosition: "calc(0% + 0.75rem) center",
+							},
+							onChange: ctx.eventHandler("search-query", (e) => {
+								state.vaultSearch.set(String(e.value));
+							}),
+						}),
+						tray.button("\u200b", {
+							intent: "gray-subtle",
+							style: {
+								width: "2.5rem",
+								height: "2.5rem",
+								backgroundImage:
+									"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNjYWNhY2EiIGZpbGw9Im5vbmUiIHN0cm9rZS13aWR0aD0iMiIgdmlld0JveD0iMCAwIDI0IDI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGhlaWdodD0iMWVtIiB3aWR0aD0iMWVtIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0zIDZoMThNNyAxMmgxMG0tNyA2aDQiLz48L3N2Zz4=)",
+								backgroundRepeat: "no-repeat",
+								backgroundPosition: "center",
+								backgroundSize: "1.2rem",
+								borderRadius: "0 0.5rem 0.5rem 0",
+							},
+							onClick: ctx.eventHandler("goto:sort", () => {
+								tabs.currentOverlay.set([this.sortShelf()]);
+							}),
+						}),
+					],
+					{ gap: 0 }
+				);
 
 				const entries = Object.values(vault.storage)
 					.filter((x) =>
@@ -973,7 +1158,7 @@ function init() {
 							? `${x.name} ${x.entries.map((e) => e.title.synonyms).flat()}`.toLowerCase().includes(state.vaultSearch.get().toLowerCase())
 							: true
 					)
-					.sort((A, B) => A.name.localeCompare(B.name))
+					.sort(shelfSort)
 					.map(this.formatShelfItem);
 
 				const body = tray.stack(entries.length ? entries : [this.noEntries()], { style: { height: "25rem", overflowY: "scroll" } });
@@ -1056,7 +1241,7 @@ function init() {
 					.filter((x) =>
 						state.shelfSearch.get().length ? x.title.synonyms.join(" ").toLowerCase().includes(state.shelfSearch.get().toLowerCase()) : true
 					)
-					.sort((A, B) => A.title.userPreferred.localeCompare(B.title.userPreferred))
+					.sort(entrySort)
 					.map((e) => this.formatMediaItem(e, shelf.type, shelf.uuid));
 
 				const body = tray.div(entries.length ? entries : [this.noEntries()], {
@@ -1126,6 +1311,73 @@ function init() {
 			},
 		};
 
+		function shelfSort(A: Shelf, B: Shelf) {
+			const sort = fieldRef.shelfSort.current;
+
+			if (sort === ShelfSort.NameDescending) {
+				return B.name.localeCompare(A.name);
+			}
+
+			if (sort === ShelfSort.CreatedAtAscending) {
+				return new Date(A.createdAt).getTime() - new Date(B.createdAt).getTime();
+			}
+
+			if (sort === ShelfSort.CreatedAtDescending) {
+				return new Date(B.createdAt).getTime() - new Date(A.createdAt).getTime();
+			}
+
+			if (sort === ShelfSort.lastUpdateAtAscending) {
+				return new Date(A.lastUpdateAt).getTime() - new Date(B.lastUpdateAt).getTime();
+			}
+
+			if (sort === ShelfSort.lastUpdateAtDescending) {
+				return new Date(B.lastUpdateAt).getTime() - new Date(A.lastUpdateAt).getTime();
+			}
+			// Default: ShelfSort.NameAscending
+			return A.name.localeCompare(B.name);
+		}
+
+		function entrySort(A: Shelf["entries"][number], B: Shelf["entries"][number]) {
+			const sort = fieldRef.entrySort.current;
+
+			if (sort === EntrySort.NameDescending) {
+				return B.title.userPreferred.localeCompare(A.title.userPreferred);
+			}
+
+			if (sort === EntrySort.AddedAtAscending) {
+				return new Date(A.addedAt).getTime() - new Date(B.addedAt).getTime();
+			}
+
+			if (sort === EntrySort.AddedAtDescending) {
+				return new Date(B.addedAt).getTime() - new Date(A.addedAt).getTime();
+			}
+
+			if (sort === EntrySort.MediaIdAscending) {
+				return A.id - B.id;
+			}
+
+			if (sort === EntrySort.MediaIdDescending) {
+				return B.id - A.id;
+			}
+			// Default: EntrySort.NameAscending
+			return A.title.userPreferred.localeCompare(B.title.userPreferred);
+		}
+
+		function formatDate(date: Date): string {
+			const month = String(date.getMonth() + 1).padStart(2, "0");
+			const day = String(date.getDate()).padStart(2, "0");
+			const year = String(date.getFullYear()).slice(-2);
+
+			let hours = date.getHours();
+			const minutes = String(date.getMinutes()).padStart(2, "0");
+			const ampm = hours >= 12 ? "PM" : "AM";
+
+			hours = hours % 12;
+			if (hours === 0) hours = 12; // convert 0 → 12 for 12-hour format
+
+			return `${month}/${day}/${year} ${hours}:${minutes} ${ampm}`;
+		}
+
 		const icon =
 			"data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE0IDdWMTNNMTEgMTBIMTdNMTQgMjFDMTEgMjEgOCAyMSA1IDIxQzMuODk1NDMgMjEgMy4wMDAwMSAyMC4xMDY5IDMuMDAwMDEgMTkuMDAyM0MzIDE2LjI4ODggMyAxMS41OTM0IDMgMTBNOSAxN0gxOUMyMC4xMDQ2IDE3IDIxIDE2LjEwNDYgMjEgMTVWNUMyMSAzLjg5NTQzIDIwLjEwNDYgMyAxOSAzSDlDNy44OTU0MyAzIDcgMy44OTU0MyA3IDVWMTVDNyAxNi4xMDQ2IDcuODk1NDMgMTcgOSAxN1oiIHN0cm9rZT0iI2NhY2FjYSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+";
 		const btnstyle = {
@@ -1177,5 +1429,6 @@ function init() {
 
 		// For older versions
 		vault.import();
+		vault.init();
 	});
 }
