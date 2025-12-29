@@ -438,7 +438,7 @@ function init() {
 				async fetchAll<T extends "Anime" | "Manga">(
 					type: T
 				): Promise<Array<(T extends "Anime" ? $malsync.AnimeListEntryWrapper : $malsync.MangaListEntryWrapper) & { idMal: number }>> {
-					let path: string | null = `users/@me/${type.toLowerCase()}list?fields=list_status&limit=1000`;
+					let path: string | null = `users/@me/${type.toLowerCase()}list?fields=list_status{comments}&limit=1000`;
 					const all = [];
 
 					while (path) {
@@ -1237,6 +1237,10 @@ function init() {
 			return { day, month, year };
 		}
 
+		function normalizeString(str: string | null | undefined): string | undefined {
+			return LoadDoc(`<p>${str ?? ""}</p>`)("p").text();
+		}
+
 		function normalizeAnimeStatusToMal(status?: $app.AL_MediaListStatus) {
 			if (status === undefined || status === null) return undefined;
 			const map: Record<typeof status, $malsync.ListStatusAnime> = {
@@ -1394,19 +1398,14 @@ function init() {
 					log.sendWarning("[SYNCLIST] Sync job terminated.");
 					return state.syncing.set(false);
 				} else {
-					log.sendInfo(`[SYNCLIST] Found ${entries.length} entries!`);
+					log.sendInfo(`[SYNCLIST] Found ${entries.length} entries in AniList!`);
 					syncProgress.refresh(entries.length);
 				}
 
-				const malEntries =
-					syncType === ManageListSyncType.FullSync || syncType === ManageListSyncType.Patch
-						? await application.list.fetchAll(mediaType).catch((e) => (e as Error).message)
-						: ([] as (($malsync.AnimeListEntryWrapper | $malsync.MangaListEntryWrapper) & { idMal: number })[]);
-				if (typeof malEntries === "string") {
-					if (syncType === ManageListSyncType.Patch) {
-						return log.sendError(`[SYNCLIST] Terminating syncjob: ${malEntries}`);
-					} else log.sendError(`[SYNCLIST] Error encountered (fall back to method POST): ${malEntries}`);
-				}
+				log.send("[SYNCLIST] Querying Myanimelist entries...");
+				const malEntries = await application.list.fetchAll(mediaType).catch((e) => (e as Error).message);
+				if (typeof malEntries === "string") return log.sendError(`[SYNCLIST] Terminating syncjob: ${malEntries}`);
+				log.sendInfo(`[SYNCLIST] Found ${malEntries.length} entries in MAL!`);
 
 				while (state.syncing.get() && entries.length) {
 					const entry = entries.pop();
@@ -1418,7 +1417,7 @@ function init() {
 					state.syncDetail.set(`Syncing ${title}`);
 
 					if (!entry.idMal) {
-						log.sendWarning(`[SYNCLIST] ${title} has no equivalent malId [SKIPPING]`);
+						log.sendWarning(`[SYNCLIST] Skipping ${title} (no equivalent MAL entry)...`);
 						continue;
 					}
 
@@ -1427,66 +1426,60 @@ function init() {
 						continue;
 					}
 
-					if (syncType === ManageListSyncType.Patch && Array.isArray(malEntries)) {
-						try {
-							const existing = malEntries.find((x) => x.idMal === unwrap(entry.idMal));
-							await $_wait(1_500);
-							if (typeof existing === "string") {
-								log.sendError(`[SYNCLIST] ${title}: ${existing} [SKIPPED]`);
-								continue;
-							}
-
-							if (existing) {
-								log.sendWarning(`[SYNCLIST] ${title} already exists at MyAnimeList. Skipping entry...`);
-								continue;
-							}
-						} catch (error) {
-							log.sendError(`[SYNCLIST] ${title}: ${(error as Error).message}`);
-							continue;
-						}
-					}
-
-					if (syncType === ManageListSyncType.FullSync && typeof malEntries !== "string" && malEntries.length) {
-						popByProperty(malEntries as ($malsync.AllListEntry & { idMal: number })[], "idMal", unwrap(entry.idMal)!);
+					const malEntry = popByProperty(malEntries, "idMal", unwrap(entry.idMal)!);
+					if (!!malEntry && syncType === ManageListSyncType.Patch) {
+						log.sendWarning(`[SYNCLIST] Skipping ${title} (already-exists)...`);
+						continue;
 					}
 
 					const start = toISODate(entry.startedAt);
 					const finish = toISODate(entry.completedAt);
-					const notes = unwrap(entry.notes);
-					const score = unwrap(entry.score);
+					const notes = normalizeString(unwrap(entry.notes));
+					const score = Math.round((unwrap(entry.score) ?? NaN) / 10);
 					const status = unwrap(entry.status);
-					const shared: $malsync.ListUpdateBodyBase = {};
 
-					if (start) shared.start_date = start;
-					if (finish) shared.finish_date = finish;
-					if (notes && notes.length) shared.comments = notes;
-					if (score) shared.score = Math.round(score / 10);
+					const shared: $malsync.ListUpdateBodyBase = {};
+					if (!!start && start !== malEntry?.list_status?.start_date) shared.start_date = start;
+					if (!!finish && finish !== malEntry?.list_status?.finish_date) shared.finish_date = finish;
+					if ((notes ?? "") !== (normalizeString(malEntry?.list_status?.comments) ?? "")) shared.comments = notes;
+					if (!!score && score !== malEntry?.list_status?.score) shared.score = score;
 
 					const body =
 						mediaType === "Anime"
 							? (() => {
 									const b: $malsync.ListUpdateAnimeBody = { ...shared };
-									if (status) b.status = normalizeAnimeStatusToMal(status);
-									if (status === "REPEATING") b.is_rewatching = true;
-									if (entry.progress) b.num_watched_episodes = entry.progress;
-									if (entry.repeat) b.num_times_rewatched = entry.repeat;
+									const malAnime = malEntry?.list_status as $malsync.AnimeListEntry | undefined;
+									const malStatus = normalizeAnimeStatusToMal(status);
+									const malRewatching = unwrap(status) === "REPEATING";
+									if (malStatus !== malAnime?.status) b.status = malStatus;
+									if (malRewatching !== malAnime?.is_rewatching) b.is_rewatching = malRewatching;
+									if ((unwrap(entry.progress) ?? 0) !== (malAnime?.num_episodes_watched ?? 0)) b.num_watched_episodes = entry.progress;
+									if ((unwrap(entry.repeat) ?? 0) !== (malAnime?.num_times_rewatched ?? 0)) b.num_times_rewatched = entry.repeat;
 									return b;
 							  })()
 							: (() => {
 									const b: $malsync.ListUpdateMangaBody = { ...shared };
-									if (status) b.status = normalizeMangaStatusToMal(status);
-									if (status === "REPEATING") b.is_rereading = true;
-									if (entry.progress) b.num_chapters_read = entry.progress;
-									if (entry.repeat) b.num_times_reread = entry.repeat;
+									const malManga = malEntry?.list_status as $malsync.MangaListEntry | undefined;
+									const malStatus = normalizeMangaStatusToMal(status);
+									const malRereading = status === "REPEATING";
+									if (malStatus !== malManga?.status) b.status = malStatus;
+									if (malRereading !== malManga?.is_rereading) b.is_rereading = malRereading;
+									if ((unwrap(entry.progress) ?? 0) !== (malManga?.num_chapters_read ?? 0)) b.num_chapters_read = entry.progress;
+									if ((unwrap(entry.repeat) ?? 0) !== (malManga?.num_times_reread ?? 0)) b.num_times_reread = entry.repeat;
 									return b;
 							  })();
+
+					if (!Object.keys(body).length) {
+						log.sendWarning(`[SYNCLIST] Skipping ${title}. (no-new-update)...`);
+						continue;
+					}
 
 					await application.list
 						.patch(mediaType, entry.idMal, body)
 						.then(() => log.sendSuccess(`[SYNCLIST] Updated ${entry.title} on MyAnimeList.`))
 						.catch((e) => log.sendError(`[SYNCLIST] Failed to update ${entry.title} on MyAnimeList ${(e as Error).message} ${JSON.stringify(body)}`));
 
-					await $_wait(1_500);
+					await $_wait(500);
 				}
 
 				if (syncType === ManageListSyncType.FullSync && typeof malEntries !== "string" && state.syncing.get()) {
@@ -1572,7 +1565,7 @@ function init() {
 				// prettier-ignore
 				const query = "const query = ` mutation ( $mediaId: Int!, $status: MediaListStatus, $progress: Int, $progressVolumes: Int, $score: Float, $repeat: Int, $notes: String, $startedAt: FuzzyDateInput, $completedAt: FuzzyDateInput ) { SaveMediaListEntry( mediaId: $mediaId, status: $status, progress: $progress, progressVolumes: $progressVolumes, score: $score, repeat: $repeat, notes: $notes, startedAt: $startedAt, completedAt: $completedAt ) { id status progress progressVolumes score repeat notes startedAt { year month day } completedAt { year month day } } }";
 				const anilistGlobalEntries = await filterExistingMalIds(entries.map((e) => e.idMal)).catch((e) => (e as Error).message);
-				const anilistEntries = syncType === ManageListSyncType.FullSync ? getAnilistEntries(mediaType).filter((x) => !unwrap(x.private)) : [];
+				const anilistEntries = getAnilistEntries(mediaType).filter((x) => !unwrap(x.private));
 
 				if (typeof anilistGlobalEntries === "string") {
 					log.sendError(`[SYNCLIST] ${anilistGlobalEntries}`);
@@ -1595,29 +1588,39 @@ function init() {
 						continue;
 					}
 
+					if (!!listEntry && syncType === ManageListSyncType.Patch) {
+						log.sendWarning(`[SYNCLIST] Skipping ${title} (already-exists)...`);
+						continue;
+					}
+
 					const body: $malsync.AnilistSaveMediaListEntryVariables = { mediaId: id };
 					const startedAt = toFuzzyDate(entry.startedAt);
 					const completedAt = toFuzzyDate(entry.completedAt);
 
-					if (entry.status) body.status = entry.status;
-					if (entry.progress) body.progress = entry.progress;
-					if (entry.progressVolumes) body.progressVolumes = entry.progressVolumes;
-					if (entry.score) body.score = entry.score * 10;
-					if (entry.repeat) body.repeat = entry.repeat;
-					if (entry.notes) body.notes = entry.notes;
+					if (entry.status !== unwrap(listEntry?.status)) body.status = entry.status;
+					if (entry.progress !== (unwrap(listEntry?.progress) ?? 0)) body.progress = entry.progress;
+					// Seanime's Anilist ListEntry for Manga does not support progressVolumes atm
+					// if (entry.progressVolumes) body.progressVolumes = entry.progressVolumes;
+					if (entry.score !== Math.round((unwrap(listEntry?.score) ?? NaN) / 10)) body.score = entry.score * 10;
+					if ((entry.repeat ?? 0) !== unwrap(listEntry?.repeat)) body.repeat = entry.repeat ?? 0;
+					if (normalizeString(entry.notes) !== normalizeString(unwrap(listEntry?.notes))) body.notes = entry.notes ?? "";
 
-					if (startedAt) body.startedAt = startedAt;
-					if (completedAt) body.completedAt = completedAt;
+					if (toISODate(startedAt) !== toISODate(listEntry?.startedAt)) body.startedAt = startedAt;
+					if (toISODate(completedAt) !== toISODate(listEntry?.completedAt)) body.completedAt = completedAt;
 
-					// Add missing entries (Omit if already exists)
-					if (syncType === ManageListSyncType.Patch && listEntry) {
-						log.sendWarning(`[SYNCLIST] Skipped ${title ?? entry.title} (already exists)`);
+					// check if there are update in the entry
+					if (Object.keys(body).length === 1) {
+						log.sendWarning(`[SYNCLIST] Skipping ${title ?? entry.title} (no-update-body)...`);
 						continue;
+					} else {
+						console.log("Combined:", body);
 					}
 
 					await anilistQuery(query, body)
 						.then(() => log.sendSuccess(`[SYNCLIST] Added ${title ?? entry.title} to Anilist.`))
-						.catch((e) => log.sendError(`[SYNCLIST] Failed to add ${title ?? entry.title} to Anilist ${(e as Error).message} ${body}`));
+						.catch((e) =>
+							log.sendError(`[SYNCLIST] Failed to add ${title ?? entry.title} to Anilist ${(e as Error).message} ${JSON.stringify(body, null, 2)}`)
+						);
 					await $_wait(2_000);
 				}
 
@@ -1637,7 +1640,13 @@ function init() {
 
 						// Check if entry exists in shikomori/mal
 						if (!unwrap(anilistEntry.idMal)) {
-							log.sendWarning(`[SYNCLIST] Entry ${mediaTitle} does not exist in MyAnimeList. Skipping...`);
+							log.sendWarning(`[SYNCLIST] Skipping ${mediaTitle} (no equivalent MAL entry)...`);
+							continue;
+						}
+
+						// Check if entry is private
+						if (unwrap(anilistEntry.private)) {
+							log.sendWarning(`[SYNCLIST] Skipping ${mediaTitle} (private in AL)...`);
 							continue;
 						}
 
@@ -1833,11 +1842,9 @@ function init() {
 
 		tray.render(() => tabs.get());
 
-		ctx.setTimeout(() => {
-			$store.watch(log.id, () => {
-				if (tabs.current.get() === Tab.logs) tray.update();
-			});
-		}, 5_000);
+		ctx.setInterval(() => {
+			if (tabs.current.get() === Tab.logs) tray.update();
+		}, 1_500);
 
 		// Authenticate
 		log.send("Initializing extension...");
