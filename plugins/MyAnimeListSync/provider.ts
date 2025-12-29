@@ -1751,7 +1751,7 @@ function init() {
 						return {
 							...body,
 							status: data.status ? normalizeAnimeStatusToMal(data.status) : undefined,
-							is_rewatching: data.status === "REPEATING" || undefined,
+							is_rewatching: data.status ? data.status === "REPEATING" : undefined,
 							num_watched_episodes: data.progress,
 						};
 					}
@@ -1759,7 +1759,7 @@ function init() {
 					return {
 						...body,
 						status: data.status ? normalizeMangaStatusToMal(data.status) : undefined,
-						is_rereading: data.status === "REPEATING" || undefined,
+						is_rereading: data.status ? data.status === "REPEATING" : undefined,
 						num_chapters_read: data.progress,
 					};
 				},
