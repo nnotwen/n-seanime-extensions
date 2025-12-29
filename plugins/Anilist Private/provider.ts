@@ -7,8 +7,9 @@
 // @ts-ignore
 function init() {
 	$ui.register((ctx) => {
-		const storeId = "anilist-private";
-		const isCurrentMediaPrivate = ctx.state<boolean>(false);
+		const currentMediaId = ctx.state<number | null>(null);
+		const currentMediaType = ctx.state<$app.AL_MediaType | null>(null);
+		const isUpdating = ctx.state<boolean>(false);
 		// prettier-ignore
 		const privateIcon = "url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0iI2NhY2FjYSIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBkPSJtMTAuNzkgMTIuOTEyLTEuNjE0LTEuNjE1YTMuNSAzLjUgMCAwIDEtNC40NzQtNC40NzRsLTIuMDYtMi4wNkMuOTM4IDYuMjc4IDAgOCAwIDhzMyA1LjUgOCA1LjVhNyA3IDAgMCAwIDIuNzktLjU4OE01LjIxIDMuMDg4QTcgNyAwIDAgMSA4IDIuNWM1IDAgOCA1LjUgOCA1LjVzLS45MzkgMS43MjEtMi42NDEgMy4yMzhsLTIuMDYyLTIuMDYyYTMuNSAzLjUgMCAwIDAtNC40NzQtNC40NzR6Ii8+PHBhdGggZD0iTTUuNTI1IDcuNjQ2YTIuNSAyLjUgMCAwIDAgMi44MjkgMi44Mjl6bTQuOTUuNzA4LTIuODI5LTIuODNhMi41IDIuNSAwIDAgMSAyLjgyOSAyLjgyOXptMy4xNzEgNi0xMi0xMiAuNzA4LS43MDggMTIgMTJ6Ii8+PC9zdmc+)";
 		const btnIconStyles: IconButtonStyles = {
@@ -21,139 +22,117 @@ function init() {
 			paddingInlineStart: "0.5rem",
 		};
 
-		// FUNCTIONS
-		/**
-		 *
-		 * @param mediaId The Anilist media Id
-		 * @param isPrivate Whether to set the media to private
-		 * @returns
-		 */
-		// prettier-ignore
-		async function updateAnilistPrivateEntry(mediaId: number, isPrivate: boolean): Promise<PrivateEntryResponse> {
-			// prettier-ignore
-			const query = "mutation SaveMediaListEntry($mediaId: Int!, $private: Boolean!) { SaveMediaListEntry(mediaId: $mediaId, private: $private) { private media { id title { userPreferred } } updatedAt } }";
-			const variables = { mediaId, private: isPrivate };
+		const Private = {
+			id: "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+				const r = (Math.random() * 16) | 0;
+				const v = c === "x" ? r : (r & 0x3) | 0x8;
+				return v.toString(16);
+			}),
+			get store() {
+				return $store.getOrSet(this.id, () => [] as number[]);
+			},
+			has(mediaId: number) {
+				return this.store.includes(mediaId);
+			},
+			// Returns true if the mediaId was added
+			async add(mediaId: number) {
+				const data = await this.toggleAnilist(mediaId, true).catch((e) => (e as Error).message);
+				if (typeof data === "string") throw new Error(data);
+				if (data.data.SaveMediaListEntry.private !== true) throw new Error(`Conflict on returned data: request=private:true response=private:false`);
+				$store.set(this.id, [...new Set([...this.store, mediaId])]);
+				return this.has(mediaId);
+			},
+			// Returns true if mediaId was removed
+			async remove(mediaId: number) {
+				const data = await this.toggleAnilist(mediaId, false).catch((e) => (e as Error).message);
+				if (typeof data === "string") throw new Error(data);
+				if (data.data.SaveMediaListEntry.private !== false) throw new Error(`Conflict on returned data: request=private:false response=private:true`);
+				// prettier-ignore
+				$store.set(this.id, this.store.filter(n => mediaId !== n));
+				return !this.has(mediaId);
+			},
+			// Calls Anilist API;
+			async toggleAnilist(mediaId: number, isPrivate: boolean) {
+				// prettier-ignore
+				const query = "mutation SaveMediaListEntry($mediaId: Int!, $private: Boolean!) { SaveMediaListEntry(mediaId: $mediaId, private: $private) { private media { id title { userPreferred } } updatedAt } }";
+				const variables = { mediaId, private: isPrivate };
 
-			const res = await ctx.fetch("https://graphql.anilist.co", {
-				method: "POST",
-				headers: {
-					Authorization: "Bearer " + $database.anilist.getToken(),
-					"Content-Type": "application/json",
-					Accept: "application/json",
-				},
-				body: JSON.stringify({ query, variables }),
-			});
+				const res = await ctx.fetch("https://graphql.anilist.co", {
+					method: "POST",
+					headers: {
+						Authorization: "Bearer " + $database.anilist.getToken(),
+						"Content-Type": "application/json",
+						Accept: "application/json",
+					},
+					body: JSON.stringify({ query, variables }),
+				});
 
-			if (!res.ok) {
-				const errorCode = res.status;
-				const errorMsg = res.statusText;
-				return { data: null, error: `${errorCode}: ${errorMsg}` };
-			}
+				const json = res.json?.();
+				if (!res.ok || !json?.data) throw new Error(json?.errors?.map((e: any) => `(${e.status}) ${e.message}`).join("\n") ?? res.statusText);
 
-			const jsonData: AnilistData | AnilistError = await res.json();
-			if (!jsonData.data) {
-				const errors = jsonData.errors.map(e => `${e.status}: ${e.message}`);
-				return { data: null, error: errors.join("\n") };
-			}
+				return json as AnilistData;
+			},
+			async init() {
+				type listEntries = $app.AL_AnimeCollection_MediaListCollection_Lists_Entries | $app.AL_MangaCollection_MediaListCollection_Lists_Entries;
+				type media = $app.AL_BaseAnime | $app.AL_BaseManga;
+				type EntryWithMedia = listEntries & { media: media; private: boolean };
 
-			return { data: jsonData.data, error: undefined };
-		}
-
-		/**
-		 * Retrieves media info on private anime and cache them, which
-		 * can then be found on `$store.get(storeId.mediaId)`.
-		 */
-		function updateLocalStore(bypassCache: boolean) {
-			const MLC = $anilist.getAnimeCollection(bypassCache).MediaListCollection;
-			if (!MLC || !MLC.lists) return;
-
-			for (const list of MLC.lists) {
-				const entries = list.entries;
-				if (!entries?.length) continue;
-
-				for (const entry of entries) {
-					const media = entry.media;
-					const isPrivate = entry.private?.valueOf();
-
-					if (!media) continue;
-					$store.set(`${storeId}.${media.id}`, isPrivate);
+				for (const mediaType of ["Anime", "Manga"] as const) {
+					($anilist[`get${mediaType}Collection`](false).MediaListCollection?.lists ?? [])
+						.flatMap((list) => list.entries)
+						.filter((entry): entry is EntryWithMedia => Boolean(entry?.media && entry?.private?.valueOf()))
+						.forEach((entry) => this.add(entry.media.id));
 				}
-			}
+			},
+		};
+
+		async function handleButtonPress({ media }: { media: $app.AL_BaseAnime | $app.AL_BaseManga }) {
+			isUpdating.set(true);
+			return ctx.setTimeout(
+				() =>
+					Private[Private.has(media.id) ? "remove" : "add"](media.id)
+						.then(() => ctx.toast.success(`Set ${media.title?.userPreferred ?? "entry"} to ${Private.has(media.id) ? "private" : "public"}!`))
+						.catch((err) => ctx.toast.error(`Error on updating ${media.title?.userPreferred ?? "entry"}: ${(err as Error).message}`))
+						.finally(() => isUpdating.set(false)),
+				1_500
+			);
 		}
 
-		/**
-		 * Updates the button on the anime page whether it was set to private
-		 * or not (Red background if private, regular if not private)
-		 */
-		function updatePrivateTag(disabled: boolean) {
-			if (disabled) {
-				privateButton.setStyle({
-					...btnIconStyles,
-					backgroundImage: "",
-				});
-			} else {
-				privateButton.setStyle({
-					...btnIconStyles,
-					backgroundImage: privateIcon,
-				});
-			}
-			privateButton.setLoading(disabled);
-			privateButton.setIntent(isCurrentMediaPrivate.get() ? "alert" : "gray-subtle");
+		const animeButton = ctx.action.newAnimePageButton({ label: "\u200b", intent: "gray-subtle", style: btnIconStyles });
+		const mangaButton = ctx.action.newMangaPageButton({ label: "\u200b", intent: "gray-subtle", style: btnIconStyles });
+
+		for (const button of [animeButton, mangaButton]) {
+			button.mount();
+			(button.onClick as (h: (e: { media: $app.AL_BaseAnime | $app.AL_BaseManga }) => void) => void)(handleButtonPress);
 		}
-
-		/**
-		 * Wait for specified amount of time
-		 * @param ms Time to wait in milliseconds
-		 * @returns
-		 */
-		function $_wait(ms: number): Promise<void> {
-			return new Promise((resolve) => ctx.setTimeout(resolve, ms));
-		}
-
-		const privateButton = ctx.action.newAnimePageButton({
-			label: "\u200b\u200b",
-			intent: "gray-subtle",
-			style: btnIconStyles,
-		});
-
-		privateButton.onClick(async (event) => {
-			updatePrivateTag(true);
-
-			const key = `${storeId}.${event.media.id}`;
-			const current = $store.get(key) ?? false;
-			const next = !current;
-
-			const mediaTitle = event.media.title?.userPreferred || "current entry";
-			const response = await updateAnilistPrivateEntry(event.media.id, next);
-
-			// Wait for several seconds (helps avoid hitting ratelimit)
-			await $_wait(2_000);
-
-			if (!response.data) {
-				updatePrivateTag(false);
-				return ctx.toast.error(`Failed to update ${mediaTitle}!\n\n${response.error}`);
-			}
-
-			// Updates the button on the current anime page
-			isCurrentMediaPrivate.set(response.data.SaveMediaListEntry.private);
-			updatePrivateTag(false);
-
-			$store.set(key, response.data.SaveMediaListEntry.private);
-			return;
-		});
 
 		ctx.screen.onNavigate((e) => {
-			if (e.pathname === "/entry" && !!e.searchParams.id) {
+			if ((e.pathname === "/entry" || e.pathname === "/manga/entry") && !!e.searchParams.id) {
 				const id = parseInt(e.searchParams.id);
-				isCurrentMediaPrivate.set($store.get(`${storeId}.${id}`));
-				updatePrivateTag(false);
+				currentMediaId.set(id);
+				currentMediaType.set(e.pathname === "/entry" ? "ANIME" : "MANGA");
+			} else {
+				currentMediaId.set(null);
+				currentMediaType.set(null);
 			}
 		});
 
-		if ($database.anilist.getToken()) {
-			updateLocalStore(false);
-			privateButton.mount();
-			ctx.screen.loadCurrent();
-		}
+		ctx.effect(() => {
+			const mediaType = currentMediaType.get();
+			if (!mediaType) return;
+
+			const mediaId = currentMediaId.get();
+			if (!mediaId) return;
+
+			const updating = isUpdating.get();
+			const button = mediaType === "ANIME" ? animeButton : mangaButton;
+
+			button.setStyle({ ...btnIconStyles, ...(updating ? { backgroundImage: "" } : {}) });
+			button.setLoading(updating);
+			button.setIntent(Private.has(mediaId) ? "alert" : "gray-subtle");
+		}, [currentMediaId, isUpdating]);
+
+		Private.init();
+		ctx.screen.loadCurrent();
 	});
 }
