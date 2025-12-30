@@ -1104,7 +1104,7 @@ function init() {
 				status: normalizeAniListStatustoKitsu(status),
 				progress: status !== "COMPLETED" && progress ? progress : undefined,
 				reconsuming: status === "REPEATING",
-				reconsumeCount: repeat,
+				reconsumeCount: status === "REPEATING" ? (repeat ?? 0) + 1 : repeat,
 				ratingTwenty: score && score >= 10 ? Math.round(score / 5) : undefined,
 				startedAt: toISODate({
 					year: unwrap(entry.startedAt?.year),
