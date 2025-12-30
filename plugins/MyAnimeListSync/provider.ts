@@ -1870,7 +1870,6 @@ function init() {
 		if (application.token.getAccessToken() !== null) {
 			log.sendSuccess("Access token found!");
 			log.sendInfo("Fetching user info...");
-			console.log(application.token.accessToken.get());
 			return application.userInfo
 				.fetch()
 				.then((data) => {
