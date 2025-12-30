@@ -439,7 +439,7 @@ function init() {
 				async fetchAll<T extends "Anime" | "Manga">(
 					type: T
 				): Promise<Array<(T extends "Anime" ? $malsync.AnimeListEntryWrapper : $malsync.MangaListEntryWrapper) & { idMal: number }>> {
-					let path: string | null = `users/@me/${type.toLowerCase()}list?fields=list_status{comments}&limit=1000`;
+					let path: string | null = `users/@me/${type.toLowerCase()}list?fields=list_status{comments,num_times_rewatched,num_times_reread}&limit=1000`;
 					const all = [];
 
 					while (path) {
@@ -1449,7 +1449,7 @@ function init() {
 
 					const start = toISODate(entry.startedAt);
 					const finish = toISODate(entry.completedAt);
-					const notes = normalizeString(unwrap(entry.notes));
+					const notes = unwrap(entry.notes);
 					const score = Math.round((unwrap(entry.score) ?? NaN) / 10);
 					const status = unwrap(entry.status);
 
@@ -1468,7 +1468,8 @@ function init() {
 									const malRewatching = unwrap(status) === "REPEATING";
 									if (malStatus !== malAnime?.status) b.status = malStatus;
 									if (malRewatching !== malAnime?.is_rewatching) b.is_rewatching = malRewatching;
-									if ((unwrap(entry.progress) ?? 0) !== (malAnime?.num_episodes_watched ?? 0)) b.num_watched_episodes = entry.progress;
+									if ((unwrap(entry.progress) ?? 0) !== (malAnime?.num_episodes_watched ?? 0) && malAnime?.status !== "completed")
+										b.num_watched_episodes = entry.progress;
 									if ((unwrap(entry.repeat) ?? 0) !== (malAnime?.num_times_rewatched ?? 0)) b.num_times_rewatched = entry.repeat;
 									return b;
 							  })()
@@ -1479,7 +1480,8 @@ function init() {
 									const malRereading = status === "REPEATING";
 									if (malStatus !== malManga?.status) b.status = malStatus;
 									if (malRereading !== malManga?.is_rereading) b.is_rereading = malRereading;
-									if ((unwrap(entry.progress) ?? 0) !== (malManga?.num_chapters_read ?? 0)) b.num_chapters_read = entry.progress;
+									if ((unwrap(entry.progress) ?? 0) !== (malManga?.num_chapters_read ?? 0) && malManga?.status !== "completed")
+										b.num_chapters_read = entry.progress;
 									if ((unwrap(entry.repeat) ?? 0) !== (malManga?.num_times_reread ?? 0)) b.num_times_reread = entry.repeat;
 									return b;
 							  })();
@@ -1618,7 +1620,7 @@ function init() {
 					// if (entry.progressVolumes) body.progressVolumes = entry.progressVolumes;
 					if (entry.score !== Math.round((unwrap(listEntry?.score) ?? NaN) / 10)) body.score = entry.score * 10;
 					if ((entry.repeat ?? 0) !== unwrap(listEntry?.repeat)) body.repeat = entry.repeat ?? 0;
-					if (normalizeString(entry.notes) !== normalizeString(unwrap(listEntry?.notes))) body.notes = entry.notes ?? "";
+					if (entry.notes !== normalizeString(unwrap(listEntry?.notes))) body.notes = entry.notes ?? "";
 
 					if (toISODate(startedAt) !== toISODate(listEntry?.startedAt)) body.startedAt = startedAt;
 					if (toISODate(completedAt) !== toISODate(listEntry?.completedAt)) body.completedAt = completedAt;
@@ -1868,6 +1870,7 @@ function init() {
 		if (application.token.getAccessToken() !== null) {
 			log.sendSuccess("Access token found!");
 			log.sendInfo("Fetching user info...");
+			console.log(application.token.accessToken.get());
 			return application.userInfo
 				.fetch()
 				.then((data) => {
