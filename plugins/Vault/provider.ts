@@ -248,6 +248,91 @@ function init() {
 					}
 				);
 			},
+			addToOtherShelf(entry: Shelf["entries"][number], type: $app.AL_MediaType, uuid: string) {
+				return tray.stack(
+					[
+						tray.flex(
+							[
+								tray.text("Add entry to other shelf", { className: "font-semibold", style: { alignContent: "center" } }),
+								tray.button("\u200b", {
+									intent: "alert-subtle",
+									className: "bg-transparent",
+									style: {
+										width: "2.5rem",
+										height: "2.5rem",
+										borderRadius: "50%",
+										backgroundImage:
+											"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNjYWNhY2EiIGZpbGw9IiNjYWNhY2EiIHN0cm9rZS13aWR0aD0iMCIgdmlld0JveD0iMCAwIDE2IDE2IiBoZWlnaHQ9IjFlbSIgd2lkdGg9IjFlbSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGNsaXAtcnVsZT0iZXZlbm9kZCIgZD0ibTcuMTE2IDgtNC41NTggNC41NTguODg0Ljg4NEw4IDguODg0bDQuNTU4IDQuNTU4Ljg4NC0uODg0TDguODg0IDhsNC41NTgtNC41NTgtLjg4NC0uODg0TDggNy4xMTYgMy40NDIgMi41NThsLS44ODQuODg0eiIgc3Ryb2tlPSJub25lIi8+PC9zdmc+)",
+										backgroundRepeat: "no-repeat",
+										backgroundPosition: "center",
+										backgroundSize: "1rem",
+									},
+									onClick: ctx.eventHandler("add-to-shelf:back", () => this.currentOverlay.set(null)),
+								}),
+							],
+							{ style: { justifyContent: "space-between", borderBottom: "1px solid var(--border)", fontSize: "1.25rem", paddingBottom: "0.25rem" } }
+						),
+						tray.stack(
+							[
+								tray.text(`Add ${entry.title.userPreferred} to other shelves:`, {
+									style: {
+										fontSize: "0.85rem",
+										opacity: "0.7",
+										wordBreak: "break-word",
+									},
+								}),
+								tray.stack(
+									Object.values(vault.storage)
+										.filter((x) => x.type === type && !x.entries.some((y) => y.id === entry.id))
+										.sort((A, B) => A.name.localeCompare(B.name))
+										.map((shelf) =>
+											tray.button(`${shelf.name}`, {
+												size: "md",
+												intent: "gray-subtle",
+												className: "flex-shrink-0 line-clamp-1",
+												onClick: ctx.eventHandler(`add-to-shelf:${shelf.uuid}`, () => {
+													vault.addToShelf(shelf.uuid, {
+														id: entry.id,
+														title: {
+															userPreferred: entry.title.userPreferred,
+														},
+														synonyms: entry.title.synonyms,
+														coverImage: {
+															large: entry.coverImage,
+														},
+														season: entry.season ?? undefined,
+														seasonYear: entry.seasonYear ?? undefined,
+														type: shelf.type,
+													});
+													ctx.toast.success(`Successfully added ${entry.title.userPreferred} to ${shelf.name}!`);
+													tabs.currentOverlay.set([this.addToOtherShelf(entry, type, uuid)]);
+												}),
+												style: {
+													textAlign: "left",
+													width: "100%",
+												},
+											})
+										),
+									{
+										style: { overflowY: "scroll" },
+									}
+								),
+							],
+							{
+								style: {
+									overflowY: "scroll",
+									maxHeight: "25rem",
+									minHeight: "10rem",
+								},
+							}
+						),
+					],
+					{
+						className: "bg-gray-900 rounded-xl p-5",
+						style: { boxShadow: "0 0 10px black", width: "25rem", margin: "1rem" },
+					}
+				);
+			},
 			sortShelf() {
 				return tray.stack(
 					[
@@ -1009,14 +1094,14 @@ function init() {
 					}),
 				});
 
-				const closeBtn = tray.button("\u200b", {
+				const deleteBtn = tray.button("\u200b", {
 					intent: "alert",
 					style: {
 						position: "absolute",
-						width: "2rem",
-						height: "2rem",
+						width: "1.75rem",
+						height: "1.75rem",
 						padding: "0",
-						top: "0.255rem",
+						top: "0.25rem",
 						right: "0.25rem",
 						zIndex: "3",
 						borderRadius: "50%",
@@ -1024,14 +1109,36 @@ function init() {
 							"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNjYWNhY2EiIGZpbGw9IiNjYWNhY2EiIHN0cm9rZS13aWR0aD0iMCIgdmlld0JveD0iMCAwIDI0IDI0IiBoZWlnaHQ9IjFlbSIgd2lkdGg9IjFlbSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNNSAyMGEyIDIgMCAwIDAgMiAyaDEwYTIgMiAwIDAgMCAyLTJWOGgyVjZoLTRWNGEyIDIgMCAwIDAtMi0ySDlhMiAyIDAgMCAwLTIgMnYySDN2Mmgyek05IDRoNnYySDl6TTggOGg5djEySDdWOHoiPjwvcGF0aD48cGF0aCBkPSJNOSAxMGgydjhIOXptNCAwaDJ2OGgtMnoiPjwvcGF0aD48L3N2Zz4=)",
 						backgroundRepeat: "no-repeat",
 						backgroundPosition: "center",
-						backgroundSize: "1.2rem",
+						backgroundSize: "1rem",
 					},
 					onClick: ctx.eventHandler(`entry-delete:${entry.id}`, () => {
 						tabs.currentOverlay.set([this.deleteItem(entry.title.userPreferred, "media", uuid, entry.id)]);
 					}),
 				});
 
-				return tray.div([background, content, button, closeBtn], {
+				const addToOtherShelfBtn = tray.button("\u200b", {
+					intent: "primary",
+					style: {
+						position: "absolute",
+						width: "1.75rem",
+						height: "1.75rem",
+						padding: "0",
+						top: "2.25rem",
+						right: "0.25rem",
+						zIndex: "3",
+						borderRadius: "50%",
+						backgroundImage:
+							"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNjYWNhY2EiIGZpbGw9IiNjYWNhY2EiIHN0cm9rZS13aWR0aD0iMCIgdmlld0JveD0iMCAwIDI0IDI0IiBoZWlnaHQ9IjFlbSIgd2lkdGg9IjFlbSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTkgMTFoLTZWNWgtMnY2SDV2Mmg2djZoMnYtNmg2eiI+PC9wYXRoPjwvc3ZnPg==)",
+						backgroundRepeat: "no-repeat",
+						backgroundPosition: "center",
+						backgroundSize: "1rem",
+					},
+					onClick: ctx.eventHandler(`entry-addtoothershelf:${entry.id}`, () => {
+						tabs.currentOverlay.set([this.addToOtherShelf(entry, type, uuid)]);
+					}),
+				});
+
+				return tray.div([background, content, button, deleteBtn, addToOtherShelfBtn], {
 					className: "vault-shelf-entry-card-media-container",
 					style: { position: "relative", borderRadius: "0.5rem", border: "1px solid var(--border)", width: "8rem", height: "12rem", overflow: "hidden" },
 				});
