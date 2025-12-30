@@ -1,7 +1,7 @@
 {
 	"id": "myanimelistsync",
 	"name": "MyAnimeListSync",
-	"version": "1.0.8",
+	"version": "1.0.9",
 	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/MyAnimeListSync/myanimelistsync.json",
 	"language": "typescript",
 	"type": "plugin",

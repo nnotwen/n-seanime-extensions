@@ -55,6 +55,7 @@ function init() {
 			manageListJobtype: ctx.fieldRef<ManageListJobType>(ManageListJobType.Import),
 			manageListMediaType: ctx.fieldRef<"Anime" | "Manga">("Anime"),
 			manageListSyncType: ctx.fieldRef<ManageListSyncType>(ManageListSyncType.Patch),
+			deletePrivateEntries: ctx.fieldRef<boolean>(false),
 		};
 
 		const state = {
@@ -1165,6 +1166,17 @@ function init() {
 								},
 							}
 						),
+						fieldRefs.manageListJobtype.current === ManageListJobType.Import
+							? tray.switch("Delete private entries", {
+									fieldRef: fieldRefs.deletePrivateEntries,
+									onChange: ctx.eventHandler("delete-private", ({ value }: { value: boolean }) => fieldRefs.deletePrivateEntries.setValue(value)),
+									style: {
+										"--color-gray-900": "24 42 85",
+										"--color-gray-800": "26 46 94",
+										"--color-brand-500": "255 95 95",
+									},
+							  })
+							: [],
 						tray.button({
 							label: "Proceed",
 							intent: "alert",
@@ -1423,6 +1435,9 @@ function init() {
 
 					if (unwrap(entry.private)) {
 						log.sendWarning(`[SYNCLIST] Skipping ${title} (private)...`);
+						if (!fieldRefs.deletePrivateEntries.current) {
+							popByProperty(malEntries, "idMal", unwrap(entry.idMal) ?? 0);
+						}
 						continue;
 					}
 
@@ -1669,6 +1684,7 @@ function init() {
 				state.syncing.set(false);
 			}
 
+			fieldRefs.deletePrivateEntries.setValue(false);
 			state.syncDetail.set(`Waiting...`);
 			syncProgress.refresh(0);
 		}
