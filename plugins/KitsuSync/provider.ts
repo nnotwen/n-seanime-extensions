@@ -1096,46 +1096,28 @@ function init() {
 		}
 
 		async function resolvekitsuMediaIdFromAniListId(anilistId: number, type: "anime" | "manga"): Promise<number | null> {
-			if (type === "anime") {
-				return (
-					(await ctx.anime
-						.getAnimeMetadata("anilist", anilistId)
-						.then((data) => data?.mappings?.kitsuId)
-						.catch(() => undefined)) ?? null
-				);
-			} else {
-				const uri = `https://kitsu.io/api/edge/mappings?filter[externalSite]=anilist/${type}&filter[externalId]=${anilistId}&include=item`;
-				const res = await ctx.fetch(uri);
+			const uri = `https://kitsu.io/api/edge/mappings?filter[externalSite]=anilist/${type}&filter[externalId]=${anilistId}&include=item`;
+			const res = await ctx.fetch(uri, { headers: await kitsuTokenManager.withAuthHeaders() });
 
-				if (!res.ok) throw new Error(res.statusText);
-				const data = await res.json();
+			if (!res.ok) throw new Error(res.statusText);
+			const data = await res.json();
 
-				// Match the type passed in (anime or manga)
-				const item = data.included?.find((i: any) => i.type === type);
+			// Match the type passed in (anime or manga)
+			const item = data.included?.find((i: any) => i.type === type);
 
-				// Convert string ID to number if possible
-				return item?.id ? Number(item.id) : null;
-			}
+			// Convert string ID to number if possible
+			return item?.id ? Number(item.id) : null;
 		}
 
 		async function resolveAniListIdFromKitsuMediaId(kitsuId: number, type: "anime" | "manga"): Promise<number | null> {
-			if (type === "anime") {
-				return (
-					(await ctx.anime
-						.getAnimeMetadata("kitsu", kitsuId)
-						.then((data) => data?.mappings?.anilistId)
-						.catch(() => undefined)) ?? null
-				);
-			} else {
-				const uri = `https://kitsu.io/api/edge/${type}/${kitsuId}?include=mappings`;
-				const res = await ctx.fetch(uri);
+			const uri = `https://kitsu.io/api/edge/${type}/${kitsuId}?include=mappings`;
+			const res = await ctx.fetch(uri, { headers: await kitsuTokenManager.withAuthHeaders() });
 
-				if (!res.ok) throw new Error(res.statusText);
-				const data = await res.json();
+			if (!res.ok) throw new Error(res.statusText);
+			const data = await res.json();
 
-				const mapping = data.included?.find((m: any) => m.type === "mappings" && m.attributes?.externalSite === `anilist/${type}`);
-				return mapping?.attributes?.externalId ? Number(mapping.attributes.externalId) : null;
-			}
+			const mapping = data.included?.find((m: any) => m.type === "mappings" && m.attributes?.externalSite === `anilist/${type}`);
+			return mapping?.attributes?.externalId ? Number(mapping.attributes.externalId) : null;
 		}
 
 		async function getLibraryEntryId(kitsuMediaId: number): Promise<string | null> {
