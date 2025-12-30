@@ -439,7 +439,9 @@ function init() {
 				async fetchAll<T extends "Anime" | "Manga">(
 					type: T
 				): Promise<Array<(T extends "Anime" ? $malsync.AnimeListEntryWrapper : $malsync.MangaListEntryWrapper) & { idMal: number }>> {
-					let path: string | null = `users/@me/${type.toLowerCase()}list?fields=list_status{comments,num_times_rewatched,num_times_reread}&limit=1000`;
+					let path:
+						| string
+						| null = `users/@me/${type.toLowerCase()}list?fields=list_status{comments,num_times_rewatched,num_times_reread}&nsfw=true&limit=1000`;
 					const all = [];
 
 					while (path) {
