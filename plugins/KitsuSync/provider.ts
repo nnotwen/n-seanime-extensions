@@ -1206,11 +1206,15 @@ function init() {
 		function getAnilistEntries(mediaType: "Anime" | "Manga") {
 			return ($anilist[`get${mediaType}Collection`](false).MediaListCollection?.lists ?? [])
 				.flatMap((list) => list.entries)
-				.filter((entry): entry is $app.AL_AnimeCollection_MediaListCollection_Lists_Entries => Boolean(entry))
+				.filter((entry): entry is $app.AL_AnimeCollection_MediaListCollection_Lists_Entries => !!entry && !isCustomSource(entry.id))
 				.map((entry) => {
 					const { media, ...rest } = entry;
 					return { ...rest, title: media?.title?.userPreferred, mediaId: media?.id, idMal: media?.idMal };
 				});
+		}
+
+		function isCustomSource(mediaId?: number) {
+			return (mediaId ?? 0) >= 2 ** 31;
 		}
 
 		async function getMedia(mediaId: number) {
