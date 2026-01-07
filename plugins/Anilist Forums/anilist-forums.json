@@ -1,0 +1,20 @@
+{
+	"id": "anilist-forums",
+	"name": "Anilist Forums",
+	"version": "0.1.0",
+	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Anilist%20Forums/anilist-forums.json",
+	"language": "typescript",
+	"type": "plugin",
+	"description": "Instant access to Anilist forum threads inside Seanime.",
+	"author": "nnotwen",
+	"icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Anilist%20Forums/icon.png",
+	"website": "https://github.com/nnotwen/n-seanime-extensions",
+	"lang": "en",
+	"payloadURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Anilist%20Forums/provider.ts",
+	"plugin": {
+		"version": "1",
+		"permissions": {
+			"scopes": ["anilist", "database", "anilist-token"]
+		}
+	}
+}
