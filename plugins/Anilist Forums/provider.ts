@@ -661,13 +661,25 @@ function init() {
 					case "italic":
 						return tray.div(node.children.map(MarkdownParser.renderTray), { className: "inline italic" });
 					case "link":
-						return tray.div(
-							[
-								tray.div(node.children?.map(MarkdownParser.renderTray) ?? [], { className: "inline text-blue-400 no-underline hover:underline" }),
-								tray.anchor("\u200b", { href: node.href, target: "_blank", className: "absolute top-0 left-0 w-full h-full" }),
-							],
-							{ className: "relative inline" }
-						);
+						if (node.children[0]?.type === "text" && node.children[0].content === node.href) {
+							return tray.anchor(`${node.href}`, { href: node.href, target: "_blank", className: "text-blue-400 no-underline hover:underline" });
+						} else {
+							return tray.div((node.children ?? []).map(MarkdownParser.renderTray), {
+								className: "inline text-blue-400 hover:underline cursor-pointer",
+								onClick: ctx.eventHandler(`goto:${node.href}:${Math.random().toFixed(5)}`, () =>
+									tabs.externalLinkModal(
+										"Leaving Seanime",
+										[
+											tray.stack([
+												tray.text("This link is taking you to the following website"),
+												tray.text(`${node.href}`, { className: "p-3 rounded-lg border text-sm bg-gray-950 opacity-70" }),
+											]),
+										],
+										node.href
+									)
+								),
+							});
+						}
 					case "list":
 						return tray.stack(
 							node.items.map((item, i) =>
