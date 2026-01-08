@@ -1302,7 +1302,7 @@ function init() {
 						),
 						tray.flex([AVATAR, AVATAR_LABEL], { style: { fontSize: "0.8rem" } }),
 						tray.flex([...thread.categories.map(tabs.threadCategory), ...thread.mediaCategories.map(tabs.threadMediaCategory)], {
-							className: "mt-2 z-[2]",
+							className: "mt-2 z-[2] overflow-hidden",
 							style: { maskImage: "linear-gradient(to right, rgba(0,0,0,1) 85%, transparent 100%)" },
 						}),
 						tray.button("\u200b", {
@@ -1954,7 +1954,7 @@ function init() {
 						// Thread title
 						tray.text(`${thread.title}`, { className: "text-center break-words text-pretty font-semibold text-lg" }),
 						tray.flex([...thread.categories.map(tabs.threadCategory), thread.mediaCategories.map(tabs.threadMediaCategory)], {
-							className: "justify-center",
+							className: "justify-center flex-wrap",
 						}),
 						tray.flex(
 							[
