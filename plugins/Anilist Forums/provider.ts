@@ -115,9 +115,21 @@ function init() {
 				if (!response.data) throw new Error(response.errors.map((e) => `[${e.status}] ${e.message}`).join("\n"));
 				return response.data.Page;
 			},
-			async toggleLikeThreadComment(threadCommentId: number) {
-				const query = "mutation($threadCommentId: Int!) { ToggleLike(id: $threadCommentId, type: THREAD_COMMENT) { id } }";
-				const response: { data: { ToggleLike: { id: number } } } | $forums.AnilistError = await this.fetch(query, { threadCommentId }, true);
+			async toggleLike(id: number, type: $forums.LikeableType) {
+				const query = "mutation ($id: Int! $type: LikeableType) { ToggleLike(id: $id, type: $type) { id } }";
+				const response: { data: { ToggleLike: { id: number } } } | $forums.AnilistError = await this.fetch(query, { id, type }, true);
+
+				if (!response.data) throw new Error(response.errors.map((e) => `[${e.status}] ${e.message}`).join("\n"));
+				return response.data;
+			},
+			async toggleThreadSubscription(threadId: number, subscribe: boolean) {
+				const query =
+					"mutation ($threadId: Int!, $subscribe: Boolean!) { ToggleThreadSubscription(threadId: $threadId, subscribe: $subscribe) { id isSubscribed } }";
+				const response: { data: { ToggleThreadSubscription: { id: number; isSubscribed: boolean } } } | $forums.AnilistError = await this.fetch(
+					query,
+					{ threadId, subscribe },
+					true
+				);
 
 				if (!response.data) throw new Error(response.errors.map((e) => `[${e.status}] ${e.message}`).join("\n"));
 				return response.data;
@@ -721,7 +733,7 @@ function init() {
 						return tray.flex(
 							[
 								tray.div([], {
-									className: "bg-no-repeat bg-center bg-contain",
+									className: "bg-no-repeat bg-center bg-contain w-10 h-10",
 									style: {
 										backgroundImage: `url(${icons.youtube})`,
 										width: "5rem",
@@ -731,7 +743,7 @@ function init() {
 								tray.anchor("\u200b", { href: node.src, className: "absolute w-full h-full top-0 left-0 z-[2]" }),
 							],
 							{
-								className: "relative w-full block bg-no-repeat bg-center bg-contain justify-center items-center",
+								className: "relative flex w-full block bg-no-repeat bg-center bg-contain justify-center items-center",
 								style: {
 									backgroundImage: `url(${node.thumbnail})`,
 									aspectRatio: "4",
@@ -864,6 +876,52 @@ function init() {
 						successCallback();
 					}),
 				});
+
+				tabs.currentOverlay.set([
+					tray.stack(
+						[
+							tray.flex([TITLE, CLOSE_BUTTON], { className: "justify-between items-center border-b" }),
+							BODY,
+							tray.flex([CANCEL_BUTTON, CONFIRM_BUTTON], { className: "justify-center mt-4" }),
+						],
+						{
+							gap: 4,
+							className: "p-4 m-2 bg-gray-900 border rounded-lg",
+						}
+					),
+				]);
+			},
+			externalLinkModal(title: string | any[], body: string | any, href: string, acceptButtonProps: Partial<Parameters<$ui.Tray["anchor"]>[1]> = {}) {
+				const TITLE = typeof title === "string" ? tray.text(title, { className: "font-semibold text-lg line-clamp-1" }) : tray.div(title);
+				const BODY = typeof body === "string" ? tray.text(body, { className: "opacity-70 break-words" }) : tray.div(body);
+
+				const CLOSE_BUTTON = tray.button("\u200b", {
+					intent: "alert-subtle",
+					className: "bg-transparent w-10 h-10 rounded-full bg-no-repeat bg-center",
+					style: { backgroundImage: `url(${icons.close})`, backgroundSize: "1rem" },
+					onClick: ctx.eventHandler("modal:close", () => this.currentOverlay.set(null)),
+				});
+				const CANCEL_BUTTON = tray.button("Cancel", {
+					intent: "gray-subtle",
+					className: "w-fit",
+					onClick: ctx.eventHandler("modal:cancel", () => tabs.currentOverlay.set(null)),
+				});
+				const CONFIRM_BUTTON = tray.div(
+					[
+						tray.anchor("Take me there", {
+							href: acceptButtonProps.href ?? href,
+							target: acceptButtonProps.target ?? "_blank",
+							className: "no-underline h-full block",
+							style: { alignContent: "center", ...(acceptButtonProps.style ?? {}) },
+						}),
+					],
+					{
+						className:
+							"cursor-pointer px-2 bg-gray-100 rounded-lg bg-opacity-10 hover:bg-red-500 hover:bg-opacity-100 transition ease-in hover:text-white text-sm font-semibold" +
+							(acceptButtonProps.className ?? ""),
+						onClick: acceptButtonProps.onClick ?? ctx.eventHandler("modal:extlink", () => tabs.currentOverlay.set(null)),
+					}
+				);
 
 				tabs.currentOverlay.set([
 					tray.stack(
@@ -1170,7 +1228,7 @@ function init() {
 				return tray.anchor(`${category.name}`, {
 					href: `https://anilist.co/forum/recent?category=${category.id}`,
 					target: "_blank",
-					className: "bg-gray-800 rounded-full no-underline hover:underline text-white z-[2]",
+					className: "bg-gray-800 rounded-full no-underline hover:underline text-white whitespace-nowrap",
 					style: {
 						alignContent: "center",
 						padding: "0.15rem 0.5rem",
@@ -1182,7 +1240,7 @@ function init() {
 			},
 			threadMediaCategory(media: $forums.ThreadOverview["mediaCategories"][number]) {
 				return tray.button(`${truncateString(media.title.userPreferred, 23)}`, {
-					className: "h-fit w-fit bg-opacity-100 hover:bg-opacity-70 bg-gray-800 rounded-full hover:underline text-white z-[2] bg-purple-600",
+					className: "h-fit w-fit bg-opacity-100 hover:bg-opacity-70 bg-gray-800 rounded-full hover:underline text-white bg-purple-600 whitespace-nowrap",
 					style: { padding: "0.15rem 0.5rem", fontSize: "0.65rem", lineHeight: "normal" },
 					onClick: ctx.eventHandler(`toggle:goto_page:${media.id}:${Math.random().toFixed(5)}`, () =>
 						ctx.screen.navigateTo(media.type === "ANIME" ? "/entry" : "/manga/entry", { id: media.id.toString() })
@@ -1232,7 +1290,8 @@ function init() {
 						),
 						tray.flex([AVATAR, AVATAR_LABEL], { style: { fontSize: "0.8rem" } }),
 						tray.flex([...thread.categories.map(tabs.threadCategory), ...thread.mediaCategories.map(tabs.threadMediaCategory)], {
-							style: { marginTop: "0.5rem" },
+							className: "mt-2 z-[2]",
+							style: { maskImage: "linear-gradient(to right, rgba(0,0,0,1) 85%, transparent 100%)" },
 						}),
 						tray.button("\u200b", {
 							className: "w-full h-full absolute top-0 left-0 bg-transparent",
@@ -1387,7 +1446,7 @@ function init() {
 							const thread = state.currentThread.get();
 							if (!thread || !thread.comments?.threadComments) return ctx.toast.error(`Could not retrieve current thread!`);
 
-							ThreadsManager.toggleLikeThreadComment(comment.id)
+							ThreadsManager.toggleLike(comment.id, "THREAD_COMMENT")
 								.then(() => {
 									comment.isLiked = !comment.isLiked;
 									comment.likeCount = comment.isLiked ? comment.likeCount + 1 : comment.likeCount - 1;
@@ -1882,7 +1941,9 @@ function init() {
 					[
 						// Thread title
 						tray.text(`${thread.title}`, { className: "text-center break-words text-pretty font-semibold text-lg" }),
-						tray.flex(thread.categories.map(tabs.threadCategory) ?? [], { className: "justify-center" }),
+						tray.flex([...thread.categories.map(tabs.threadCategory), thread.mediaCategories.map(tabs.threadMediaCategory)], {
+							className: "justify-center",
+						}),
 						tray.flex(
 							[
 								tray.div([], {
@@ -1904,6 +1965,17 @@ function init() {
 								tray.text(`${getRelativeTime(thread.createdAt)}`, {
 									className: "w-full opacity-50 text-xs leading-tight whitespace-nowrap",
 								}),
+								tray.div([], {
+									className: `cursor-pointer rounded-lg bg-transparent bg-no-repeat bg-center hover:bg-gray-200 active:bg-gray-300 dark:bg-opacity-10 dark:hover:bg-opacity-20 w-8 h-8 shrink-0`,
+									style: { backgroundSize: "1rem", backgroundImage: `url(${icons.flag})` },
+									onClick: ctx.eventHandler("toggle:thread:report", () =>
+										tabs.externalLinkModal(
+											"Thread Reporting Unavailable",
+											"AniList does not support reporting threads via API. You can report or flag the discussion directly on AniList by opening the thread.",
+											`https://anilist.co/forum/thread/${thread.id}/`
+										)
+									),
+								}),
 								tray.anchor(`\u200b`, {
 									href: `https://anilist.co/forum/thread/${thread.id}/`,
 									target: "_blank",
@@ -1914,6 +1986,56 @@ function init() {
 							{ className: "items-center" }
 						),
 						tray.div(this.parseMarkdownText(thread.body, thread.id.toString()), { className: "text-sm" }),
+						tray.flex(
+							[
+								tray.flex(
+									[
+										tray.button("\u200b", {
+											intent: "gray-subtle",
+											className: "bg-transparent h-full w-12 bg-cover bg-center bg-no-repeat px-2",
+											loading: state.replyThreadLikeButtonIsLoading.get(),
+											disabled: ThreadsManager.isFetching.get(),
+											style: {
+												backgroundImage: state.replyThreadLikeButtonIsLoading.get() ? "" : `url(${thread.isLiked ? icons.heart_active : icons.heart})`,
+												backgroundSize: "1rem",
+												paddingInlineStart: "0.5rem",
+											},
+											onClick: ctx.eventHandler(`toggle:thread:like:${thread.id}`, () => {
+												state.replyThreadLikeButtonIsLoading.set(true);
+												ThreadsManager.toggleLike(thread.id, "THREAD")
+													.then(() => {
+														thread.isLiked = !thread.isLiked;
+														thread.likeCount = thread.isLiked ? thread.likeCount + 1 : thread.likeCount - 1;
+														state.currentThread.set(thread);
+													})
+													.catch((error) => ctx.toast.error((error as Error).message))
+													.finally(() => state.replyThreadLikeButtonIsLoading.set(false));
+											}),
+										}),
+										tray.text(`${thread.likeCount}`, { className: "opacity-50 text-sm" }),
+									],
+									{ gap: 1, className: "h-full items-center" }
+								),
+								tray.button(thread.isSubscribed ? "Subscribed" : "Subscribe", {
+									size: "sm",
+									intent: thread.isSubscribed ? "alert" : "gray-subtle",
+									className: `${thread.isSubscribed ? "" : "bg-transparent"}`,
+									loading: state.replyThreadLikeButtonIsLoading.get(),
+									disabled: ThreadsManager.isFetching.get(),
+									onClick: ctx.eventHandler(`toggle:thread:subscribe:${thread.id}`, () => {
+										state.replyThreadLikeButtonIsLoading.set(true);
+										ThreadsManager.toggleThreadSubscription(thread.id, !thread.isSubscribed)
+											.then(({ ToggleThreadSubscription: { isSubscribed } }) => {
+												thread.isSubscribed = isSubscribed;
+												state.currentThread.set(thread);
+											})
+											.catch((error) => ctx.toast.error((error as Error).message))
+											.finally(() => state.replyThreadLikeButtonIsLoading.set(false));
+									}),
+								}),
+							],
+							{ className: "justify-start items-center" }
+						),
 						tray.flex(
 							[
 								tray.text(`${formatToK(thread.replyCount)} Replies`, { className: "w-fit font-semibold" }),
