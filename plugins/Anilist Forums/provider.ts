@@ -746,16 +746,12 @@ function init() {
 							[
 								tray.div([], {
 									className: "bg-no-repeat bg-center bg-contain w-10 h-10",
-									style: {
-										backgroundImage: `url(${icons.youtube})`,
-										width: "5rem",
-										height: "5rem",
-									},
+									style: { backgroundImage: `url(${icons.youtube})` },
 								}),
 								tray.anchor("\u200b", { href: node.src, className: "absolute w-full h-full top-0 left-0 z-[2]" }),
 							],
 							{
-								className: "relative flex w-full block bg-no-repeat bg-center bg-contain justify-center items-center",
+								className: "relative w-full bg-no-repeat bg-center bg-contain justify-center items-center",
 								style: {
 									backgroundImage: `url(${node.thumbnail})`,
 									aspectRatio: "4",

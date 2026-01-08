@@ -1,7 +1,7 @@
 {
 	"id": "anilist-forums",
 	"name": "Anilist Forums",
-	"version": "0.1.3",
+	"version": "0.1.4",
 	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Anilist%20Forums/anilist-forums.json",
 	"language": "typescript",
 	"type": "plugin",
