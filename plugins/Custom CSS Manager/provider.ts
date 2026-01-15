@@ -10,6 +10,80 @@ function init() {
 		const iconUrl = "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Custom%20CSS%20Manager/icon.png";
 		const tray = ctx.newTray({ iconUrl, withContent: true });
 
+		const icons = {
+			html: {
+				back: /*html*/ `
+					<svg stroke="#cacaca" fill="#cacaca" stroke-width="0" viewBox="0 0 256 256" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+						<path d="M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24m0 192a88 88 0 1 1 88-88 88.1 88.1 0 0 1-88 88m48-88a8 8 0 0 1-8 8h-60.69l18.35 18.34a8 8 0 0 1-11.32 11.32l-32-32a8 8 0 0 1 0-11.32l32-32a8 8 0 0 1 11.32 11.32L107.31 120H168a8 8 0 0 1 8 8" stroke="none"/>
+					</svg>`,
+				checkmark: /*html*/ `
+					<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+						<path d="m7 13 3 3 7-7" stroke="#238059" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+					</svg>`,
+				chevydown: /*html*/ `
+					<svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" fill="none">
+						<path stroke="#cacaca" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m4 7 6 6 6-6"/>
+					</svg>`,
+				chevyup: /*html*/ `
+					<svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" fill="none">
+						<path stroke="#cacaca" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m16 13-6-6-6 6"/>
+					</svg>`,
+				close: /*html*/ `
+					<svg stroke="#d93e3e" fill="#d93e3e" stroke-width="0" viewBox="0 0 16 16" class="text-[0.95rem]" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+						<path fill-rule="evenodd" clip-rule="evenodd" d="M7.116 8l-4.558 4.558.884.884L8 8.884l4.558 4.558.884-.884L8.884 8l4.558-4.558-.884-.884L8 7.116 3.442 2.558l-.884.884L7.116 8z"></path>
+					</svg>`,
+				crossmark: /*html*/ `
+					<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+						<path fill-rule="evenodd" clip-rule="evenodd" d="M16.95 8.464a1 1 0 1 0-1.414-1.414L12 10.586 8.465 7.05A1 1 0 0 0 7.05 8.464L10.586 12 7.05 15.536a1 1 0 1 0 1.415 1.414L12 13.414l3.536 3.536a1 1 0 1 0 1.414-1.414L13.414 12z" fill="#ef4444d9"/>
+					</svg>`,
+				delete: /*html*/ `
+					<svg stroke="#fca5a5" fill="#fca5a5" stroke-width="0" viewBox="0 0 24 24" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+						<path d="M5 20a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8h2V6h-4V4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H3v2h2zM9 4h6v2H9zM8 8h9v12H7V8z"></path>
+						<path d="M9 10h2v8H9zm4 0h2v8h-2z"></path>
+					</svg>`,
+				download: /*html*/ `
+					<svg stroke="#bcb7f0" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+						<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m4-5 5 5 5-5m-5 5V3"/>
+					</svg>`,
+				edit: /*html*/ `
+					<svg stroke="#cfc2ff" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+						<path d="M7 7H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-1"/><path d="M20.385 6.585a2.1 2.1 0 0 0-2.97-2.97L9 12v3h3zM16 5l3 3"/>
+					</svg>`,
+				link: /*html*/ `
+					<svg stroke="#cacaca" fill="#cacaca" stroke-width="0" viewBox="0 0 512 512" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+						<path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.04 16.04 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.5 152.5 0 0 1 20.522 17.197M467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.5 152.5 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.04 16.04 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959" stroke="none"/>
+					</svg>`,
+				marketplace: /*html*/ `
+					<svg stroke="#cacaca" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+						<path d="m15 11-1 9m5-9-4-7M2 11h20M3.5 11l1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4M4.5 15.5h15M5 11l4-7m0 7 1 9"/>
+					</svg>`,
+				plus: /*html*/ `
+					<svg stroke="#cacaca" fill="#cacaca" stroke-width="0" viewBox="0 0 24 24" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+						<path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z"></path>
+					</svg>`,
+				refresh: /*html*/ `
+					<svg stroke="#cacaca" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+						<path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+						<path d="M3 3v5h5m-5 4a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+						<path d="M16 16h5v5"/>
+					</svg>`,
+				save: /*html*/ `
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#68b695" viewBox="0 0 16 16">
+						<path d="M12 2h-2v3h2z"/>
+						<path d="M1.5 0A1.5 1.5 0 0 0 0 1.5v13A1.5 1.5 0 0 0 1.5 16h13a1.5 1.5 0 0 0 1.5-1.5V2.914a1.5 1.5 0 0 0-.44-1.06L14.147.439A1.5 1.5 0 0 0 13.086 0zM4 6a1 1 0 0 1-1-1V1h10v4a1 1 0 0 1-1 1zM3 9h10a1 1 0 0 1 1 1v5H2v-5a1 1 0 0 1 1-1"/>
+					</svg>`,
+				settings: /*html*/ `
+					<svg stroke="#cacaca" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+						<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2"/>
+						<circle cx="12" cy="12" r="3"/>
+					</svg>`,
+			},
+			get(name: keyof typeof this.html, raw: boolean = false) {
+				if (raw) return this.html[name];
+				return `data:image/svg+xml;base64,${Buffer.from(this.html[name].trim(), "utf-8").toString("base64")}`;
+			},
+		};
+
 		enum Tabs {
 			Manager = 1,
 			Editor = 2,
@@ -189,75 +263,60 @@ function init() {
 					: ([] as any[]);
 			},
 			header(primary: string, subtext?: string, additionalComponents?: any[]) {
-				return tray.flex(
+				const icon = tray.div([], {
+					className: "w-10 h-10 bg-contain bg-no-repeat bg-center shrink-0",
+					style: { backgroundImage: `url(${iconUrl})` },
+				});
+
+				const text = tray.stack(
 					[
-						tray.div([], {
-							style: {
-								width: "2.5rem",
-								height: "2.5rem",
-								marginTop: "-0.3rem",
-								backgroundImage: `url(${iconUrl})`,
-								backgroundSize: "contain",
-								backgroundRepeat: "no-repeat",
-								backgroundPosition: "center",
-								flexGrow: "0",
-								flexShrink: "0",
-							},
-						}),
-						tray.stack(
-							[
-								tray.text(`${primary}`, { style: { fontSize: "1.2em", fontWeight: "bold" } }),
-								subtext ? tray.text(`${subtext}`, { style: { fontSize: "0.8em" }, className: "opacity-30" }) : [],
-							],
-							{
-								style: {
-									lineHeight: "1em",
-									width: "100%",
-								},
-							}
-						),
-						tray.div(additionalComponents ?? []),
+						tray.span(`${primary}`, { className: " text-lg font-bold" }), //
+						subtext ? tray.span(`${subtext}`, { className: "text-[--muted] text-sm" }) : [],
 					],
-					{
-						gap: 3,
-						style: {
-							marginBottom: "1rem",
-						},
-					}
+					{ gap: 0, className: "flex-1" }
 				);
-			},
-			backButton() {
-				return tray.button("\u200b", {
-					intent: "gray-subtle",
-					className: "bg-transparent",
-					style: {
-						width: "2.5rem",
-						height: "2.5rem",
-						borderRadius: "50%",
-						backgroundImage:
-							"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNjYWNhY2EiIGZpbGw9IiNjYWNhY2EiIHN0cm9rZS13aWR0aD0iMCIgdmlld0JveD0iMCAwIDI1NiAyNTYiIGhlaWdodD0iMWVtIiB3aWR0aD0iMWVtIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0xMjggMjRhMTA0IDEwNCAwIDEgMCAxMDQgMTA0QTEwNC4xMSAxMDQuMTEgMCAwIDAgMTI4IDI0bTAgMTkyYTg4IDg4IDAgMSAxIDg4LTg4IDg4LjEgODguMSAwIDAgMS04OCA4OG00OC04OGE4IDggMCAwIDEtOCA4aC02MC42OWwxOC4zNSAxOC4zNGE4IDggMCAwIDEtMTEuMzIgMTEuMzJsLTMyLTMyYTggOCAwIDAgMSAwLTExLjMybDMyLTMyYTggOCAwIDAgMSAxMS4zMiAxMS4zMkwxMDcuMzEgMTIwSDE2OGE4IDggMCAwIDEgOCA4IiBzdHJva2U9Im5vbmUiLz48L3N2Zz4=)",
-						backgroundRepeat: "no-repeat",
-						backgroundPosition: "center",
-						backgroundSize: "1.5rem",
-					},
-					onClick: ctx.eventHandler("goto:back", () => {
-						// clear fieldrefs
-						tabs.current.set(Tabs.Manager);
-					}),
+
+				return tray.flex([icon, text, tray.div(additionalComponents ?? [])], {
+					gap: 3,
+					className: "mb-4",
 				});
 			},
-			saveButton(style?: $cssm.Style) {
-				return tray.button("\u200b", {
-					intent: "success",
+			backButton() {
+				const button = tray.button("\u200b", {
+					intent: "gray-subtle",
+					className: "bg-transparent w-10 h-10 rounded-full bg-no-repeat bg-center",
 					style: {
-						width: "2.5rem",
-						height: "2.5rem",
-						borderRadius: "50%",
-						// prettier-ignore
-						backgroundImage: "url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iI2ZmZiIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBkPSJNMTIgMmgtMnYzaDJ6Ii8+PHBhdGggZD0iTTEuNSAwQTEuNSAxLjUgMCAwIDAgMCAxLjV2MTNBMS41IDEuNSAwIDAgMCAxLjUgMTZoMTNhMS41IDEuNSAwIDAgMCAxLjUtMS41VjIuOTE0YTEuNSAxLjUgMCAwIDAtLjQ0LTEuMDZMMTQuMTQ3LjQzOUExLjUgMS41IDAgMCAwIDEzLjA4NiAwek00IDZhMSAxIDAgMCAxLTEtMVYxaDEwdjRhMSAxIDAgMCAxLTEgMXpNMyA5aDEwYTEgMSAwIDAgMSAxIDF2NUgydi01YTEgMSAwIDAgMSAxLTEiLz48L3N2Zz4=)",
-						backgroundRepeat: "no-repeat",
-						backgroundPosition: "center",
-						backgroundSize: "1rem 1rem",
+						backgroundImage: `url(${icons.get("back")})`,
+						backgroundSize: "1.5rem",
+					},
+					onClick: ctx.eventHandler("goto:back", () => tabs.current.set(Tabs.Manager)),
+				});
+
+				return tray.tooltip(button, { text: "Go Back" });
+			},
+			customStyles() {
+				return tray.css(/*css*/ `
+					.grayscale {
+						filter: grayscale(100%);
+					}
+					.grayscale-0 {
+						filter: grayscale(0%);
+					}
+					.hover\\:grayscale:hover {
+						filter: grayscale(100%);
+					}
+					.hover\\:grayscale-0:hover {
+						filter: grayscale(0%);	
+					}
+				`);
+			},
+			saveButton(style?: $cssm.Style) {
+				const button = tray.button("\u200b", {
+					intent: "success-subtle",
+					className: "w-10 h-10 rounded-full bg-no-repeat bg-center",
+					style: {
+						backgroundImage: `url(${icons.get("save")})`,
+						backgroundSize: "1rem",
 					},
 					onClick: ctx.eventHandler("save-entry", async () => {
 						if (!fieldRef.editor.name.current.length) {
@@ -297,19 +356,16 @@ function init() {
 						}
 					}),
 				});
+
+				return tray.tooltip(button, { text: "Save" });
 			},
 			deleteButton(style: $cssm.Style) {
-				return tray.button("\u200b", {
-					intent: "alert",
+				const button = tray.button("\u200b", {
+					intent: "alert-subtle",
+					className: "w-10 h-10 rounded-full bg-no-repeat bg-center",
 					style: {
-						width: "2.5rem",
-						height: "2.5rem",
-						borderRadius: "50%",
-						// prettier-ignore
-						backgroundImage: "url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iI2ZmZiIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBkPSJNMTEgMS41djFoMy41YS41LjUgMCAwIDEgMCAxaC0uNTM4bC0uODUzIDEwLjY2QTIgMiAwIDAgMSAxMS4xMTUgMTZoLTYuMjNhMiAyIDAgMCAxLTEuOTk0LTEuODRMMi4wMzggMy41SDEuNWEuNS41IDAgMCAxIDAtMUg1di0xQTEuNSAxLjUgMCAwIDEgNi41IDBoM0ExLjUgMS41IDAgMCAxIDExIDEuNW0tNSAwdjFoNHYtMWEuNS41IDAgMCAwLS41LS41aC0zYS41LjUgMCAwIDAtLjUuNU00LjUgNS4wMjlsLjUgOC41YS41LjUgMCAxIDAgLjk5OC0uMDZsLS41LTguNWEuNS41IDAgMSAwLS45OTguMDZtNi41My0uNTI4YS41LjUgMCAwIDAtLjUyOC40N2wtLjUgOC41YS41LjUgMCAwIDAgLjk5OC4wNThsLjUtOC41YS41LjUgMCAwIDAtLjQ3LS41MjhNOCA0LjVhLjUuNSAwIDAgMC0uNS41djguNWEuNS41IDAgMCAwIDEgMFY1YS41LjUgMCAwIDAtLjUtLjUiLz48L3N2Zz4=)",
-						backgroundRepeat: "no-repeat",
-						backgroundPosition: "center",
-						backgroundSize: "1rem 1rem",
+						backgroundImage: `url(${icons.get("delete")})`,
+						backgroundSize: "1.5rem",
 					},
 					onClick: ctx.eventHandler(`delete-entry:${style.uuid}`, () => {
 						manager.remove(style.uuid);
@@ -317,399 +373,244 @@ function init() {
 						tabs.current.set(Tabs.Manager);
 					}),
 				});
+
+				return tray.tooltip(button, { text: "Delete" });
 			},
 			formatManagerItem(item: $cssm.Style, index?: number, array?: $cssm.Style[]) {
-				const buttonStyles = {
-					width: "2rem",
-					height: "2rem",
-					backgroundRepeat: "no-repeat",
-					backgroundPosition: "center",
-					backgroundSize: "1.5rem",
-				};
-				return tray.flex(
+				const name = tray.text(`${item.name}`, {
+					className: "break-words overflow-hidden overflow-ellipsis line-clamp-2 text-md font-semibold",
+				});
+
+				const author = tray.span(`${item.author}`, {
+					className: "inline-flex w-fit text-xs px-2 h-6 font-semibold border rounded-md tracking-wide items-center",
+				});
+
+				const left = tray.stack([name, author], { className: "justify-around" });
+
+				const toggle = tray.button("\u200b", {
+					intent: "gray-subtle",
+					className: "bg-transparent w-8 h-8 bg-no-repeat bg-center",
+					style: {
+						backgroundSize: "1.5rem",
+						backgroundImage: `url(${icons.get(item.enabled ? "checkmark" : "crossmark")})`,
+					},
+					onClick: ctx.eventHandler(`toggle-${item.uuid}`, () => {
+						manager.toggle(item.uuid);
+						tray.update();
+					}),
+				});
+
+				const edit = tray.button("\u200b", {
+					intent: "gray-subtle",
+					className: "bg-transparent w-8 h-8 bg-no-repeat bg-center",
+					style: {
+						backgroundSize: "1.2rem",
+						backgroundImage: `url(${icons.get("edit")})`,
+					},
+					onClick: ctx.eventHandler(`edit-${item.uuid}`, () => {
+						state.currentStyle.set(item);
+						fieldRef.editor.name.setValue(item.name);
+						fieldRef.editor.controller.setValue(item.style.desktop);
+						fieldRef.editor.desktop.setValue(item.style.desktop);
+						fieldRef.editor.mobile.setValue(item.style.mobile);
+						state.editorSelectedScreen.set("desktop");
+						tabs.current.set(Tabs.Editor);
+					}),
+				});
+
+				const moveup = tray.button("\u200b", {
+					intent: "gray-subtle",
+					className: "bg-transparent w-8 h-8 bg-no-repeat bg-center",
+					disabled: index === 0,
+					style: {
+						backgroundSize: "1.2rem",
+						backgroundImage: `url(${icons.get("chevyup")})`,
+					},
+					onClick: ctx.eventHandler(`moveup:${item.uuid}`, () => {
+						manager.moveUp(item.uuid);
+						tray.update();
+					}),
+				});
+
+				const movedown = tray.button("\u200b", {
+					intent: "gray-subtle",
+					className: "bg-transparent w-8 h-8 bg-no-repeat bg-center",
+					disabled: index && array?.length ? index >= array?.length - 1 : false,
+					style: {
+						backgroundSize: "1.2rem",
+						backgroundImage: `url(${icons.get("chevydown")})`,
+					},
+					onClick: ctx.eventHandler(`movedown:${item.uuid}`, () => {
+						manager.moveDown(item.uuid);
+						tray.update();
+					}),
+				});
+
+				const btnGroupLeft = tray.stack(
 					[
-						tray.stack(
-							[
-								tray.text(`${item.name}`, {
-									style: {
-										overflow: "hidden",
-										textOverflow: "ellipsis",
-										display: "-webkit-box",
-										"-webkit-line-clamp": "2",
-										"-webkit-box-orient": "vertical",
-										fontWeight: "600",
-										wordBreak: "break-word",
-									},
-								}),
-								tray.text(`${item.author}`, {
-									style: {
-										fontSize: "0.7rem",
-										opacity: "0.7rem",
-										fontWeight: "bold",
-										width: "fit-content",
-										border: "1px solid var(--border)",
-										borderRadius: "0.4rem",
-										padding: "0 0.5rem",
-									},
-								}),
-							],
-							{
-								style: {
-									justifyContent: "space-around",
-								},
-							}
-						),
-						tray.flex([
-							tray.stack(
-								[
-									tray.button("\u200b", {
-										intent: "gray-subtle",
-										className: "bg-transparent",
-										style: {
-											...buttonStyles,
-											backgroundImage: item.enabled
-												? "url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJtNyAxMyAzIDMgNy03IiBzdHJva2U9IiMyMzgwNTkiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+)"
-												: "url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGNsaXAtcnVsZT0iZXZlbm9kZCIgZD0iTTE2Ljk1IDguNDY0YTEgMSAwIDEgMC0xLjQxNC0xLjQxNEwxMiAxMC41ODYgOC40NjUgNy4wNUExIDEgMCAwIDAgNy4wNSA4LjQ2NEwxMC41ODYgMTIgNy4wNSAxNS41MzZhMSAxIDAgMSAwIDEuNDE1IDEuNDE0TDEyIDEzLjQxNGwzLjUzNiAzLjUzNmExIDEgMCAxIDAgMS40MTQtMS40MTRMMTMuNDE0IDEyeiIgZmlsbD0iI2VmNDQ0NGQ5Ii8+PC9zdmc+)",
-										},
-										onClick: ctx.eventHandler(`toggle-${item.uuid}`, () => {
-											manager.toggle(item.uuid);
-											tray.update();
-										}),
-									}),
-									tray.button("\u200b", {
-										intent: "gray-subtle",
-										className: "bg-transparent",
-										style: {
-											...buttonStyles,
-											backgroundSize: "1.2rem",
-											backgroundImage:
-												"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNjZmMyZmYiIGZpbGw9Im5vbmUiIHN0cm9rZS13aWR0aD0iMiIgdmlld0JveD0iMCAwIDI0IDI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGhlaWdodD0iMWVtIiB3aWR0aD0iMWVtIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik03IDdINmEyIDIgMCAwIDAtMiAydjlhMiAyIDAgMCAwIDIgMmg5YTIgMiAwIDAgMCAyLTJ2LTEiLz48cGF0aCBkPSJNMjAuMzg1IDYuNTg1YTIuMSAyLjEgMCAwIDAtMi45Ny0yLjk3TDkgMTJ2M2gzek0xNiA1bDMgMyIvPjwvc3ZnPg==)",
-										},
-										onClick: ctx.eventHandler(`edit-${item.uuid}`, () => {
-											state.currentStyle.set(item);
-											fieldRef.editor.name.setValue(item.name);
-											fieldRef.editor.controller.setValue(item.style.desktop);
-											fieldRef.editor.desktop.setValue(item.style.desktop);
-											fieldRef.editor.mobile.setValue(item.style.mobile);
-											state.editorSelectedScreen.set("desktop");
-											tabs.current.set(Tabs.Editor);
-										}),
-									}),
-								],
-								{
-									gap: 0,
-								}
-							),
-							tray.stack(
-								[
-									tray.button("\u200b", {
-										intent: "gray-subtle",
-										className: "bg-transparent",
-										disabled: index === 0,
-										style: {
-											...buttonStyles,
-											backgroundSize: "1.2rem",
-											backgroundImage:
-												"url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBmaWxsPSJub25lIj48cGF0aCBzdHJva2U9IiNjYWNhY2EiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIyIiBkPSJtMTYgMTMtNi02LTYgNiIvPjwvc3ZnPg==)",
-										},
-										onClick: ctx.eventHandler(`moveup:${item.uuid}`, () => {
-											manager.moveUp(item.uuid);
-											tray.update();
-										}),
-									}),
-									tray.button("\u200b", {
-										intent: "gray-subtle",
-										className: "bg-transparent",
-										disabled: index && array?.length ? index >= array?.length - 1 : false,
-										style: {
-											...buttonStyles,
-											backgroundSize: "1.2rem",
-											backgroundImage:
-												"url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBmaWxsPSJub25lIj48cGF0aCBzdHJva2U9IiNjYWNhY2EiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIyIiBkPSJtNCA3IDYgNiA2LTYiLz48L3N2Zz4=)",
-										},
-										onClick: ctx.eventHandler(`movedown:${item.uuid}`, () => {
-											manager.moveDown(item.uuid);
-											tray.update();
-										}),
-									}),
-								],
-								{
-									gap: 0,
-								}
-							),
-						]),
-						// tray.button("\u200b", {
-						// 	intent: "alert",
-						// 	style: {
-						// 		width: "1rem",
-						// 		height: "1rem",
-						// 		position: "absolute",
-						// 		top: "calc(0px - 0.25rem)",
-						// 		right: "calc(0px - 0.25rem)",
-						// 		padding: "0",
-						// 		borderRadius: "50%",
-						// 		backgroundImage:
-						// 			"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNmZmYiIGZpbGw9IiNmZmYiIHN0cm9rZS13aWR0aD0iMCIgdmlld0JveD0iMCAwIDE2IDE2IiBjbGFzcz0idGV4dC1bMC45NXJlbV0iIGhlaWdodD0iMWVtIiB3aWR0aD0iMWVtIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJtNy4xMTYgOC00LjU1OCA0LjU1OC44ODQuODg0TDggOC44ODRsNC41NTggNC41NTguODg0LS44ODRMOC44ODQgOGw0LjU1OC00LjU1OC0uODg0LS44ODRMOCA3LjExNiAzLjQ0MiAyLjU1OGwtLjg4NC44ODR6IiBzdHJva2U9Im5vbmUiLz48L3N2Zz4=)",
-						// 		backgroundSize: "0.65rem",
-						// 		backgroundRepeat: "no-repeat",
-						// 		backgroundPosition: "center",
-						// 	},
-						// 	onClick: ctx.eventHandler(`delete:${item.uuid}`, () => {
-						// 		manager.remove(item.uuid);
-						// 		tray.update();
-						// 	}),
-						// }),
+						tray.tooltip(toggle, { text: item.enabled ? "Disable" : "Enable" }), //
+						tray.tooltip(edit, { text: "Edit" }),
 					],
-					{
-						style: {
-							borderRadius: "0.5rem",
-							border: "1px solid var(--border)",
-							backgroundColor: "rgb(var(--color-gray-900))",
-							justifyContent: "space-between",
-							padding: "0.75rem",
-							position: "relative",
-						},
-					}
+					{ gap: 0 }
 				);
+
+				const btnGroupRight = tray.stack(
+					[
+						index === 0 ? moveup : tray.tooltip(moveup, { text: "Move up" }),
+						(index && array?.length ? index >= array?.length - 1 : false) ? movedown : tray.tooltip(movedown, { text: "Move down" }),
+					],
+					{ gap: 0 }
+				);
+
+				return tray.flex([left, tray.flex([btnGroupLeft, btnGroupRight])], {
+					className: "rounded-lg border bg-gray-900 justify-between p-3 relative",
+				});
 			},
 			formatMarketplaceItem(item: $cssm.Style) {
 				const alreadyDownloaded = manager.has(item.uuid);
-				return tray.flex(
-					[
-						tray.stack(
-							[
-								tray.text(`${item.name}`, {
-									style: {
-										overflow: "hidden",
-										textOverflow: "ellipsis",
-										display: "-webkit-box",
-										"-webkit-line-clamp": "2",
-										"-webkit-box-orient": "vertical",
-										fontWeight: "600",
-										wordBreak: "break-word",
-									},
-								}),
-								tray.text(`${item.author}`, {
-									style: {
-										fontSize: "0.7rem",
-										opacity: "0.7rem",
-										fontWeight: "600",
-										width: "fit-content",
-										border: "1px solid var(--border)",
-										borderRadius: "0.4rem",
-										padding: "0 0.5rem",
-									},
-								}),
-							],
-							{
+
+				// components
+				const name = tray.text(`${item.name}`, {
+					className: "break-words overflow-hidden overflow-ellipsis line-clamp-2 text-md font-semibold",
+				});
+
+				const author = tray.span(`${item.author}`, {
+					className: "inline-flex w-fit text-xs px-2 h-6 font-semibold border rounded-md tracking-wide items-center",
+				});
+
+				const left = tray.stack([name, author], { className: "justify-around" });
+
+				const download = tray.button("\u200b", {
+					intent: "gray-subtle",
+					disabled: alreadyDownloaded,
+					className: "w-8 h-8 bg-no-repeat bg-center",
+					style: {
+						backgroundSize: "1.2rem",
+						backgroundImage: `url(${icons.get(alreadyDownloaded ? "checkmark" : "download")})`,
+					},
+					onClick: ctx.eventHandler(`download-${item.uuid}`, () => {
+						try {
+							manager.addFromMarketplace(item);
+							ctx.toast.success(`Added ${item.name} to styles!`);
+							tray.update();
+						} catch (error) {
+							ctx.toast.error((error as Error).message);
+						}
+					}),
+				});
+
+				const link = item.link
+					? tray.tooltip(
+							tray.anchor("\u200b", {
+								className: "block w-8 h-8 rounded-lg bg-no-repeat bg-center bg-gray-300 hover:bg-gray-200 dark:bg-opacity-10 dark:hover:bg-opacity-20",
+								href: item.link,
 								style: {
-									justifyContent: "space-around",
+									backgroundSize: "1rem",
+									backgroundImage: `url(${icons.get("link")})`,
 								},
-							}
-						),
-						tray.stack([
-							tray.button("\u200b", {
-								intent: "gray-subtle",
-								// className: alreadyDownloaded ? "" : "bg-transparent",
-								disabled: alreadyDownloaded,
-								style: {
-									width: "2rem",
-									height: "2rem",
-									backgroundRepeat: "no-repeat",
-									backgroundPosition: "center",
-									backgroundSize: "1.2rem",
-									backgroundImage: alreadyDownloaded
-										? "url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJtNyAxMyAzIDMgNy03IiBzdHJva2U9IiMyMzgwNTkiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+)"
-										: "url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNiY2I3ZjAiIGZpbGw9Im5vbmUiIHN0cm9rZS13aWR0aD0iMiIgdmlld0JveD0iMCAwIDI0IDI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGhlaWdodD0iMWVtIiB3aWR0aD0iMWVtIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0yMSAxNXY0YTIgMiAwIDAgMS0yIDJINWEyIDIgMCAwIDEtMi0ydi00bTQtNSA1IDUgNS01bS01IDVWMyIvPjwvc3ZnPg==)",
-								},
-								onClick: ctx.eventHandler(`download-${item.uuid}`, () => {
-									try {
-										manager.addFromMarketplace(item);
-										ctx.toast.success(`Added ${item.name} to styles!`);
-										tray.update();
-									} catch (error) {
-										ctx.toast.error((error as Error).message);
-									}
-								}),
 							}),
-							item.link
-								? tray.anchor("\u200b", {
-										className: "bg-gray-300 hover:bg-gray-200 dark:bg-opacity-10 dark:hover:bg-opacity-20",
-										href: item.link,
-										style: {
-											width: "2rem",
-											height: "2rem",
-											borderRadius: "0.5rem",
-											backgroundRepeat: "no-repeat",
-											backgroundPosition: "center",
-											backgroundSize: "1rem",
-											backgroundImage:
-												"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNjYWNhY2EiIGZpbGw9IiNjYWNhY2EiIHN0cm9rZS13aWR0aD0iMCIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGhlaWdodD0iMWVtIiB3aWR0aD0iMWVtIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0zMjYuNjEyIDE4NS4zOTFjNTkuNzQ3IDU5LjgwOSA1OC45MjcgMTU1LjY5OC4zNiAyMTQuNTktLjExLjEyLS4yNC4yNS0uMzYuMzdsLTY3LjIgNjcuMmMtNTkuMjcgNTkuMjctMTU1LjY5OSA1OS4yNjItMjE0Ljk2IDAtNTkuMjctNTkuMjYtNTkuMjctMTU1LjcgMC0yMTQuOTZsMzcuMTA2LTM3LjEwNmM5Ljg0LTkuODQgMjYuNzg2LTMuMyAyNy4yOTQgMTAuNjA2LjY0OCAxNy43MjIgMy44MjYgMzUuNTI3IDkuNjkgNTIuNzIxIDEuOTg2IDUuODIyLjU2NyAxMi4yNjItMy43ODMgMTYuNjEybC0xMy4wODcgMTMuMDg3Yy0yOC4wMjYgMjguMDI2LTI4LjkwNSA3My42Ni0xLjE1NSAxMDEuOTYgMjguMDI0IDI4LjU3OSA3NC4wODYgMjguNzQ5IDEwMi4zMjUuNTFsNjcuMi02Ny4xOWMyOC4xOTEtMjguMTkxIDI4LjA3My03My43NTcgMC0xMDEuODMtMy43MDEtMy42OTQtNy40MjktNi41NjQtMTAuMzQxLTguNTY5YTE2LjA0IDE2LjA0IDAgMCAxLTYuOTQ3LTEyLjYwNmMtLjM5Ni0xMC41NjcgMy4zNDgtMjEuNDU2IDExLjY5OC0yOS44MDZsMjEuMDU0LTIxLjA1NWM1LjUyMS01LjUyMSAxNC4xODItNi4xOTkgMjAuNTg0LTEuNzMxYTE1Mi41IDE1Mi41IDAgMCAxIDIwLjUyMiAxNy4xOTdNNDY3LjU0NyA0NC40NDljLTU5LjI2MS01OS4yNjItMTU1LjY5LTU5LjI3LTIxNC45NiAwbC02Ny4yIDY3LjJjLS4xMi4xMi0uMjUuMjUtLjM2LjM3LTU4LjU2NiA1OC44OTItNTkuMzg3IDE1NC43ODEuMzYgMjE0LjU5YTE1Mi41IDE1Mi41IDAgMCAwIDIwLjUyMSAxNy4xOTZjNi40MDIgNC40NjggMTUuMDY0IDMuNzg5IDIwLjU4NC0xLjczMWwyMS4wNTQtMjEuMDU1YzguMzUtOC4zNSAxMi4wOTQtMTkuMjM5IDExLjY5OC0yOS44MDZhMTYuMDQgMTYuMDQgMCAwIDAtNi45NDctMTIuNjA2Yy0yLjkxMi0yLjAwNS02LjY0LTQuODc1LTEwLjM0MS04LjU2OS0yOC4wNzMtMjguMDczLTI4LjE5MS03My42MzkgMC0xMDEuODNsNjcuMi02Ny4xOWMyOC4yMzktMjguMjM5IDc0LjMtMjguMDY5IDEwMi4zMjUuNTEgMjcuNzUgMjguMyAyNi44NzIgNzMuOTM0LTEuMTU1IDEwMS45NmwtMTMuMDg3IDEzLjA4N2MtNC4zNSA0LjM1LTUuNzY5IDEwLjc5LTMuNzgzIDE2LjYxMiA1Ljg2NCAxNy4xOTQgOS4wNDIgMzQuOTk5IDkuNjkgNTIuNzIxLjUwOSAxMy45MDYgMTcuNDU0IDIwLjQ0NiAyNy4yOTQgMTAuNjA2bDM3LjEwNi0zNy4xMDZjNTkuMjcxLTU5LjI1OSA1OS4yNzEtMTU1LjY5OS4wMDEtMjE0Ljk1OSIgc3Ryb2tlPSJub25lIi8+PC9zdmc+)",
-										},
-								  })
-								: [],
-						]),
-					],
-					{
-						style: {
-							borderRadius: "0.5rem",
-							border: "1px solid var(--border)",
-							backgroundColor: "rgb(var(--color-gray-900))",
-							justifyContent: "space-between",
-							padding: "0.75rem",
-						},
-					}
-				);
+							{ text: "Reference URL" }
+					  )
+					: [];
+
+				const downloadWithTooltip = alreadyDownloaded ? download : tray.tooltip(download, { text: "Apply Styles" });
+
+				const right = tray.stack([downloadWithTooltip, link]);
+
+				return tray.flex([left, right], { className: "p-3 rounded-lg border bg-gray-900 justify-between" });
 			},
 			loadingItem() {
-				return tray.div([], {
-					className: "animate-pulse",
-					style: {
-						width: "100%",
-						height: "5rem",
-						borderRadius: "0.5rem",
-						backgroundColor: "rgb(var(--color-gray-800))",
-					},
-				});
+				return tray.div([], { className: "animate-pulse w-full h-20 rounded-lg bg-gray-800" });
 			},
 			settings() {
-				return tray.stack(
-					[
-						tray.flex(
-							[
-								tray.text("Settings", { className: "font-semibold", style: { alignContent: "center" } }),
-								tray.button("\u200b", {
-									intent: "gray-subtle",
-									className: "bg-transparent",
-									style: {
-										width: "2.5rem",
-										height: "2.5rem",
-										borderRadius: "50%",
-										backgroundImage:
-											"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNjYWNhY2EiIGZpbGw9IiNjYWNhY2EiIHN0cm9rZS13aWR0aD0iMCIgdmlld0JveD0iMCAwIDI1NiAyNTYiIGhlaWdodD0iMWVtIiB3aWR0aD0iMWVtIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0xMjggMjRhMTA0IDEwNCAwIDEgMCAxMDQgMTA0QTEwNC4xMSAxMDQuMTEgMCAwIDAgMTI4IDI0bTAgMTkyYTg4IDg4IDAgMSAxIDg4LTg4IDg4LjEgODguMSAwIDAgMS04OCA4OG00OC04OGE4IDggMCAwIDEtOCA4aC02MC42OWwxOC4zNSAxOC4zNGE4IDggMCAwIDEtMTEuMzIgMTEuMzJsLTMyLTMyYTggOCAwIDAgMSAwLTExLjMybDMyLTMyYTggOCAwIDAgMSAxMS4zMiAxMS4zMkwxMDcuMzEgMTIwSDE2OGE4IDggMCAwIDEgOCA4IiBzdHJva2U9Im5vbmUiLz48L3N2Zz4=)",
-										backgroundRepeat: "no-repeat",
-										backgroundPosition: "center",
-										backgroundSize: "1.5rem",
-										padding: "0",
-										paddingInlineStart: "0.5rem",
-									},
-									onClick: ctx.eventHandler("settings:back", () => this.currentOverlay.set(null)),
-								}),
-							],
-							{ style: { justifyContent: "space-between", borderBottom: "1px solid var(--border)", fontSize: "1.25rem", paddingBottom: "0.25rem" } }
-						),
-						tray.switch("Disable css validation", {
-							fieldRef: fieldRef.disableCSSValidation,
-							onChange: ctx.eventHandler("options.css.validate:switch", ({ value }) => {
-								fieldRef.disableCSSValidation.setValue(value);
-								$storage.set("options.css.validate", value);
-								this.currentOverlay.set([this.settings()]);
-							}),
-						}),
-						fieldRef.disableCSSValidation.current
-							? tray.text(
-									"Saving styles without validation may cause unexpected behavior inside your application. Invalid or unsupported rules may break layout inheritance. It is strongly recommended to validate your CSS before saving changes.",
-									{
-										style: {
-											padding: "0.5rem",
-											fontSize: "0.8rem",
-											wordBreak: "break-word",
-											lineHeight: "normal",
-											border: "1px solid var(--red-500)",
-											borderRadius: "0.5rem",
-											backgroundColor: "var(--red-950)",
-											color: "var(--red)",
-											marginTop: "0.25rem",
-										},
-									}
-							  )
-							: [],
-					],
+				const headerText = tray.span("Settings", { className: "text-lg font-semibold flex-1" });
+				const backbtn = tray.button("\u200b", {
+					intent: "gray-subtle",
+					className: "bg-transparent w-10 h-10 rounded-full bg-no-repeat bg-center p-0 grayscale hover:grayscale-0 transition",
+					style: { backgroundImage: `url(${icons.get("close")})` },
+					onClick: ctx.eventHandler("settings:back", () => this.currentOverlay.set(null)),
+				});
+
+				const header = tray.flex([headerText, backbtn], { className: "justify-between items-center border-b pb-1" });
+
+				// settings
+				const disableCSSValidation = tray.switch("Disable CSS Validation", {
+					fieldRef: fieldRef.disableCSSValidation,
+					onChange: ctx.eventHandler("options.css.validate:switch", ({ value }) => {
+						fieldRef.disableCSSValidation.setValue(value);
+						$storage.set("options.css.validate", value);
+						this.currentOverlay.set([this.settings()]);
+					}),
+				});
+
+				const disableCSSValidationWarning = tray.text(
+					"Saving styles without validation may cause unexpected behavior inside your application. Invalid or unsupported rules may break layout inheritance. It is strongly recommended to validate your CSS before saving changes.",
 					{
-						className: "bg-gray-900 rounded-xl p-5",
-						style: { boxShadow: "0 0 10px black", width: "25rem", margin: "1rem" },
+						className: "p-2 text-sm break-words leading-none border rounded-lg bg-red-950 text-red-400 mt-1",
 					}
 				);
+
+				return tray.stack([header, disableCSSValidation, fieldRef.disableCSSValidation.current ? disableCSSValidationWarning : []], {
+					className: "bg-gray-900 rounded-xl p-5 m-4 border",
+					style: { boxShadow: "0 0 10px black", width: "25rem" },
+				});
 			},
 			[Tabs.Manager]() {
+				const create = tray.button("\u200b", {
+					intent: "gray-subtle",
+					className: "bg-transparent w-10 h-10 rounded-full bg-no-repeat bg-center p-0",
+					style: {
+						backgroundImage: `url(${icons.get("plus")})`,
+						backgroundSize: "1.5rem",
+					},
+					onClick: ctx.eventHandler("goto:create", () => {
+						tabs.current.set(Tabs.Editor);
+						fieldRef.editor.controller.setValue("");
+						fieldRef.editor.desktop.setValue("");
+						fieldRef.editor.mobile.setValue("");
+						fieldRef.editor.name.setValue("");
+						state.currentStyle.set(null);
+					}),
+				});
+
+				const marketplace = tray.button("\u200b", {
+					intent: "gray-subtle",
+					className: "bg-transparent w-10 h-10 rounded-full bg-no-repeat bg-center p-0",
+					style: {
+						backgroundImage: `url(${icons.get("marketplace")})`,
+						backgroundSize: "1.5rem",
+					},
+					onClick: ctx.eventHandler("goto:marketplace", () => tabs.current.set(Tabs.Marketplace)),
+				});
+
 				const header = this.header("Custom CSS Manager", "Manage styles more effeciently", [
 					tray.flex(
 						[
-							tray.button("\u200b", {
-								intent: "gray-subtle",
-								className: "bg-transparent",
-								style: {
-									width: "2.5rem",
-									height: "2.5rem",
-									borderRadius: "50%",
-									backgroundImage:
-										"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNjYWNhY2EiIGZpbGw9IiNjYWNhY2EiIHN0cm9rZS13aWR0aD0iMCIgdmlld0JveD0iMCAwIDI0IDI0IiBoZWlnaHQ9IjFlbSIgd2lkdGg9IjFlbSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTkgMTFoLTZWNWgtMnY2SDV2Mmg2djZoMnYtNmg2eiI+PC9wYXRoPjwvc3ZnPg==)",
-									backgroundRepeat: "no-repeat",
-									backgroundPosition: "center",
-									backgroundSize: "1.5rem",
-									padding: "0",
-									paddingInlineStart: "0.5rem",
-								},
-								onClick: ctx.eventHandler("goto:create", () => {
-									tabs.current.set(Tabs.Editor);
-									fieldRef.editor.controller.setValue("");
-									fieldRef.editor.desktop.setValue("");
-									fieldRef.editor.mobile.setValue("");
-									fieldRef.editor.name.setValue("");
-									state.currentStyle.set(null);
-								}),
-							}),
-							tray.button("\u200b", {
-								intent: "gray-subtle",
-								className: "bg-transparent",
-								style: {
-									width: "2.5rem",
-									height: "2.5rem",
-									borderRadius: "50%",
-									// prettier-ignore
-									backgroundImage:"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNjYWNhY2EiIGZpbGw9Im5vbmUiIHN0cm9rZS13aWR0aD0iMiIgdmlld0JveD0iMCAwIDI0IDI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJVSS1TdGF0aWNUYWJzX19pY29uIC1tbC0wLjUgbXItMiBoLTQgdy00IiBhcmlhLWhpZGRlbj0idHJ1ZSIgZGF0YS1jdXJyZW50PSJ0cnVlIiBoZWlnaHQ9IjFlbSIgd2lkdGg9IjFlbSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJtMTUgMTEtMSA5bTUtOS00LTdNMiAxMWgyME0zLjUgMTFsMS42IDcuNGEyIDIgMCAwIDAgMiAxLjZoOS44YTIgMiAwIDAgMCAyLTEuNmwxLjctNy40TTQuNSAxNS41aDE1TTUgMTFsNC03bTAgNyAxIDkiLz48L3N2Zz4=)",
-									backgroundRepeat: "no-repeat",
-									backgroundPosition: "center",
-									backgroundSize: "1.5rem",
-									padding: "0",
-									paddingInlineStart: "0.5rem",
-								},
-								onClick: ctx.eventHandler("goto:marketplace", () => {
-									// clear fieldrefs
-									tabs.current.set(Tabs.Marketplace);
-								}),
-							}),
+							tray.tooltip(create, { text: "Create Style" }), //
+							tray.tooltip(marketplace, { text: "Marketplace" }),
 						],
 						{
-							style: {
-								alignItems: "center",
-							},
+							className: "items-center",
 						}
 					),
 				]);
 
 				const storage = manager.storage;
-
 				const body = tray.div(
 					[
 						storage.length
-							? tray.stack(storage.map(this.formatManagerItem), { style: { marginRight: "0.25rem", marginTop: "0.25rem" } })
+							? tray.stack(storage.map(this.formatManagerItem), { className: " mr-1 mt-1" })
 							: tray.text("No styles yet!", {
+									className: "flex-1 h-full text-center bg-gray-900 rounded-lg text-lg font-bold text-[--muted]",
 									style: {
 										alignContent: "center",
-										textAlign: "center",
-										height: "100%",
-										backgroundColor: "rgb(var(--color-gray-900))",
 										border: "0.25rem dashed var(--border)",
-										borderRadius: "0.5rem",
-										fontSize: "1.5rem",
-										fontWeight: "bold",
-										color: "rgb(var(--color-gray-500))",
 									},
 							  }),
 					],
 					{
-						style: { height: "28rem", overflowY: "scroll" },
+						className: "overflow-scroll",
+						style: { height: "28rem" },
 					}
 				);
 
@@ -717,35 +618,20 @@ function init() {
 			},
 			[Tabs.Editor]() {
 				const currentStyle = state.currentStyle.get();
+				const settings = tray.button("\u200b", {
+					intent: "gray-subtle",
+					className: "w-10 h-10 rounded-full bg-no-repeat bg-center bg-transparent",
+					style: {
+						backgroundImage: `url(${icons.get("settings")})`,
+						backgroundSize: "1.5rem",
+					},
+					onClick: ctx.eventHandler("goto:settings", () => tabs.currentOverlay.set([this.settings()])),
+				});
 
 				const header = this.header(currentStyle ? "Edit Style" : "Create Style", currentStyle ? "Edit current style" : "Create new style", [
-					tray.flex(
-						[
-							this.backButton(),
-							tray.button("\u200b", {
-								intent: "gray-subtle",
-								className: "bg-transparent",
-								style: {
-									width: "2.5rem",
-									height: "2.5rem",
-									borderRadius: "50%",
-									backgroundImage:
-										"url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNjYWNhY2EiIGZpbGw9Im5vbmUiIHN0cm9rZS13aWR0aD0iMiIgdmlld0JveD0iMCAwIDI0IDI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGhlaWdodD0iMWVtIiB3aWR0aD0iMWVtIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0xMi4yMiAyaC0uNDRhMiAyIDAgMCAwLTIgMnYuMThhMiAyIDAgMCAxLTEgMS43M2wtLjQzLjI1YTIgMiAwIDAgMS0yIDBsLS4xNS0uMDhhMiAyIDAgMCAwLTIuNzMuNzNsLS4yMi4zOGEyIDIgMCAwIDAgLjczIDIuNzNsLjE1LjFhMiAyIDAgMCAxIDEgMS43MnYuNTFhMiAyIDAgMCAxLTEgMS43NGwtLjE1LjA5YTIgMiAwIDAgMC0uNzMgMi43M2wuMjIuMzhhMiAyIDAgMCAwIDIuNzMuNzNsLjE1LS4wOGEyIDIgMCAwIDEgMiAwbC40My4yNWEyIDIgMCAwIDEgMSAxLjczVjIwYTIgMiAwIDAgMCAyIDJoLjQ0YTIgMiAwIDAgMCAyLTJ2LS4xOGEyIDIgMCAwIDEgMS0xLjczbC40My0uMjVhMiAyIDAgMCAxIDIgMGwuMTUuMDhhMiAyIDAgMCAwIDIuNzMtLjczbC4yMi0uMzlhMiAyIDAgMCAwLS43My0yLjczbC0uMTUtLjA4YTIgMiAwIDAgMS0xLTEuNzR2LS41YTIgMiAwIDAgMSAxLTEuNzRsLjE1LS4wOWEyIDIgMCAwIDAgLjczLTIuNzNsLS4yMi0uMzhhMiAyIDAgMCAwLTIuNzMtLjczbC0uMTUuMDhhMiAyIDAgMCAxLTIgMGwtLjQzLS4yNWEyIDIgMCAwIDEtMS0xLjczVjRhMiAyIDAgMCAwLTItMiIvPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjMiLz48L3N2Zz4=)",
-									backgroundRepeat: "no-repeat",
-									backgroundPosition: "center",
-									backgroundSize: "1.5rem",
-								},
-								onClick: ctx.eventHandler("goto:settings", () => {
-									tabs.currentOverlay.set([this.settings()]);
-								}),
-							}),
-						],
-						{
-							style: {
-								alignItems: "center",
-							},
-						}
-					),
+					tray.flex([this.backButton(), tray.tooltip(settings, { text: "Settings" })], {
+						className: "items-center",
+					}),
 				]);
 
 				function switchTab(target: "desktop" | "mobile") {
@@ -759,155 +645,118 @@ function init() {
 					ctx.setTimeout(() => state.tabBtnDisabled.set(false), 500);
 				}
 
-				const body = tray.stack(
+				const nameInput = tray.flex(
 					[
-						tray.flex(
-							[
-								tray.text("Name", {
-									style: {
-										width: "fit-content",
-										height: "100%",
-										wordBreak: "normal",
-										alignContent: "center",
-										padding: "0 0.75rem",
-										backgroundColor: "rgb(var(--color-gray-900))",
-										border: "1px solid var(--border)",
-										borderRadius: "0.5rem 0 0 0.5rem",
-									},
-								}),
-								tray.input({
-									fieldRef: fieldRef.editor.name,
-									placeholder: "Name for your custom style",
-									style: {
-										borderRadius: "0 0.5rem 0.5rem 0",
-										marginLeft: "-1px",
-									},
-								}),
-							],
-							{
-								gap: 0,
-								style: {
-									alignItems: "center",
-								},
-							}
-						),
-						tray.stack(
-							[
-								tray.flex(
-									[
-										tray.button("Desktop", {
-											className: `bg-transparent ${state.editorSelectedScreen.get() === "desktop" ? "" : "hover:bg-gray-600"}`,
-											disabled: state.tabBtnDisabled.get(),
-											style: {
-												width: "100%",
-												borderRadius: "0.5rem 0.5rem 0 0",
-												// if selected
-												...(state.editorSelectedScreen.get() === "desktop"
-													? {
-															border: "1px solid var(--border)",
-															borderBottom: "1px solid transparent",
-													  }
-													: {
-															borderBottom: "1px solid var(--border)",
-													  }),
-											},
-											onClick: ctx.eventHandler("screen-desktop", () => switchTab("desktop")),
-										}),
-										tray.button("Mobile", {
-											className: `bg-transparent ${state.editorSelectedScreen.get() === "mobile" ? "" : "hover:bg-gray-600"}`,
-											disabled: state.tabBtnDisabled.get(),
-											style: {
-												width: "100%",
-												borderRadius: "0.5rem 0.5rem 0 0",
-												...(state.editorSelectedScreen.get() === "mobile"
-													? {
-															border: "1px solid var(--border)",
-															borderBottom: "1px solid transparent",
-													  }
-													: {
-															borderBottom: "1px solid var(--border)",
-													  }),
-											},
-											onClick: ctx.eventHandler("screen-mobile", () => switchTab("mobile")),
-										}),
-									],
-									{ gap: 0 }
-								),
-								tray.input({
-									textarea: true,
-									fieldRef: fieldRef.editor.controller,
-									placeholder: "...your custom style",
-									style: {
-										borderRadius: "0 0 0.5rem 0.5rem",
-										height: "300px",
-										overflow: "scroll",
-										whiteSpace: "nowrap",
-										fontFamily: "monospace",
-										borderTop: "none",
-										borderColor: "var(--border)",
-										"--tw-ring-opcaity": "0",
-										"--tw-ring-color": "transparent",
-									},
-									onChange: ctx.eventHandler("screen-controller", ({ value }) => {
-										fieldRef.editor[state.editorSelectedScreen.get()].setValue(value);
-									}),
-								}),
-							],
-							{
-								gap: 0,
-							}
-						),
-						tray.flex([currentStyle ? this.deleteButton(currentStyle) : [], this.saveButton(currentStyle ?? undefined)], {
-							style: {
-								justifyContent: "end",
-							},
+						tray.text("Name", {
+							className: "w-fit h-full break-normal bg-gray-900 border py-0 px-3",
+							style: { alignContent: "center", borderRadius: "0.5rem 0 0 0.5rem" },
+						}),
+						tray.input({
+							fieldRef: fieldRef.editor.name,
+							placeholder: "Name for your custom style",
+							style: { borderRadius: "0 0.5rem 0.5rem 0", marginLeft: "-1px" },
 						}),
 					],
 					{
-						gap: 5,
-						style: { height: "28rem" },
+						gap: 0,
+						className: "items-center",
 					}
 				);
 
-				return tray.stack([this.overlay(), header, body], { style: { padding: "0.5rem" } });
+				const desktop = tray.button("Desktop", {
+					className: `bg-transparent ${state.editorSelectedScreen.get() === "desktop" ? "" : "hover:bg-gray-600"}`,
+					disabled: state.tabBtnDisabled.get(),
+					style: {
+						width: "100%",
+						borderRadius: "0.5rem 0.5rem 0 0",
+						...(state.editorSelectedScreen.get() === "desktop"
+							? {
+									border: "1px solid var(--border)",
+									borderBottom: "1px solid transparent",
+							  }
+							: {
+									borderBottom: "1px solid var(--border)",
+							  }),
+					},
+					onClick: ctx.eventHandler("screen-desktop", () => switchTab("desktop")),
+				});
+
+				const mobile = tray.button("Mobile", {
+					className: `w-full bg-transparent ${state.editorSelectedScreen.get() === "mobile" ? "" : "hover:bg-gray-600"}`,
+					disabled: state.tabBtnDisabled.get(),
+					style: {
+						borderRadius: "0.5rem 0.5rem 0 0",
+						...(state.editorSelectedScreen.get() === "mobile"
+							? {
+									border: "1px solid var(--border)",
+									borderBottom: "1px solid transparent",
+							  }
+							: {
+									borderBottom: "1px solid var(--border)",
+							  }),
+					},
+					onClick: ctx.eventHandler("screen-mobile", () => switchTab("mobile")),
+				});
+
+				const panel = tray.stack(
+					[
+						tray.flex([desktop, mobile], { gap: 0 }),
+						tray.input({
+							textarea: true,
+							fieldRef: fieldRef.editor.controller,
+							placeholder: "...your custom style",
+							style: {
+								borderRadius: "0 0 0.5rem 0.5rem",
+								height: "300px",
+								overflow: "scroll",
+								whiteSpace: "nowrap",
+								fontFamily: "monospace",
+								borderTop: "none",
+								borderColor: "var(--border)",
+								"--tw-ring-opcaity": "0",
+								"--tw-ring-color": "transparent",
+							},
+							onChange: ctx.eventHandler("screen-controller", ({ value }) => fieldRef.editor[state.editorSelectedScreen.get()].setValue(value)),
+						}),
+					],
+					{ gap: 0 }
+				);
+
+				const actionGroup = tray.flex([currentStyle ? this.deleteButton(currentStyle) : [], this.saveButton(currentStyle ?? undefined)], {
+					className: "justify-end",
+				});
+
+				const body = tray.stack([nameInput, panel, actionGroup], {
+					gap: 5,
+					style: { height: "28rem" },
+				});
+
+				return tray.stack([this.customStyles(), this.overlay(), header, body], { style: { padding: "0.5rem" } });
 			},
 			[Tabs.Marketplace]() {
+				const refresh = tray.button("\u200b", {
+					intent: "gray-subtle",
+					loading: state.isFetching.get(),
+					className: "w-10 h-10 rounded-full bg-transparent bg-no-repeat bg-center p-0",
+					style: {
+						...(state.isFetching.get() ? {} : { backgroundImage: `url(${icons.get("refresh")})` }),
+						backgroundSize: "1.3rem",
+						paddingInlineStart: "0.5rem",
+					},
+					onClick: ctx.eventHandler(`refresh-favorites`, () => {
+						state.isFetching.set(true);
+						manager
+							.fetchMarketplace()
+							.then(() => ctx.toast.success("Successfully refreshed community styles!"))
+							.catch((err) => ctx.toast.error(`An error occured while fetching favorites: ${err.message}`))
+							.finally(() => ctx.setTimeout(() => state.isFetching.set(false), 1000));
+					}),
+				});
+
 				const header = this.header("Community made styles", "Download community made css snippets", [
-					tray.flex(
-						[
-							this.backButton(),
-							tray.button("\u200b", {
-								intent: "gray-subtle",
-								loading: state.isFetching.get(),
-								className: "bg-transparent",
-								style: {
-									width: "2.5rem",
-									height: "2.5rem",
-									borderRadius: "50%",
-									// prettier-ignore
-									backgroundImage: state.isFetching.get() ? "" : "url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9IiNjYWNhY2EiIGZpbGw9Im5vbmUiIHN0cm9rZS13aWR0aD0iMiIgdmlld0JveD0iMCAwIDI0IDI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGhlaWdodD0iMWVtIiB3aWR0aD0iMWVtIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0yMSAxMmE5IDkgMCAwIDAtOS05IDkuNzUgOS43NSAwIDAgMC02Ljc0IDIuNzRMMyA4Ii8+PHBhdGggZD0iTTMgM3Y1aDVtLTUgNGE5IDkgMCAwIDAgOSA5IDkuNzUgOS43NSAwIDAgMCA2Ljc0LTIuNzRMMjEgMTYiLz48cGF0aCBkPSJNMTYgMTZoNXY1Ii8+PC9zdmc+",
-									backgroundRepeat: "no-repeat",
-									backgroundPosition: "center",
-									backgroundSize: "1.3rem",
-									padding: "0",
-									paddingInlineStart: "0.5rem",
-								},
-								onClick: ctx.eventHandler(`refresh-favorites`, () => {
-									state.isFetching.set(true);
-									manager
-										.fetchMarketplace()
-										.then(() => ctx.toast.success("Successfully refreshed community styles!"))
-										.catch((err) => ctx.toast.error(`An error occured while fetching favorites: ${err.message}`))
-										.finally(() => ctx.setTimeout(() => state.isFetching.set(false), 1000));
-								}),
-							}),
-						],
-						{
-							style: {
-								alignItems: "center",
-							},
-						}
-					),
+					tray.flex([this.backButton(), tray.tooltip(refresh, { text: "Refresh" })], {
+						className: "items-center",
+					}),
 				]);
 
 				const marketplace = manager.marketplace;
