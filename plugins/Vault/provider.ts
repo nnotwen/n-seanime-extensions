@@ -822,7 +822,7 @@ function init() {
 				const content = tray.stack([name, details], { className: "justify-between p-3 h-24" });
 
 				return tray.div([background, content], {
-					className: "rounded-lg border overflow-hidden vault-shelf-entry-card-container bg-gray-900 cursor-pointer mr-1",
+					className: "rounded-lg border overflow-hidden vault-shelf-entry-card-container bg-gray-900 cursor-pointer mr-1 shrink-0",
 					style: { minHeight: "fit-content" },
 					onClick: ctx.eventHandler(`vault-clicked:${shelf.uuid}`, () => {
 						state.currentShelfId.set(shelf.uuid);
@@ -872,7 +872,7 @@ function init() {
 				);
 
 				return tray.div([background, content], {
-					className: "vault-shelf-entry-card-container rounded-lg border overflow-hidden bg-gray-900 cursor-pointer shrink-0",
+					className: "vault-shelf-entry-card-container rounded-lg border overflow-hidden bg-gray-900 cursor-pointer mr-1 shrink-0",
 					onClick: ctx.eventHandler(`shelf-clicked:${shelf.uuid}`, () => {
 						try {
 							vault.addToShelf(shelf.uuid, media);
