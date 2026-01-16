@@ -1,7 +1,7 @@
 {
 	"id": "traktsync",
 	"name": "TraktSync",
-	"version": "1.1.3",
+	"version": "1.1.4",
 	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/TraktSync/traktsync.json",
 	"language": "typescript",
 	"type": "plugin",
@@ -18,7 +18,7 @@
 			"allow": {
 				"networkAccess": {
 					"allowedDomains": ["animeapi.my.id"],
-					"reasoning": "Used for mapping anime to other providers"
+					"reasoning": "Used for mapping anime to other providers."
 				}
 			}
 		}

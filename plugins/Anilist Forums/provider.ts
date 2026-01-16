@@ -647,17 +647,19 @@ function init() {
 					case "highlight":
 						return tray.div([node.children.map(MarkdownParser.renderTray)], { className: "inline text-blue-400" });
 					case "image":
-						return tray.button("\u200b", {
-							className: "w-full h-auto bg-no-repeat bg-start bg-cover",
-							style: {
-								// width: node.width ?? "",
-								// maxWidth: "100%",
-								backgroundImage: `url(${node.src})`,
-								aspectRatio: "16 / 9",
-								"--tw-bg-opacity": "0",
-							},
-							onClick: ctx.eventHandler(`preview:${node.src}:${Math.random().toFixed(5)}`, () => tabs.previewImage(node.src ?? "")),
-						});
+						return tray.div(
+							[
+								tray.img({
+									src: node.src,
+									width: node.width || "100%",
+									height: "auto",
+									className: "inline",
+								}),
+							],
+							{
+								onClick: ctx.eventHandler(`preview:${node.src}:${Math.random().toFixed(5)}`, () => tabs.previewImage(node.src ?? "")),
+							}
+						);
 					case "italic":
 						return tray.div(node.children.map(MarkdownParser.renderTray), { className: "inline italic" });
 					case "link":
@@ -693,11 +695,18 @@ function init() {
 					case "newline":
 						return tray.text("\u200b");
 					case "paragraph":
-						return tray.div(node.children.map(MarkdownParser.renderTray), { className: "w-full" });
+						return tray.p(node.children.map(MarkdownParser.renderTray), { className: "w-full" });
 					case "quote":
-						return tray.div(node.children.map(MarkdownParser.renderTray), {
-							className: "w-full border-l-4 rounded-md py-2 pl-4 pr-2 bg-blue-950 bg-opacity-30 text-gray-400 italic my-2",
-						});
+						return tray.flex(
+							[
+								tray.div([], { className: "h-auto w-2 bg-gray-400", style: { borderRadius: "0.25rem 0 0 0.25rem" } }),
+								tray.p(node.children.map(MarkdownParser.renderTray), {
+									className: "w-full py-2 pl-4 pr-2 bg-blue-950 bg-opacity-30 text-gray-400 italic",
+									style: { borderRadius: "0 0.25rem 0.25rem 0" },
+								}),
+							],
+							{ gap: 0, className: "my-2" }
+						);
 					case "spoiler":
 						return tray.stack(
 							[
