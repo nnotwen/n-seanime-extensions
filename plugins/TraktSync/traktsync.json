@@ -14,7 +14,13 @@
 	"plugin": {
 		"version": "1",
 		"permissions": {
-			"scopes": ["storage", "anilist"]
+			"scopes": ["storage", "anilist"],
+			"allow": {
+				"networkAccess": {
+					"allowedDomains": ["animeapi.my.id"],
+					"reasoning": "Used for mapping anime to other providers"
+				}
+			}
 		}
 	}
 }
