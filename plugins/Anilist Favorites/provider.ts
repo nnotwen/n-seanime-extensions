@@ -11,11 +11,38 @@ function init() {
 		const iconUrl = "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Anilist%20Favorites/icon.png";
 		const tray = ctx.newTray({ iconUrl, withContent: true });
 
+		const icons = {
+			html: {
+				back: /*html*/ `
+					<svg stroke="#cacaca" fill="#cacaca" stroke-width="0" viewBox="0 0 256 256" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+						<path d="M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24m0 192a88 88 0 1 1 88-88 88.1 88.1 0 0 1-88 88m48-88a8 8 0 0 1-8 8h-60.69l18.35 18.34a8 8 0 0 1-11.32 11.32l-32-32a8 8 0 0 1 0-11.32l32-32a8 8 0 0 1 11.32 11.32L107.31 120H168a8 8 0 0 1 8 8" stroke="none"/>
+					</svg>`,
+				chevyleft: /*html*/ `
+					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+						<path stroke="#cacaca" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m7 16 6-6-6-6"/>
+					</svg>`,
+				refresh: /*html*/ `
+					<svg stroke="#cacaca" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+						<path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+						<path d="M3 3v5h5m-5 4a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+						<path d="M16 16h5v5"/>
+					</svg>`,
+				search: /*html*/ `
+					<svg xmlns="http://www.w3.org/2000/svg" fill="#5a5a5a" height="512" width="512" viewBox="0 0 512 512">
+						<path d="M495 466.2 377.2 348.4c29.2-35.6 46.8-81.2 46.8-130.9C424 103.5 331.5 11 217.5 11 103.4 11 11 103.5 11 217.5S103.4 424 217.5 424c49.7 0 95.2-17.5 130.8-46.7L466.1 495c8 8 20.9 8 28.9 0 8-7.9 8-20.9 0-28.8m-277.5-83.3C126.2 382.9 52 308.7 52 217.5S126.2 52 217.5 52C308.7 52 383 126.3 383 217.5s-74.3 165.4-165.5 165.4"/>
+					</svg>`,
+			},
+			get(name: keyof typeof this.html, raw: boolean = false) {
+				if (raw) return this.html[name];
+				return `data:image/svg+xml;base64,${Buffer.from(this.html[name].trim(), "utf-8").toString("base64")}`;
+			},
+		};
+
 		enum Tabs {
 			General = 1,
 			Media = 2,
 			People = 3,
-			PeopleSpecific = 4,
+			Person = 4,
 		}
 
 		const state = {
@@ -177,7 +204,7 @@ function init() {
 						const query = "query ($characterId: Int!, $characterMediaPage: Int!) { Character(id: $characterId) { media(page: $characterMediaPage, perPage: 50) { pageInfo { currentPage hasNextPage } edges { node { id type title { userPreferred } coverImage { large } format seasonYear } voiceActors { id name { full native } languageV2 image { large } } } } } }";
 						const data: $favorite.FavoriteCharactersFetchResponse["Viewer"]["favourites"]["characters"]["nodes"][number]["media"] = await favorites.fetch(
 							query,
-							{ characterId: characterPage.id, characterMediaPage: characterPage.media.pageInfo.currentPage + 1 }
+							{ characterId: characterPage.id, characterMediaPage: characterPage.media.pageInfo.currentPage + 1 },
 						);
 
 						const cache = this.cache;
@@ -232,7 +259,7 @@ function init() {
 						const query = "query ($staffId: Int!, $staffMediaPage: Int!) { Staff(id: $staffId) { staffMedia(page: $staffMediaPage, perPage: 50) { pageInfo { currentPage hasNextPage } edges { staffRole node { id type title synonyms { userPreferred } coverImage { large } format seasonYear } } } } }";
 						const data: $favorite.FavoriteStaffFetchResponse["Viewer"]["favourites"]["staff"]["nodes"][number]["staffMedia"] = await favorites.fetch(
 							query,
-							{ staffId: staff.id, staffMediaPage: staff.staffMedia.pageInfo.currentPage + 1 }
+							{ staffId: staff.id, staffMediaPage: staff.staffMedia.pageInfo.currentPage + 1 },
 						);
 
 						const cache = this.cache;
@@ -299,18 +326,24 @@ function init() {
 						}
 						$store.set(
 							`favorites:types:${key}`,
-							nodes.reduce((acc, entry) => {
-								acc[entry.id] = entry;
-								return acc;
-							}, {} as Record<number, (typeof nodes)[number]>)
+							nodes.reduce(
+								(acc, entry) => {
+									acc[entry.id] = entry;
+									return acc;
+								},
+								{} as Record<number, (typeof nodes)[number]>,
+							),
 						);
 					} else {
 						$store.set(
 							`favorites:types:${key}`,
-							res.Viewer.favourites[key].nodes.reduce((acc, entry) => {
-								acc[entry.id] = entry;
-								return acc;
-							}, {} as Record<number, (typeof nodes)[number]>)
+							res.Viewer.favourites[key].nodes.reduce(
+								(acc, entry) => {
+									acc[entry.id] = entry;
+									return acc;
+								},
+								{} as Record<number, (typeof nodes)[number]>,
+							),
 						);
 					}
 				}
@@ -372,229 +405,129 @@ function init() {
 					height: "1rem",
 				},
 			},
+			header(primary: string, subtext?: string, additionalComponents?: any[]) {
+				const icon = tray.div([], {
+					className: "w-10 h-10 bg-contain bg-no-repeat bg-center shrink-0",
+					style: { backgroundImage: `url(${iconUrl})` },
+				});
+
+				const text = tray.stack(
+					[
+						tray.span(`${primary}`, { className: " text-lg font-bold" }), //
+						subtext ? tray.span(`${subtext}`, { className: "text-[--muted] text-sm" }) : [],
+					],
+					{ gap: 0, className: "flex-1" },
+				);
+
+				return tray.flex([icon, text, tray.div(additionalComponents ?? [])], {
+					gap: 3,
+					className: "mb-4",
+				});
+			},
 			loadingRect() {
 				return tray.div([], {
-					className: "animate-pulse",
-					style: { ...tabs.styles.media, backgroundColor: "rgb(var(--color-gray-800))" },
+					className: "animate-pulse w-32 bg-gray-800 p-2 rounded-lg",
+					style: { height: "calc(48 * 0.25rem)" },
 				});
 			},
 
 			loadingCircles() {
 				return tray.stack(
 					[
-						tray.div([], {
-							className: "animate-pulse",
-							style: { ...tabs.styles.people, backgroundColor: "rgb(var(--color-gray-800))" },
-						}),
-						tabs.loadingPill("5.5rem"),
-						tabs.loadingPill("7.5rem"),
+						tray.div([], { className: "w-20 h-20 animate-pulse bg-gray-800 rounded-full" }),
+						tray.span("", { className: "w-24 h-4 block animate-pulse rounded-full bg-gray-800" }),
+						tray.span("", { className: "w-full h-4 block animate-pulse rounded-full bg-gray-800" }),
 					],
 					{
 						gap: 1,
-						style: { width: tabs.styles.media.minWidth, justifyContent: "center", alignItems: "center" },
-					}
-				);
-			},
-
-			loadingPill(width?: string, height?: string) {
-				return tray.div([], {
-					className: "animate-pulse",
-					style: {
-						width: width ?? tabs.styles.pill.width,
-						height: height ?? tabs.styles.pill.height,
-						borderRadius: "9999px",
-						backgroundColor: "rgb(var(--color-gray-800))",
+						className: "w-32 justify-center items-center",
 					},
-				});
+				);
 			},
 
 			noEntries() {
 				return tray.text("No entries yet", {
-					style: {
-						width: "100%",
-						height: "100%",
-						alignSelf: "center",
-						justifySelf: "center",
-						textAlign: "center",
-						padding: "1rem",
-						opacity: "0.8",
-					},
+					className: "w-full h-full p-4 opacity-80 text-center",
+					style: { alignSelf: "center", justifySelf: "center" },
 				});
 			},
 
 			formatMediaCard(
 				media:
 					| $favorite.FavoriteAnimeFetchResponse["Viewer"]["favourites"]["anime"]["nodes"][number]
-					| $favorite.FavoriteMangaFetchResponse["Viewer"]["favourites"]["manga"]["nodes"][number]
+					| $favorite.FavoriteMangaFetchResponse["Viewer"]["favourites"]["manga"]["nodes"][number],
 			) {
-				return tray.stack(
+				const background = tray.div([], {
+					className: "favorites-tab-general-entry-card-background w-full h-full absolute bg-cover bg-no-repeat pointer-events-none",
+					style: {
+						backgroundImage: `url(${media.coverImage.large})`,
+						maskImage: "linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 100%)",
+					},
+				});
+
+				const info = tray.stack(
 					[
-						tray.div([], {
-							className: "favorites-tab-general-entry-card-background",
-							style: {
-								...tabs.styles.media,
-								pointerEvents: "none",
-								position: "absolute",
-								backgroundImage: `url(${media.coverImage.large})`,
-								backgroundSize: "cover",
-								backgroundRepeat: "no-repeat",
-								maskImage: "linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 100%)",
-							},
-						}),
-						tray.stack(
+						tray.flex(
 							[
-								tray.flex(
-									[
-										media.seasonYear ? tray.text(`${media.seasonYear}`, { style: { wordBreak: "normal" } }) : [],
-										tray.text(`${media.format}`, { style: { wordBreak: "normal" } }),
-									],
-									{
-										style: {
-											fontSize: "0.65rem",
-											fontWeight: "bold",
-											width: "fit-content",
-											background: "rgb(var(--color-gray-900) / 0.8)",
-											padding: "0 0.5rem",
-											borderRadius: "0.5rem",
-										},
-									}
-								),
-								tray.text(`${media.title.userPreferred}`, {
-									style: {
-										overflow: "hidden",
-										textOverflow: "ellipsis",
-										display: "-webkit-box",
-										"-webkit-line-clamp": "3",
-										"-webkit-box-orient": "vertical",
-										fontSize: "0.8rem",
-										lineHeight: "normal",
-										wordBreak: "normal",
-									},
-								}),
+								media.seasonYear ? tray.text(`${media.seasonYear}`, { style: { wordBreak: "normal" } }) : [],
+								tray.text(`${media.format}`, { style: { wordBreak: "normal" } }),
 							],
 							{
-								style: {
-									width: "100%",
-									height: "100%",
-									padding: "0.5rem",
-									justifyContent: "space-between",
-									zIndex: "2",
-									textShadow: "0 0 10px black",
-								},
-							}
-						),
-						// Button
-						tray.button("\u200b", {
-							onClick: ctx.eventHandler(`navigate-to:${media.id}`, () => {
-								const path = String(media.type) === "ANIME" ? "/entry" : "/manga/entry";
-								ctx.screen.navigateTo(path, { id: media.id.toString() });
-								tray.close();
-								tabs.current.set(Tabs.General);
-							}),
-							style: {
-								width: "calc(100% + 0.5rem)",
-								height: "calc(100% + 0.5rem)",
-								position: "absolute",
-								marginTop: "-0.5em",
-								marginLeft: "-0.5rem",
-								zIndex: "2",
-								background: "none",
+								className: "w-fit bg-gray-900 text-xs font-bold py-0 px-2 rounded-lg z-[2] bg-gray-900 border",
 							},
+						),
+						tray.text(`${media.title.userPreferred}`, {
+							className: "overflow-hidden line-clamp-3 text-xs leading-none break-normal",
 						}),
 					],
 					{
-						className: "favorites-tab-general-container",
-						style: {
-							minWidth: tabs.styles.media.minWidth,
-							minHeight: tabs.styles.media.minHeight,
-							width: tabs.styles.media.minWidth,
-							height: tabs.styles.media.minHeight,
-							borderRadius: tabs.styles.media.borderRadius,
-							border: "1px solid var(--border)",
-							overflow: "hidden",
-							position: "relative",
-						},
-					}
+						className: "w-full h-full p-2 justify-between z-[2] shadow pointer-events-none",
+					},
 				);
+
+				return tray.div([background, info], {
+					className: "favorites-tab-general-container relative w-32 cursor-pointer rounded-lg border overflow-hidden shrink-0",
+					style: { height: "calc(48 * 0.25rem)" },
+					onClick: ctx.eventHandler(`navigate-to:${media.id}`, () => {
+						const path = String(media.type) === "ANIME" ? "/entry" : "/manga/entry";
+						ctx.screen.navigateTo(path, { id: media.id.toString() });
+						tray.close();
+						tabs.current.set(Tabs.General);
+					}),
+				});
 			},
 
 			formatPeopleCard(
 				people:
 					| $favorite.FavoriteCharactersFetchResponse["Viewer"]["favourites"]["characters"]["nodes"][number]
-					| $favorite.FavoriteStaffFetchResponse["Viewer"]["favourites"]["staff"]["nodes"][number]
+					| $favorite.FavoriteStaffFetchResponse["Viewer"]["favourites"]["staff"]["nodes"][number],
 			) {
-				return tray.stack(
+				const avatar = tray.div([], {
+					className: "w-20 h-20 rounded-full bg-cover bg-no-repeat",
+					style: { backgroundImage: `url(${people.image.large})` },
+				});
+
+				const name = tray.text(`${people.name.full}`, {
+					className: "mt-3 overflow-hiden clamp-3 text-sm opacity-90 text-center leading-none font-bold break-normal",
+				});
+
+				const media = tray.div(
 					[
-						tray.div([], {
-							style: { ...tabs.styles.people, backgroundImage: `url(${people.image.large})`, backgroundSize: "cover", backgroundRepeat: "no-repeat" },
-						}),
-						tray.text(`${people.name.full}`, {
-							style: {
-								marginTop: "0.75rem",
-								overflow: "hidden",
-								textOverflow: "ellipsis",
-								display: "-webkit-box",
-								"-webkit-line-clamp": "3",
-								"-webkit-box-orient": "vertical",
-								fontSize: "0.8rem",
-								opacity: "0.9",
-								textAlign: "center",
-								lineHeight: "normal",
-								fontWeight: "bold",
-								wordBreak: "normal",
-							},
-						}),
-						tray.div(
-							[
-								tray.text(`${"media" in people ? people.media.edges[0]?.node.title.userPreferred : people.languageV2}`, {
-									style: {
-										overflow: "hidden",
-										textOverflow: "ellipsis",
-										display: "-webkit-box",
-										"-webkit-line-clamp": "3",
-										"-webkit-box-orient": "vertical",
-										fontSize: "0.7rem",
-										opacity: "0.6",
-										textAlign: "center",
-										lineHeight: "normal",
-										wordBreak: "normal",
-									},
-								}),
-							],
-							{ style: { flex: "1" } }
-						),
-						// Button
-						tray.button("\u200b", {
-							onClick: ctx.eventHandler(`navigate-to:${people.id}`, () => {
-								state.currentPerson.set(people);
-								tabs.current.set(Tabs.PeopleSpecific);
-								tabs.previous.set(Tabs.People);
-							}),
-							style: {
-								width: "calc(100% + 0.5rem)",
-								height: "calc(100% + 0.5rem)",
-								position: "absolute",
-								marginTop: "-0.5em",
-								marginLeft: "-0.5rem",
-								zIndex: "2",
-								background: "none",
-							},
+						tray.text(`${"media" in people ? people.media.edges[0]?.node.title.userPreferred : people.languageV2}`, {
+							className: "overflow-hidden line-clamp-3 text-xs opacity-60 text-center leading-none break-normal",
 						}),
 					],
-					{
-						gap: 1,
-						className: "hover:bg-gray-800",
-						style: {
-							minWidth: tabs.styles.media.minWidth,
-							width: tabs.styles.media.minWidth,
-							justifyContent: "center",
-							alignItems: "center",
-							padding: "0.5rem",
-							position: "relative",
-							borderRadius: "0.75rem",
-						},
-					}
+					{ className: "flex-1" },
 				);
+
+				return tray.div([avatar, name, media], {
+					className: "flex flex-col relative w-32 p-2 rounded-lg gap-1 hover:bg-gray-800 shrink-0 justify-center items-center cursor-pointer",
+					onClick: ctx.eventHandler(`navigate-to:${people.id}`, () => {
+						state.currentPerson.set(people);
+						tabs.current.set(Tabs.Person);
+						tabs.previous.set(Tabs.People);
+					}),
+				});
 			},
 
 			parseMarkdownText(md: string) {
@@ -616,7 +549,7 @@ function init() {
 							tray.anchor(match[1], {
 								href: match[2],
 								style: { textDecoration: "underline", color: "var(--blue)" },
-							})
+							}),
 						);
 
 						lastIndex = linkRegex.lastIndex;
@@ -636,53 +569,37 @@ function init() {
 					// Headings
 					if (/^#{1,6}\s/.test(text)) {
 						const heading = text.replace(/^#{1,6}\s*/, "");
-						lineRes.push(tray.text(heading, { style: { fontWeight: "bold", fontSize: "1.25rem" } }));
+						lineRes.push(tray.text(heading, { className: "text-lg font-bold" }));
 						return;
 					}
 
 					// Bold (**text**)
 					text = text.replace(/\*\*(.*?)\*\*/g, (_, bold) => {
-						lineRes.push(
-							tray.text(`${bold}`, {
-								style: { fontWeight: "bold", display: "inline" },
-							})
-						);
+						lineRes.push(tray.span(`${bold}`, { className: "font-bold" }));
 						return "";
 					});
 
 					// Underline (__text__)
 					text = text.replace(/__(.*?)__/g, (_, underline) => {
-						lineRes.push(
-							tray.text(`${underline}`, {
-								style: { textDecoration: "underline", display: "inline" },
-							})
-						);
+						lineRes.push(tray.span(`${underline}`, { className: "underline" }));
 						return "";
 					});
 
 					// Italic
 					text = text.replace(/\*(.*?)\*/g, (_, italic) => {
-						lineRes.push(tray.text(`${italic}`, { style: { fontStyle: "italic", display: "inline" } }));
+						lineRes.push(tray.span(`${italic}`, { className: "italic" }));
 						return "";
 					});
 
 					// Inline code
 					text = text.replace(/`(.*?)`/g, (_, code) => {
-						lineRes.push(tray.text(`${code}`, { style: { fontFamily: "monospace", backgroundColor: "#eee", display: "inline" } }));
+						lineRes.push(tray.span(`${code}`, { style: { fontFamily: "monospace", backgroundColor: "#eee" } }));
 						return "";
 					});
 
 					// Spoilers (~! text !~)
 					text = text.replace(/~!(.*?)!~/g, (_, spoiler) => {
-						lineRes.push(
-							tray.text(`${spoiler}`, {
-								className: "favorites-spoiler",
-								style: {
-									cursor: "pointer",
-									display: "inline",
-								},
-							})
-						);
+						lineRes.push(tray.text(`${spoiler}`, { className: "favorites-spoiler cursor-pointer" }));
 						return "";
 					});
 
@@ -695,7 +612,7 @@ function init() {
 
 					// Fallback plain text
 					if (text.length > 0) {
-						lineRes.push(tray.text(`${text}`, { style: { display: "inline" } }));
+						lineRes.push(tray.span(`${text}`));
 					}
 				}
 
@@ -712,247 +629,119 @@ function init() {
 			},
 
 			[Tabs.General]() {
-				const moreButtonOpts = {
-					className: "bg-transparent",
-					intent: "gray-subtle" as $ui.Intent,
-					disabled: !favorites.hasInitialized.get() || state.isFetching.get(),
+				const refresh = tray.button("\u200b", {
+					intent: "gray-subtle",
+					loading: state.isFetching.get() || !favorites.hasInitialized.get(),
+					className: "w-10 h-10 rounded-full bg-transparent bg-no-repeat bg-center p-0",
 					style: {
-						borderRadius: "9999px",
-						backgroundImage:
-							"url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgdmlld0JveD0iMCAwIDIwIDIwIiBmaWxsPSJub25lIj48cGF0aCBzdHJva2U9IiNjYWNhY2EiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIyIiBkPSJtNyAxNiA2LTYtNi02Ii8+PC9zdmc+)",
-						backgroundPosition: "calc(100% - 0.5rem) center",
-						backgroundRepeat: "no-repeat",
-						backgroundSize: "1.1rem",
-						paddingInlineEnd: "2.3rem",
-						marginRight: "0.5rem",
+						...(state.isFetching.get() || !favorites.hasInitialized.get() ? {} : { backgroundImage: `url(${icons.get("refresh")})` }),
+						backgroundSize: "1.2rem",
+						paddingInlineStart: "0.5rem",
 					},
-				};
-
-				const header = tray.flex(
-					[
-						tray.div([], {
-							style: {
-								width: "2.5rem",
-								height: "2.5rem",
-								marginTop: "-0.3rem",
-								backgroundImage: `url(${iconUrl})`,
-								backgroundSize: "contain",
-								backgroundRepeat: "no-repeat",
-								backgroundPosition: "center",
-								flexGrow: "0",
-								flexShrink: "0",
-							},
-						}),
-						tray.stack(
-							[
-								tray.text("Anilist Favorites", { style: { fontSize: "1.2em", fontWeight: "bold" } }),
-								tray.text("Browse your favorite entries", { style: { fontSize: "0.8em" }, className: "opacity-30" }),
-							],
-							{
-								style: {
-									lineHeight: "1em",
-									width: "100%",
-								},
-							}
-						),
-						tray.flex(
-							[
-								tray.button("\u200b", {
-									intent: "gray-subtle",
-									loading: state.isFetching.get() || !favorites.hasInitialized.get(),
-									style: {
-										width: "2.5rem",
-										height: "2.5rem",
-										borderRadius: "50%",
-										// prettier-ignore
-										backgroundImage: state.isFetching.get() || !favorites.hasInitialized.get() ? "" : "url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iI2ZmZiIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik04IDNhNSA1IDAgMSAwIDQuNTQ2IDIuOTE0LjUuNSAwIDAgMSAuOTA4LS40MTdBNiA2IDAgMSAxIDggMnoiLz48cGF0aCBkPSJNOCA0LjQ2NlYuNTM0YS4yNS4yNSAwIDAgMSAuNDEtLjE5MmwyLjM2IDEuOTY2Yy4xMi4xLjEyLjI4NCAwIC4zODRMOC40MSA0LjY1OEEuMjUuMjUgMCAwIDEgOCA0LjQ2NiIvPjwvc3ZnPg==)",
-										backgroundRepeat: "no-repeat",
-										backgroundPosition: "center",
-										backgroundSize: "1rem 1rem",
-										padding: "0",
-										paddingInlineStart: "0.5rem",
-									},
-									onClick: ctx.eventHandler(`refresh-favorites`, () => {
-										state.isFetching.set(true);
-										favorites
-											.refetch()
-											.then(() => ctx.setTimeout(() => ctx.toast.success("Successfully refetched favorites from AniList!"), 2_000))
-											.catch((err) => ctx.toast.error(`An error occured while fetching favorites: ${err.message}`))
-											.finally(() =>
-												ctx.setTimeout(() => {
-													state.isFetching.set(false);
-													tray.update();
-												}, 2_000)
-											);
-									}),
-								}),
-							],
-							{
-								style: {
-									alignItems: "center",
-								},
-							}
-						),
-					],
-					{
-						gap: 3,
-						style: {
-							marginBottom: "1rem",
-						},
-					}
-				);
-
-				const animeCache = Object.values(favorites.types.anime.cache);
-				const animeEntries = favorites.hasInitialized.get() ? animeCache.map(this.formatMediaCard) : Array.from({ length: 6 }).map(this.loadingRect);
-				const anime = tray.stack([
-					tray.flex(
-						[
-							tray.text(`Anime (${favorites.hasInitialized.get() ? animeCache.length : "..."})`, {
-								style: { fontSize: "1.1rem", borderBottom: "1px solid var(--border)" },
-							}),
-							tray.button("More", {
-								...moreButtonOpts,
-								disabled: moreButtonOpts.disabled || !animeCache.length,
-								onClick: ctx.eventHandler("goto-anime", () => {
-									this.type.set("ANIME");
-									this.current.set(Tabs.Media);
-								}),
-							}),
-						],
-						{ style: { justifyContent: "space-between" } }
-					),
-					tray.flex(animeEntries.length ? animeEntries : [this.noEntries()], {
-						style: {
-							overflow: "hidden",
-							maskImage: "linear-gradient(to right, rgba(0,0,0,1) 90%, transparent 100%)",
-						},
+					onClick: ctx.eventHandler(`refresh-favorites`, () => {
+						state.isFetching.set(true);
+						favorites
+							.refetch()
+							.then(() => ctx.setTimeout(() => ctx.toast.success("Successfully refetched favorites from AniList!"), 2_000))
+							.catch((err) => ctx.toast.error(`An error occured while fetching favorites: ${err.message}`))
+							.finally(() =>
+								ctx.setTimeout(() => {
+									state.isFetching.set(false);
+									tray.update();
+								}, 2_000),
+							);
 					}),
-				]);
-
-				const mangaCache = Object.values(favorites.types.manga.cache);
-				const mangaEntries = favorites.hasInitialized.get() ? mangaCache.map(this.formatMediaCard) : Array.from({ length: 6 }).map(this.loadingRect);
-				const manga = tray.stack([
-					tray.flex(
-						[
-							tray.text(`Manga (${favorites.hasInitialized.get() ? mangaCache.length : "..."})`, {
-								style: { fontSize: "1.1rem", borderBottom: "1px solid var(--border)" },
-							}),
-							tray.button("More", {
-								...moreButtonOpts,
-								disabled: moreButtonOpts.disabled || !mangaCache.length,
-								onClick: ctx.eventHandler("goto-manga", () => {
-									this.type.set("MANGA");
-									this.current.set(Tabs.Media);
-								}),
-							}),
-						],
-						{ style: { justifyContent: "space-between" } }
-					),
-					tray.flex(mangaEntries.length ? mangaEntries : [this.noEntries()], {
-						style: {
-							overflow: "hidden",
-							maskImage: !mangaEntries.length ? "" : "linear-gradient(to right, rgba(0,0,0,1) 90%, transparent 100%)",
-						},
-					}),
-				]);
-
-				const characterCache = Object.values(favorites.types.characters.cache);
-				const characterEntries = favorites.hasInitialized.get()
-					? characterCache.map(this.formatPeopleCard)
-					: Array.from({ length: 6 }).map(this.loadingCircles);
-				const characters = tray.stack([
-					tray.flex(
-						[
-							tray.text(`Characters (${favorites.hasInitialized.get() ? characterCache.length : "..."})`, {
-								style: { fontSize: "1.1rem", borderBottom: "1px solid var(--border)" },
-							}),
-							tray.button("More", {
-								...moreButtonOpts,
-								disabled: moreButtonOpts.disabled || !characterCache.length,
-								onClick: ctx.eventHandler("goto-characters", () => {
-									this.type.set("CHARACTERS");
-									this.current.set(Tabs.People);
-								}),
-							}),
-						],
-						{ style: { justifyContent: "space-between" } }
-					),
-					tray.flex(characterEntries.length ? characterEntries : [this.noEntries()], {
-						style: {
-							overflow: "hidden",
-							maskImage: "linear-gradient(to right, rgba(0,0,0,1) 90%, transparent 100%)",
-						},
-					}),
-				]);
-
-				const staffCache = Object.values(favorites.types.staff.cache);
-				const staffEntries = favorites.hasInitialized.get() ? staffCache.map(this.formatPeopleCard) : Array.from({ length: 6 }).map(this.loadingCircles);
-				const staff = tray.stack([
-					tray.flex(
-						[
-							tray.text(`Staff (${favorites.hasInitialized.get() ? staffCache.length : "..."})`, {
-								style: { fontSize: "1.1rem", borderBottom: "1px solid var(--border)" },
-							}),
-							tray.button("More", {
-								...moreButtonOpts,
-								disabled: moreButtonOpts.disabled || !staffCache.length,
-								onClick: ctx.eventHandler("goto-staff", () => {
-									this.type.set("STAFF");
-									this.current.set(Tabs.People);
-								}),
-							}),
-						],
-						{ style: { justifyContent: "space-between" } }
-					),
-					tray.flex(staffEntries.length ? staffEntries : [this.noEntries()], {
-						style: {
-							overflow: "hidden",
-							maskImage: "linear-gradient(to right, rgba(0,0,0,1) 90%, transparent 100%)",
-						},
-					}),
-				]);
-
-				const studioCache = Object.values(favorites.types.studios.cache);
-				const studioEntries = favorites.hasInitialized.get()
-					? studioCache.map((x) =>
-							tray.anchor(`${x.name}`, {
-								href: x.siteUrl ?? "",
-								target: "_blank",
-								className: "no-underline bg-gray-800 hover:bg-gray-700",
-								style: {
-									padding: "0 0.75rem",
-									borderRadius: "0.75rem",
-								},
-							})
-					  )
-					: Array.from({ length: 10 }).map(() => this.loadingPill(`${4 + Math.floor(Math.random() * 6)}rem`));
-				const studio = tray.stack(
-					[
-						tray.flex(
-							[
-								tray.text(`Studio (${favorites.hasInitialized.get() ? studioCache.length : "..."})`, {
-									style: { fontSize: "1.1rem", borderBottom: "1px solid var(--border)" },
-								}),
-							],
-							{ style: { justifyContent: "space-between" } }
-						),
-						tray.flex(studioEntries.length ? studioEntries : [this.noEntries()], { style: { flexWrap: "wrap" } }),
-					],
-					{
-						style: {
-							marginBottom: "1rem",
-						},
-					}
-				);
-
-				const body = tray.stack([anime, manga, characters, staff, studio], {
-					gap: 5,
-					style: {
-						overflowY: "scroll",
-						overflowX: "hidden",
-						height: "28rem",
-					},
 				});
+
+				const header = this.header("AniList Favorites", "Browse your favorite entries", [
+					tray.flex([tray.tooltip(refresh, { text: "Refresh" })], {
+						className: "items-center",
+					}),
+				]);
+
+				const bodyComponents = [];
+
+				const sources = {
+					ANIME: Object.values(favorites.types.anime.cache),
+					MANGA: Object.values(favorites.types.manga.cache),
+					CHARACTERS: Object.values(favorites.types.characters.cache),
+					STAFF: Object.values(favorites.types.staff.cache),
+					STUDIO: Object.values(favorites.types.studios.cache),
+				} as const;
+
+				for (const [prop, entries] of Object.entries(sources) as { [K in keyof typeof sources]: [K, (typeof sources)[K]] }[keyof typeof sources][]) {
+					const initd = favorites.hasInitialized.get();
+
+					const type = tray.span(`${prop.charAt(0).toUpperCase() + prop.slice(1).toLowerCase()}`, { className: "text-lg font-semibold mr-2" });
+					const len = tray.span(`${entries.length || ""}`, { className: "text-sm text-[--muted]" });
+					const heading = tray.div([type, len], { className: "flex-1 border-b" });
+
+					const more =
+						prop !== "STUDIO"
+							? tray.button("More", {
+									intent: "gray-subtle",
+									disabled: !favorites.hasInitialized.get() || state.isFetching.get(),
+									className: "bg-transparent rounded-full bg-no-repeat mr-2",
+									style: {
+										backgroundPosition: "calc(100% - 0.5rem) center",
+										backgroundSize: "1.1rem",
+										backgroundImage: `url(${icons.get("chevyleft")})`,
+										paddingInlineEnd: "2rem",
+									},
+									onClick: ctx.eventHandler(`goto-${prop}`, () => {
+										this.type.set(prop);
+										this.current.set(Tabs[["ANIME", "MANGA"].includes(prop) ? "Media" : "People"]);
+									}),
+								})
+							: [];
+
+					const ent = [];
+					switch (prop) {
+						case "ANIME":
+							ent.push(initd ? entries.map(this.formatMediaCard) : Array.from({ length: 4 }).map(this.loadingRect));
+							break;
+						case "CHARACTERS":
+							ent.push(initd ? entries.map(this.formatPeopleCard) : Array.from({ length: 4 }).map(this.loadingCircles));
+							break;
+						case "MANGA":
+							ent.push(initd ? entries.map(this.formatMediaCard) : Array.from({ length: 4 }).map(this.loadingRect));
+							break;
+						case "STAFF":
+							ent.push(initd ? entries.map(this.formatPeopleCard) : Array.from({ length: 4 }).map(this.loadingCircles));
+							break;
+						case "STUDIO":
+							ent.push(
+								initd
+									? entries.map((studio) =>
+											tray.anchor(`${studio.name}`, {
+												href: studio.siteUrl ?? "",
+												className: "no-underline bg-gray-800 hover:bg-gray-700 py-0 px-3 rounded-full",
+											}),
+										)
+									: Array.from({ length: 6 }).map(() =>
+											tray.span("", {
+												className: `h-4 block animate-pulse rounded-full bg-gray-800`,
+												style: { width: `${4 + Math.floor(Math.random() * 6)}rem` },
+											}),
+										),
+							);
+							break;
+					}
+
+					const top = tray.flex([heading, more], { className: "justify-between" });
+					const btm = tray.flex(ent.length ? ent : [this.noEntries()], {
+						className: "overflow-hidden",
+						style: { maskImage: "linear-gradient(to right, rgba(0,0,0,1) 90%, transparent 100%)" },
+					});
+
+					bodyComponents.push(tray.stack([top, btm]));
+				}
+
+				const body = tray.stack(bodyComponents, {
+					gap: 5,
+					style: { overflow: "hidden scroll", height: "28rem" },
+				});
+
 				return tray.stack([header, body], { style: { padding: "0.5rem" } });
 			},
 
@@ -960,67 +749,21 @@ function init() {
 				const type = this.type.get();
 				const favorite = favorites.types[type === "ANIME" ? "anime" : "manga"];
 
-				const header = tray.flex(
-					[
-						tray.div([], {
-							style: {
-								width: "2.5rem",
-								height: "2.5rem",
-								marginTop: "-0.3rem",
-								backgroundImage: `url(${iconUrl})`,
-								backgroundSize: "contain",
-								backgroundRepeat: "no-repeat",
-								backgroundPosition: "center",
-								flexGrow: "0",
-								flexShrink: "0",
-							},
-						}),
-						tray.stack(
-							[
-								tray.text(`Favorite ${type === "ANIME" ? "Anime" : "Manga"}`, { style: { fontSize: "1.2em", fontWeight: "bold" } }),
-								tray.text("Browse your favorite entries", { style: { fontSize: "0.8em" }, className: "opacity-30" }),
-							],
-							{
-								style: {
-									lineHeight: "1em",
-									width: "100%",
-								},
-							}
-						),
-						tray.flex(
-							[
-								tray.button("\u200b", {
-									intent: "gray-subtle",
-									style: {
-										width: "2.5rem",
-										height: "2.5rem",
-										borderRadius: "50%",
-										// prettier-ignore
-										backgroundImage: "url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iI2ZmZiIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xNSA4YS41LjUgMCAwIDAtLjUtLjVIMi43MDdsMy4xNDctMy4xNDZhLjUuNSAwIDEgMC0uNzA4LS43MDhsLTQgNGEuNS41IDAgMCAwIDAgLjcwOGw0IDRhLjUuNSAwIDAgMCAuNzA4LS43MDhMMi43MDcgOC41SDE0LjVBLjUuNSAwIDAgMCAxNSA4Ii8+PC9zdmc+)",
-										backgroundRepeat: "no-repeat",
-										backgroundPosition: "center",
-										backgroundSize: "1rem 1rem",
-									},
-									onClick: ctx.eventHandler(`favorites-goback`, () => {
-										tabs.current.set(Tabs.General);
-										state.searchQuery.set("");
-									}),
-								}),
-							],
-							{
-								style: {
-									alignItems: "center",
-								},
-							}
-						),
-					],
-					{
-						gap: 3,
-						style: {
-							marginBottom: "1rem",
-						},
-					}
-				);
+				const back = tray.button("\u200b", {
+					intent: "gray-subtle",
+					className: "w-10 h-10 rounded-full bg-transparent bg-no-repeat bg-center",
+					style: { backgroundImage: `url(${icons.get("back")})`, backgroundSize: "1.5rem" },
+					onClick: ctx.eventHandler(`favorites-goback`, () => {
+						tabs.current.set(Tabs.General);
+						state.searchQuery.set("");
+					}),
+				});
+
+				const header = this.header(`Favorite ${type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()}`, "Browse your favorite entries", [
+					tray.flex([tray.tooltip(back, { text: "Go Back" })], {
+						className: "items-center",
+					}),
+				]);
 
 				const search = tray.input({
 					placeholder: `Search favorite ${this.type.get()?.toLowerCase()}...`,
@@ -1028,144 +771,80 @@ function init() {
 					style: {
 						borderRadius: "0.5rem",
 						paddingInlineStart: "2.5rem",
-						backgroundImage: `url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9IiM1YTVhNWEiIGhlaWdodD0iNTEyIiB3aWR0aD0iNTEyIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI+PHBhdGggZD0iTTQ5NSA0NjYuMiAzNzcuMiAzNDguNGMyOS4yLTM1LjYgNDYuOC04MS4yIDQ2LjgtMTMwLjlDNDI0IDEwMy41IDMzMS41IDExIDIxNy41IDExIDEwMy40IDExIDExIDEwMy41IDExIDIxNy41UzEwMy40IDQyNCAyMTcuNSA0MjRjNDkuNyAwIDk1LjItMTcuNSAxMzAuOC00Ni43TDQ2Ni4xIDQ5NWM4IDggMjAuOSA4IDI4LjkgMCA4LTcuOSA4LTIwLjkgMC0yOC44bS0yNzcuNS04My4zQzEyNi4yIDM4Mi45IDUyIDMwOC43IDUyIDIxNy41UzEyNi4yIDUyIDIxNy41IDUyQzMwOC43IDUyIDM4MyAxMjYuMyAzODMgMjE3LjVzLTc0LjMgMTY1LjQtMTY1LjUgMTY1LjQiLz48L3N2Zz4=)`,
+						backgroundImage: `url(${icons.get("search")})`,
 						backgroundSize: "1rem",
 						backgroundRepeat: "no-repeat",
 						backgroundPosition: "calc(0% + 0.75rem) center",
 					},
-					onChange: ctx.eventHandler("search-query", (e) => {
-						state.searchQuery.set(String(e.value));
-					}),
+					onChange: ctx.eventHandler("search-query", (e) => state.searchQuery.set(String(e.value))),
 				});
 
 				const entries = tray.div(
 					[
 						...Object.values(favorite.cache)
 							.filter((a) =>
-								[...Object.values(a.title).filter(Boolean), ...(a.synonyms || [])].join(" ").toLowerCase().includes(state.searchQuery.get().toLowerCase())
+								[...Object.values(a.title).filter(Boolean), ...(a.synonyms || [])].join(" ").toLowerCase().includes(state.searchQuery.get().toLowerCase()),
 							)
 							.sort((A, B) => A.title.userPreferred!.localeCompare(B.title.userPreferred!))
 							.map(this.formatMediaCard),
 						state.isFetching.get() ? Array.from({ length: 6 }).map(this.loadingRect) : [],
 					],
 					{
-						style: {
-							display: "grid",
-							gridTemplateColumns: `repeat(auto-fit, minmax(${this.styles.media.minWidth}, 1fr))`,
-							gap: "0.5rem",
-						},
-					}
+						className: "grid gap-2",
+						style: { gridTemplateColumns: `repeat(auto-fill, minmax(8rem, 1fr))` },
+					},
 				);
 
-				const additionalEntries =
-					favorite.cacheInfo.hasNextPage && !state.isFetching.get()
-						? tray.flex(
-								[
-									tray.button("Load more", {
-										intent: "gray-subtle",
-										style: {
-											borderRadius: "999px",
-											// prettier-ignore
-											backgroundImage: state.isFetching.get() || !favorites.hasInitialized.get() ? "" : "url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iI2ZmZiIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik04IDNhNSA1IDAgMSAwIDQuNTQ2IDIuOTE0LjUuNSAwIDAgMSAuOTA4LS40MTdBNiA2IDAgMSAxIDggMnoiLz48cGF0aCBkPSJNOCA0LjQ2NlYuNTM0YS4yNS4yNSAwIDAgMSAuNDEtLjE5MmwyLjM2IDEuOTY2Yy4xMi4xLjEyLjI4NCAwIC4zODRMOC40MSA0LjY1OEEuMjUuMjUgMCAwIDEgOCA0LjQ2NiIvPjwvc3ZnPg==)",
-											backgroundRepeat: "no-repeat",
-											backgroundPosition: "calc(0% + 0.5rem) center",
-											backgroundSize: "1rem 1rem",
-											padding: "0 0.75rem 0 2rem",
-										},
-										onClick: ctx.eventHandler("load-more", () => {
-											state.isFetching.set(true);
-											favorite
-												.fetchNextPage()
-												.then(() => ctx.setTimeout(() => ctx.toast.success("Successfully refetched favorites from AniList!"), 2_000))
-												.catch((err) => ctx.toast.error(`An error occured while fetching favorites: ${err.message}`))
-												.finally(() =>
-													ctx.setTimeout(() => {
-														state.isFetching.set(false);
-														tray.update();
-													}, 2_000)
-												);
-										}),
-									}),
-								],
-								{ style: { justifyContent: "center" } }
-						  )
-						: [];
-
-				const body = tray.stack([entries, additionalEntries], {
+				const loadMore = tray.button("Load more", {
+					intent: "gray-subtle",
+					className: "rounded-full bg-no-repeat px-0 pt-3 pb-8",
 					style: {
-						height: "25rem",
-						overflowY: "scroll",
+						backgroundImage: state.isFetching.get() || !favorites.hasInitialized.get() ? "" : `url(${icons.get("refresh")})`,
+						backgroundPosition: "calc(0% + 0.5rem) center",
 					},
+					onClick: ctx.eventHandler("load-more", () => {
+						state.isFetching.set(true);
+						favorite
+							.fetchNextPage()
+							.then(() => ctx.setTimeout(() => ctx.toast.success("Successfully refetched favorites from AniList!"), 2_000))
+							.catch((err) => ctx.toast.error(`An error occured while fetching favorites: ${err.message}`))
+							.finally(() =>
+								ctx.setTimeout(() => {
+									state.isFetching.set(false);
+									tray.update();
+								}, 2_000),
+							);
+					}),
 				});
 
-				return tray.stack([header, search, body], { style: { padding: "0.5rem" } });
+				const plusEntries = favorite.cacheInfo.hasNextPage && !state.isFetching.get() ? tray.flex([loadMore], { className: "justify-center" }) : [];
+
+				const body = tray.stack([entries, plusEntries], {
+					style: { height: "25rem", overflowY: "scroll" },
+				});
+
+				return tray.stack([header, search, body], { className: "p-2" });
 			},
 
 			[Tabs.People]() {
 				const type = this.type.get();
 				const favorite = favorites.types[type === "CHARACTERS" ? "characters" : "staff"];
 
-				const header = tray.flex(
-					[
-						tray.div([], {
-							style: {
-								width: "2.5rem",
-								height: "2.5rem",
-								marginTop: "-0.3rem",
-								backgroundImage: `url(${iconUrl})`,
-								backgroundSize: "contain",
-								backgroundRepeat: "no-repeat",
-								backgroundPosition: "center",
-								flexGrow: "0",
-								flexShrink: "0",
-							},
-						}),
-						tray.stack(
-							[
-								tray.text(`Favorite ${type === "CHARACTERS" ? "Characters" : "Staff"}`, { style: { fontSize: "1.2em", fontWeight: "bold" } }),
-								tray.text("Browse your favorite entries", { style: { fontSize: "0.8em" }, className: "opacity-30" }),
-							],
-							{
-								style: {
-									lineHeight: "1em",
-									width: "100%",
-								},
-							}
-						),
-						tray.flex(
-							[
-								tray.button("\u200b", {
-									intent: "gray-subtle",
-									style: {
-										width: "2.5rem",
-										height: "2.5rem",
-										borderRadius: "50%",
-										// prettier-ignore
-										backgroundImage: "url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iI2ZmZiIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xNSA4YS41LjUgMCAwIDAtLjUtLjVIMi43MDdsMy4xNDctMy4xNDZhLjUuNSAwIDEgMC0uNzA4LS43MDhsLTQgNGEuNS41IDAgMCAwIDAgLjcwOGw0IDRhLjUuNSAwIDAgMCAuNzA4LS43MDhMMi43MDcgOC41SDE0LjVBLjUuNSAwIDAgMCAxNSA4Ii8+PC9zdmc+)",
-										backgroundRepeat: "no-repeat",
-										backgroundPosition: "center",
-										backgroundSize: "1rem 1rem",
-									},
-									onClick: ctx.eventHandler(`favorites-goback`, () => {
-										tabs.current.set(tabs.current.get() === Tabs.People ? Tabs.General : Tabs.People);
-										state.searchQuery.set("");
-									}),
-								}),
-							],
-							{
-								style: {
-									alignItems: "center",
-								},
-							}
-						),
-					],
-					{
-						gap: 3,
-						style: {
-							marginBottom: "1rem",
-						},
-					}
-				);
+				const back = tray.button("\u200b", {
+					intent: "gray-subtle",
+					className: "w-10 h-10 rounded-full bg-transparent bg-no-repeat bg-center",
+					style: { backgroundImage: `url(${icons.get("back")})`, backgroundSize: "1.5rem" },
+					onClick: ctx.eventHandler(`favorites-goback`, () => {
+						tabs.current.set(Tabs.General);
+						state.searchQuery.set("");
+					}),
+				});
+
+				const header = this.header(`Favorite ${type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()}`, "Browse your favorite entries", [
+					tray.flex([tray.tooltip(back, { text: "Go Back" })], {
+						className: "items-center",
+					}),
+				]);
 
 				const search = tray.input({
 					placeholder: `Search favorite ${this.type.get()?.toLowerCase()}...`,
@@ -1173,14 +852,12 @@ function init() {
 					style: {
 						borderRadius: "0.5rem",
 						paddingInlineStart: "2.5rem",
-						backgroundImage: `url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9IiM1YTVhNWEiIGhlaWdodD0iNTEyIiB3aWR0aD0iNTEyIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI+PHBhdGggZD0iTTQ5NSA0NjYuMiAzNzcuMiAzNDguNGMyOS4yLTM1LjYgNDYuOC04MS4yIDQ2LjgtMTMwLjlDNDI0IDEwMy41IDMzMS41IDExIDIxNy41IDExIDEwMy40IDExIDExIDEwMy41IDExIDIxNy41UzEwMy40IDQyNCAyMTcuNSA0MjRjNDkuNyAwIDk1LjItMTcuNSAxMzAuOC00Ni43TDQ2Ni4xIDQ5NWM4IDggMjAuOSA4IDI4LjkgMCA4LTcuOSA4LTIwLjkgMC0yOC44bS0yNzcuNS04My4zQzEyNi4yIDM4Mi45IDUyIDMwOC43IDUyIDIxNy41UzEyNi4yIDUyIDIxNy41IDUyQzMwOC43IDUyIDM4MyAxMjYuMyAzODMgMjE3LjVzLTc0LjMgMTY1LjQtMTY1LjUgMTY1LjQiLz48L3N2Zz4=)`,
+						backgroundImage: `url(${icons.get("search")})`,
 						backgroundSize: "1rem",
 						backgroundRepeat: "no-repeat",
 						backgroundPosition: "calc(0% + 0.75rem) center",
 					},
-					onChange: ctx.eventHandler("search-query", (e) => {
-						state.searchQuery.set(String(e.value));
-					}),
+					onChange: ctx.eventHandler("search-query", (e) => state.searchQuery.set(String(e.value))),
 				});
 
 				const entries = tray.div(
@@ -1190,185 +867,104 @@ function init() {
 									...Object.values(favorites.types.characters.cache)
 										.filter((a) => Object.values(a.name).filter(Boolean).join(" ").toLowerCase().includes(state.searchQuery.get().toLowerCase()))
 										.sort((A, B) => A.name.full!.localeCompare(B.name.full!)),
-							  ]
+								]
 							: [
 									...Object.values(favorites.types.staff.cache)
 										.filter((a) => Object.values(a.name).filter(Boolean).join(" ").toLowerCase().includes(state.searchQuery.get().toLowerCase()))
 										.sort((A, B) => A.name.full!.localeCompare(B.name.full!)),
-							  ]
+								]
 						).map(this.formatPeopleCard),
 						state.isFetching.get() ? Array.from({ length: 6 }).map(this.loadingRect) : [],
 					],
 					{
-						style: {
-							display: "grid",
-							gridTemplateColumns: `repeat(auto-fit, minmax(${this.styles.media.minWidth}, 1fr))`,
-							gap: "0.5rem",
-						},
-					}
+						className: "grid gap-2",
+						style: { gridTemplateColumns: `repeat(auto-fill, minmax(8rem, 1fr))` },
+					},
 				);
 
-				const additionalEntries =
-					favorite.cacheInfo.hasNextPage && !state.isFetching.get()
-						? tray.flex(
-								[
-									tray.button("Load more", {
-										intent: "gray-subtle",
-										style: {
-											borderRadius: "999px",
-											// prettier-ignore
-											backgroundImage: state.isFetching.get() || !favorites.hasInitialized.get() ? "" : "url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iI2ZmZiIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik04IDNhNSA1IDAgMSAwIDQuNTQ2IDIuOTE0LjUuNSAwIDAgMSAuOTA4LS40MTdBNiA2IDAgMSAxIDggMnoiLz48cGF0aCBkPSJNOCA0LjQ2NlYuNTM0YS4yNS4yNSAwIDAgMSAuNDEtLjE5MmwyLjM2IDEuOTY2Yy4xMi4xLjEyLjI4NCAwIC4zODRMOC40MSA0LjY1OEEuMjUuMjUgMCAwIDEgOCA0LjQ2NiIvPjwvc3ZnPg==)",
-											backgroundRepeat: "no-repeat",
-											backgroundPosition: "calc(0% + 0.5rem) center",
-											backgroundSize: "1rem 1rem",
-											padding: "0 0.75rem 0 2rem",
-										},
-										onClick: ctx.eventHandler("load-more", () => {
-											state.isFetching.set(true);
-											favorite
-												.fetchNextPage()
-												.then(() => ctx.setTimeout(() => ctx.toast.success("Successfully refetched favorites from AniList!"), 2_000))
-												.catch((err) => ctx.toast.error(`An error occured while fetching favorites: ${err.message}`))
-												.finally(() =>
-													ctx.setTimeout(() => {
-														state.isFetching.set(false);
-														tray.update();
-													}, 2_000)
-												);
-										}),
-									}),
-								],
-								{ style: { justifyContent: "center" } }
-						  )
-						: [];
-
-				const body = tray.stack([entries, additionalEntries], {
+				const loadMore = tray.button("Load more", {
+					intent: "gray-subtle",
+					className: "rounded-full bg-no-repeat px-0 pt-3 pb-8",
 					style: {
-						height: "25rem",
-						overflowY: "scroll",
+						backgroundImage: state.isFetching.get() || !favorites.hasInitialized.get() ? "" : `url(${icons.get("refresh")})`,
+						backgroundPosition: "calc(0% + 0.5rem) center",
 					},
+					onClick: ctx.eventHandler("load-more", () => {
+						state.isFetching.set(true);
+						favorite
+							.fetchNextPage()
+							.then(() => ctx.setTimeout(() => ctx.toast.success("Successfully refetched favorites from AniList!"), 2_000))
+							.catch((err) => ctx.toast.error(`An error occured while fetching favorites: ${err.message}`))
+							.finally(() =>
+								ctx.setTimeout(() => {
+									state.isFetching.set(false);
+									tray.update();
+								}, 2_000),
+							);
+					}),
 				});
 
-				return tray.stack([header, search, body], { style: { padding: "0.5rem" } });
+				const plusEntries = favorite.cacheInfo.hasNextPage && !state.isFetching.get() ? tray.flex([loadMore], { className: "justify-center" }) : [];
+
+				const body = tray.stack([entries, plusEntries], {
+					style: { height: "25rem", overflowY: "scroll" },
+				});
+
+				return tray.stack([header, search, body], { className: "p-2" });
 			},
 
-			[Tabs.PeopleSpecific]() {
+			[Tabs.Person]() {
 				const person = state.currentPerson.get();
 				if (!person) throw new Error("Could not get the required info.");
 
-				const header = tray.flex(
+				const back = tray.button("\u200b", {
+					intent: "gray-subtle",
+					className: "w-10 h-10 rounded-full bg-transparent bg-no-repeat bg-center",
+					style: { backgroundImage: `url(${icons.get("back")})`, backgroundSize: "1.5rem" },
+					onClick: ctx.eventHandler(`favorites-goback`, () => {
+						tabs.type.set("media" in (person ?? {}) ? "CHARACTERS" : "STAFF");
+						tabs.current.set(tabs.previous.get());
+						state.searchQuery.set("");
+					}),
+				});
+
+				const name = tray.text(`${person.name.full}`, { className: "text-lg font-bold" });
+				const altname = tray.text(`${person.name.alternative?.join(", ")}`, { className: "text-xs text-[--muted] break-normal" });
+				const header = this.header("Favorite", "Browse your favorite entries", [
+					tray.flex([tray.tooltip(back, { text: "Go Back" })], {
+						className: "items-center",
+					}),
+				]);
+
+				const avatar = tray.div(
 					[
 						tray.div([], {
-							style: {
-								width: "2.5rem",
-								height: "2.5rem",
-								marginTop: "-0.3rem",
-								backgroundImage: `url(${iconUrl})`,
-								backgroundSize: "contain",
-								backgroundRepeat: "no-repeat",
-								backgroundPosition: "center",
-								flexGrow: "0",
-								flexShrink: "0",
-							},
+							className: "absolute w-full h-full rounded-lg bg-no-repeat bg-cover pointer-events-none",
+							style: { backgroundImage: `url(${person.image.large})` },
 						}),
-						tray.stack(
-							[
-								tray.text(`Favorite`, { style: { fontSize: "1.2em", fontWeight: "bold" } }),
-								tray.text("Browse your favorite entries", { style: { fontSize: "0.8em" }, className: "opacity-30" }),
-							],
-							{
-								style: {
-									lineHeight: "1em",
-									width: "100%",
-								},
-							}
-						),
-						tray.flex(
-							[
-								tray.button("\u200b", {
-									intent: "gray-subtle",
-									style: {
-										width: "2.5rem",
-										height: "2.5rem",
-										borderRadius: "50%",
-										// prettier-ignore
-										backgroundImage: "url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iI2ZmZiIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xNSA4YS41LjUgMCAwIDAtLjUtLjVIMi43MDdsMy4xNDctMy4xNDZhLjUuNSAwIDEgMC0uNzA4LS43MDhsLTQgNGEuNS41IDAgMCAwIDAgLjcwOGw0IDRhLjUuNSAwIDAgMCAuNzA4LS43MDhMMi43MDcgOC41SDE0LjVBLjUuNSAwIDAgMCAxNSA4Ii8+PC9zdmc+)",
-										backgroundRepeat: "no-repeat",
-										backgroundPosition: "center",
-										backgroundSize: "1rem 1rem",
-									},
-									onClick: ctx.eventHandler(`favorites-goback`, () => {
-										tabs.type.set("media" in (person ?? {}) ? "CHARACTERS" : "STAFF");
-										tabs.current.set(tabs.previous.get());
-										state.searchQuery.set("");
-									}),
-								}),
-							],
-							{
-								style: {
-									alignItems: "center",
-								},
-							}
-						),
 					],
 					{
-						gap: 3,
-						style: {
-							marginBottom: "1rem",
-						},
-					}
+						className: "relative p-0 w-32",
+						style: { height: "12rem" },
+					},
 				);
 
 				const info = tray.flex(
 					[
-						tray.stack([
-							tray.div(
-								[
-									tray.div([], {
-										style: {
-											...tabs.styles.media,
-											pointerEvents: "none",
-											position: "absolute",
-											backgroundImage: `url(${person.image.large})`,
-											backgroundSize: "cover",
-											backgroundRepeat: "no-repeat",
-										},
-									}),
-								],
-								{
-									style: {
-										...tabs.styles.media,
-										position: "relative",
-										padding: "0",
-									},
-								}
-							),
-							// tray.button("Unfavorite", {
-							// 	intent: "alert-subtle",
-							// 	style: {
-							// 		width: "100%",
-							// 	},
-							// }),
-						]),
+						tray.stack([avatar]),
 						tray.div(this.parseMarkdownText(person.description ?? "No available bio"), {
-							style: {
-								fontSize: "0.8rem",
-								overflowY: "scroll",
-								height: "14rem",
-								width: "100%",
-							},
+							className: "w-full text-sm",
+							style: { overflowY: "scroll", height: "14rem" },
 						}),
 					],
-					{
-						gap: 4,
-					}
+					{ gap: 4 },
 				);
 
 				const voiceActors =
 					"staffMedia" in person
 						? []
 						: tray.stack([
-								tray.text("Voice Actors", {}),
+								tray.text("Voice Actors", { className: "text-lg font-semibold" }),
 								tray.flex(
 									[
 										[
@@ -1376,111 +972,62 @@ function init() {
 												person.media?.edges
 													.map((e) => e.voiceActors)
 													.flat()
-													.map((e) => [e.id, e])
+													.map((e) => [e.id, e]),
 											).values(),
 										].map((e) =>
-											tray.flex(
+											tray.a(
 												[
-													tray.div(
+													tray.flex(
 														[
-															tray.div([], {
-																style: {
-																	width: "100%",
-																	height: "100%",
-																	pointerEvents: "none",
-																	position: "absolute",
-																	backgroundImage: `url(${e.image.large})`,
-																	backgroundSize: "cover",
-																	backgroundRepeat: "no-repeat",
-																	backgroundPosition: "center",
+															tray.div(
+																[
+																	tray.div([], {
+																		className: "absolute w-full h-full pointer-events-none bg-cover bg-no-repeat bg-center",
+																		style: { backgroundImage: `url(${e.image.large})` },
+																	}),
+																],
+																{ className: "relative w-12 h-20 p-0" },
+															),
+															tray.stack(
+																[
+																	tray.text(e.name.full ?? "", { className: "overflow-hidden line-clamp-2 text-sm leading-none" }),
+																	tray.text(e.languageV2, { className: "text-xs text-[--muted]" }),
+																],
+																{
+																	className: "p-2 justify-between",
+																	style: { width: "10rem" },
 																},
-															}),
+															),
 														],
-														{
-															style: {
-																width: "3rem",
-																height: "5rem",
-																position: "relative",
-																padding: "0",
-															},
-														}
-													),
-													tray.stack(
-														[
-															tray.text(e.name.full ?? "", {
-																style: {
-																	overflow: "hidden",
-																	textOverflow: "ellipsis",
-																	display: "-webkit-box",
-																	"-webkit-line-clamp": "2",
-																	"-webkit-box-orient": "vertical",
-																	fontSize: "0.85rem",
-																	lineHeight: "normal",
-																},
-															}),
-															tray.text(e.languageV2, {
-																style: {
-																	fontSize: "0.7rem",
-																	opacity: "0.8",
-																},
-															}),
-														],
-														{
-															style: {
-																justifyContent: "space-between",
-																width: "10rem",
-																padding: "0.5rem",
-															},
-														}
+														{ className: "rounded-lg overflow-hidden bg-gray-900 border", gap: 0 },
 													),
 												],
-												{
-													gap: 0,
-													style: {
-														borderRadius: "0.5rem",
-														overflow: "hidden",
-														backgroundColor: "rgb(var(--color-gray-900))",
-														border: "1px solid var(--border)",
-													},
-												}
-											)
+												{ href: `https://anilist.co/staff/${e.id}`, className: "no-underline" },
+											),
 										),
 									],
-									{
-										style: {
-											flexWrap: "wrap",
-										},
-									}
+									{ className: "flex-wrap" },
 								),
-						  ]);
+							]);
 
 				const relatedWorks = tray.flex(
 					[
 						tray.stack([
-							tray.text("staffMedia" in person ? "Related Works" : "Appearances"),
+							tray.text("staffMedia" in person ? "Related Works" : "Appearances", { className: "text-lg font-semibold" }),
 							tray.flex([("staffMedia" in person ? person.staffMedia : person.media).edges.map((e) => this.formatMediaCard(e.node))], {
-								style: {
-									flexWrap: "wrap",
-								},
+								className: "flex-wrap",
 							}),
 						]),
 					],
-					{
-						style: {
-							flexWrap: "wrap",
-						},
-					}
+					{ className: "flex-wrap" },
 				);
 
-				const body = tray.stack([info, voiceActors, relatedWorks], {
+				const body = tray.stack([tray.stack([name, altname, info]), voiceActors, relatedWorks], {
 					gap: 5,
-					style: {
-						height: "28rem",
-						overflowY: "scroll",
-					},
+					style: { height: "28rem", overflowY: "scroll" },
 				});
 
-				return tray.stack([header, body], { style: { padding: "0.5rem" } });
+				return tray.stack([header, body], { className: "p-2" });
 			},
 
 			get() {
@@ -1513,6 +1060,7 @@ function init() {
 					button.setLoading(false);
 					button.setStyle({ ...btnIconStyles });
 					button.setIntent(state.isCurrentMediaFavorite.get() ? "alert" : "gray-subtle");
+					button.setTooltipText(state.isCurrentMediaFavorite.get() ? "Unfavorite" : "Favorite");
 				});
 		}
 
@@ -1528,13 +1076,15 @@ function init() {
 			paddingInlineStart: "0.5rem",
 		};
 
-		const animeButton = ctx.action.newAnimePageButton({ label: "\u200b", intent: "gray-subtle", style: btnIconStyles });
-		animeButton.mount();
-		animeButton.onClick(handleButtonPress);
+		const animeButton = ctx.action.newAnimePageButton({ label: "\u200b" });
+		const mangaButton = ctx.action.newMangaPageButton({ label: "\u200b" });
+		for (const btn of [animeButton, mangaButton]) {
+			btn.setIntent("gray-subtle");
+			btn.setStyle(btnIconStyles);
+			btn.mount();
 
-		const mangaButton = ctx.action.newMangaPageButton({ label: "\u200b", intent: "gray-subtle", style: btnIconStyles });
-		mangaButton.mount();
-		mangaButton.onClick(handleButtonPress);
+			btn.onClick(handleButtonPress);
+		}
 
 		tray.render(() => tabs.get());
 
@@ -1561,6 +1111,7 @@ function init() {
 				}
 				state.isCurrentMediaFavorite.set(!!favorites.types.anime.cache[mediaId]);
 				animeButton.setIntent(state.isCurrentMediaFavorite.get() ? "alert" : "gray-subtle");
+				animeButton.setTooltipText(state.isCurrentMediaFavorite.get() ? "Unfavorite" : "Favorite");
 			}
 
 			if (e.pathname === "/manga/entry") {
@@ -1572,13 +1123,14 @@ function init() {
 				}
 				state.isCurrentMediaFavorite.set(!!favorites.types.manga.cache[mediaId]);
 				mangaButton.setIntent(state.isCurrentMediaFavorite.get() ? "alert" : "gray-subtle");
+				mangaButton.setTooltipText(state.isCurrentMediaFavorite.get() ? "Unfavorite" : "Favorite");
 			}
 		});
 
 		ctx.dom.onReady(async () => {
 			const style = await ctx.dom.createElement("style");
 			style.setText(
-				".favorites-tab-general-entry-card-background { transition: transform ease-in-out 0.2s;  } .favorites-tab-general-container:hover .favorites-tab-general-entry-card-background { transform: scale(1.1) } .favorites-spoiler { background: rgb(var(--color-gray-700)); color: rgb(var(--color-gray-700))} .favorites-spoiler:hover { background: rgb(var(--color-gray-900)); color: rgb(var(--color-gray-400));}"
+				".favorites-tab-general-entry-card-background { transition: transform ease-in-out 0.2s;  } .favorites-tab-general-container:hover .favorites-tab-general-entry-card-background { transform: scale(1.1) } .favorites-spoiler { background: rgb(var(--color-gray-700)); color: rgb(var(--color-gray-700))} .favorites-spoiler:hover { background: rgb(var(--color-gray-900)); color: rgb(var(--color-gray-400));}",
 			);
 		});
 
