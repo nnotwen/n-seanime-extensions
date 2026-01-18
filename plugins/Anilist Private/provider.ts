@@ -94,7 +94,7 @@ function init() {
 						.then(() => ctx.toast.success(`Set ${media.title?.userPreferred ?? "entry"} to ${Private.has(media.id) ? "private" : "public"}!`))
 						.catch((err) => ctx.toast.error(`Error on updating ${media.title?.userPreferred ?? "entry"}: ${(err as Error).message}`))
 						.finally(() => isUpdating.set(false)),
-				1_500
+				1_500,
 			);
 		}
 
@@ -130,6 +130,7 @@ function init() {
 			button.setStyle({ ...btnIconStyles, ...(updating ? { backgroundImage: "" } : {}) });
 			button.setLoading(updating);
 			button.setIntent(Private.has(mediaId) ? "alert" : "gray-subtle");
+			button.setTooltipText(Private.has(mediaId) ? "Unset Private" : "Set to Private");
 		}, [currentMediaId, isUpdating]);
 
 		Private.init();
