@@ -184,5 +184,17 @@
 			"mobile": "[data-media-entry-characters-section-grid-item-image-container=\"true\"] {\n\tborder-radius: 50%;\n}"
 		},
 		"link": "https://discord.com/channels/1224767201551192224/1446383540823658628"
+	},
+
+	{
+		"name": "Compact download button on Anime Page",
+		"author": "nnotwen",
+		"uuid": "2fffe419-4494-484f-a810-da321fb6768a",
+		"enabled": true,
+		"style": {
+			"desktop": "[data-torrent-search-button] {\n\twidth: 40px;\n}\n\n[data-torrent-search-button] span.md\\:inline-block {\n\tdisplay: none;\n}\n\n[data-torrent-search-button] span.UI-Button__icon {\n\tmargin-inline-end: 0!important;\n}",
+			"mobile": ""
+		},
+		"link": "https://discord.com/channels/1224767201551192224/1446383540823658628"
 	}
 ]
