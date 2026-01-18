@@ -32,11 +32,61 @@ function init() {
 				Appearance: {
 					HideBannerOnList: "notes:settings-appearance-hidebanneronlist",
 					HideBannerOnEdit: "notes:settings-appearance-hidebanneronedit",
+					ListDensity: "notes:settings-appearance-listdensity",
 				},
 			},
 		} as const;
 
 		const kaomojis = ["(・・ )ゞ", "(・・;)ゞ", "(・_・;)", "(._.)", "(´･ω･`)", "(￣▽￣*)ゞ", "(ᵕ—ᴗ—)"];
+
+		const icons = {
+			html: {
+				back: /*html*/ `
+					<svg stroke="#cacaca" fill="#cacaca" stroke-width="0" viewBox="0 0 256 256" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+						<path d="M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24m0 192a88 88 0 1 1 88-88 88.1 88.1 0 0 1-88 88m48-88a8 8 0 0 1-8 8h-60.69l18.35 18.34a8 8 0 0 1-11.32 11.32l-32-32a8 8 0 0 1 0-11.32l32-32a8 8 0 0 1 11.32 11.32L107.31 120H168a8 8 0 0 1 8 8" stroke="none"/>
+					</svg>`,
+				chevyleft: /*html*/ `
+					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+						<path stroke="#cacaca" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m7 16 6-6-6-6"/>
+					</svg>`,
+				close: /*html*/ `
+					<svg stroke="#d93e3e" fill="#d93e3e" stroke-width="0" viewBox="0 0 16 16" class="text-[0.95rem]" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+						<path fill-rule="evenodd" clip-rule="evenodd" d="M7.116 8l-4.558 4.558.884.884L8 8.884l4.558 4.558.884-.884L8.884 8l4.558-4.558-.884-.884L8 7.116 3.442 2.558l-.884.884L7.116 8z"></path>
+					</svg>`,
+				delete: /*html*/ `
+					<svg stroke="#fca5a5" fill="#fca5a5" stroke-width="0" viewBox="0 0 24 24" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+						<path d="M5 20a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8h2V6h-4V4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H3v2h2zM9 4h6v2H9zM8 8h9v12H7V8z"></path>
+						<path d="M9 10h2v8H9zm4 0h2v8h-2z"></path>
+					</svg>`,
+				edit: /*html*/ `
+					<svg stroke="#cfc2ff" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+						<path d="M7 7H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-1"/><path d="M20.385 6.585a2.1 2.1 0 0 0-2.97-2.97L9 12v3h3zM16 5l3 3"/>
+					</svg>`,
+				refresh: /*html*/ `
+					<svg stroke="#cacaca" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+						<path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+						<path d="M3 3v5h5m-5 4a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+						<path d="M16 16h5v5"/>
+					</svg>`,
+				search: /*html*/ `
+					<svg xmlns="http://www.w3.org/2000/svg" fill="#5a5a5a" height="512" width="512" viewBox="0 0 512 512">
+						<path d="M495 466.2 377.2 348.4c29.2-35.6 46.8-81.2 46.8-130.9C424 103.5 331.5 11 217.5 11 103.4 11 11 103.5 11 217.5S103.4 424 217.5 424c49.7 0 95.2-17.5 130.8-46.7L466.1 495c8 8 20.9 8 28.9 0 8-7.9 8-20.9 0-28.8m-277.5-83.3C126.2 382.9 52 308.7 52 217.5S126.2 52 217.5 52C308.7 52 383 126.3 383 217.5s-74.3 165.4-165.5 165.4"/>
+					</svg>`,
+				settings: /*html*/ `
+					<svg stroke="#cacaca" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+						<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2"/>
+						<circle cx="12" cy="12" r="3"/>
+					</svg>`,
+				sort: /*html*/ `
+					<svg stroke="#cacaca" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+						<path d="M3 6h18M7 12h10m-7 6h4"/>
+					</svg>`,
+			},
+			get(name: keyof typeof this.html, raw: boolean = false) {
+				if (raw) return this.html[name];
+				return `data:image/svg+xml;base64,${Buffer.from(this.html[name].trim(), "utf-8").toString("base64")}`;
+			},
+		};
 
 		const fieldRefs = {
 			textArea: ctx.fieldRef<string>(""),
@@ -73,6 +123,7 @@ function init() {
 			appearance: {
 				hideBannerOnList: ctx.fieldRef<boolean>(Boolean($storage.get(Keys.Settings.Appearance.HideBannerOnList))),
 				hideBannerOnEdit: ctx.fieldRef<boolean>(Boolean($storage.get(Keys.Settings.Appearance.HideBannerOnEdit))),
+				listDensity: ctx.fieldRef<string>($storage.get(Keys.Settings.Appearance.ListDensity) ?? "default"),
 			},
 		};
 
@@ -129,7 +180,7 @@ function init() {
 
 					const verifier = Array.from(
 						{ length: 86 },
-						() => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"[Math.floor(Math.random() * 66)]
+						() => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"[Math.floor(Math.random() * 66)],
 					).join("");
 					$store.set("notes:mal:auth:verifier", verifier);
 					const url = new URL("https://myanimelist.net/v1/oauth2/authorize");
@@ -367,7 +418,7 @@ function init() {
 					const kitsuMediaId = await (async () => {
 						// self‑contained logic here
 						const res = await ctx.fetch(
-							`https://kitsu.io/api/edge/mappings?filter[externalSite]=anilist/${type.toLowerCase()}&filter[externalId]=${mediaId}&include=item`
+							`https://kitsu.io/api/edge/mappings?filter[externalSite]=anilist/${type.toLowerCase()}&filter[externalId]=${mediaId}&include=item`,
 						);
 
 						if (!res.ok) {
@@ -480,7 +531,7 @@ function init() {
 		const notes = {
 			id: "3f5d8ce4-d15f-453d-8616-c030ca4d6f68",
 			getAll() {
-				return $store.getOrSet(this.id, () => ({} as Record<number, $notes.BaseNote>));
+				return $store.getOrSet<Record<number, $notes.BaseNote>>(this.id, () => ({}));
 			},
 
 			set(mediaId: number, note: $notes.BaseNote) {
@@ -490,7 +541,7 @@ function init() {
 			},
 
 			get(mediaId: number) {
-				return ($store.get(this.id) as Record<number, $notes.BaseNote> | undefined)?.[mediaId];
+				return $store.get<Record<number, $notes.BaseNote> | undefined>(this.id)?.[mediaId];
 			},
 
 			delete(mediaId: number) {
@@ -623,7 +674,7 @@ function init() {
 								coverImage: entry!.media!.coverImage?.medium,
 								type: entry!.media?.type!,
 								isAdult: entry!.media?.isAdult?.valueOf(),
-							})
+							}),
 						);
 				}
 				return;
@@ -632,122 +683,294 @@ function init() {
 
 		const tabs = {
 			current: ctx.state<Tabs>(Tabs.General),
+			currentOverlay: ctx.state<any[] | null>(null),
+			overlay() {
+				const overlay = this.currentOverlay.get();
+				return overlay
+					? tray.div([tray.flex(overlay, { className: "w-full h-full justify-center items-center" })], {
+							className: "fixed z-[50] border rounded-lg top-0 left-0",
+							style: { width: "calc(100%)", height: "calc(100% - 1rem)", backdropFilter: "blur(4px) brightness(0.4)" },
+						})
+					: ([] as any[]);
+			},
 
 			withBanner(container: any[]) {
 				const banner = settings.appearance.hideBannerOnEdit.current
 					? []
 					: tray.div([], {
+							className: "absolute h-40 pointer-events-none bg-center bg-cover rounded-tl-xl rounded-tr-xl border",
 							style: {
-								position: "absolute",
 								top: "-0.75rem",
 								left: "-0.75rem",
 								width: "calc(100% + 1.5rem)",
-								height: "10rem",
-								borderRadius: "0.75rem 0.75rem 0 0",
-								pointerEvents: "none",
-								background: `url(${state.currentMedia.get()?.bannerImage ?? state.currentMedia.get()?.coverImage})`,
-								backgroundPosition: "center",
-								backgroundSize: "cover",
+								backgroundImage: `url(${state.currentMedia.get()?.bannerImage ?? state.currentMedia.get()?.coverImage})`,
 								maskImage: "linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 100%)",
 								filter: !!state.currentMedia.get()?.bannerImage ? "" : "blur(4px)",
 							},
-					  });
-				return tray.div([banner, tray.div(container, { style: { position: "relative", height: "100%" } })], {
-					style: { position: "relative", minHeight: "24.5rem" },
+						});
+
+				return tray.div([banner, tray.div(container, { className: "relative h-full" })], {
+					className: "relative shrink-0",
+					style: { height: "24.5rem" },
 				});
 			},
 
-			[Tabs.General]() {
+			header(primary: string, subtext?: string, additionalComponents?: any[]) {
+				const icon = tray.div([], {
+					className: "w-10 h-10 bg-contain bg-no-repeat bg-center shrink-0",
+					style: { backgroundImage: `url(${iconUrl})` },
+				});
+
+				const text = tray.stack(
+					[
+						tray.span(`${primary}`, { className: " text-lg font-bold" }), //
+						subtext ? tray.span(`${subtext}`, { className: "text-[--muted] text-sm" }) : [],
+					],
+					{ gap: 0, className: "flex-1" },
+				);
+
+				return tray.flex([icon, text, tray.div(additionalComponents ?? [])], {
+					gap: 3,
+					className: "mb-4",
+				});
+			},
+
+			deleteModal(entry: $notes.BaseNote) {
 				const header = tray.flex(
 					[
-						tray.div([], {
-							style: {
-								width: "2.5rem",
-								height: "2.5rem",
-								marginTop: "-0.3rem",
-								backgroundImage: `url(${iconUrl})`,
-								backgroundSize: "contain",
-								backgroundRepeat: "no-repeat",
-								backgroundPosition: "center",
-								flexGrow: "0",
-								flexShrink: "0",
-							},
+						tray.text("Delete Note?", { className: "text-lg pb-2 border-b font-bold" }),
+						tray.button("\u200b", {
+							intent: "gray-subtle",
+							className: "w-10 h-10 rounded-full bg-transparent bg-center bg-no-repeat",
+							style: { backgroundImage: `url(${icons.get("close")})`, backgroundSize: "1.2rem" },
+							onClick: ctx.eventHandler("close-modal", () => tabs.currentOverlay.set(null)),
 						}),
-						tray.stack(
-							[
-								tray.text("Notes", { style: { fontSize: "1.2em", fontWeight: "bold" } }),
-								tray.text("Your thoughts, saved here!", { style: { fontSize: "0.8em" }, className: "opacity-30" }),
-							],
-							{
-								style: {
-									lineHeight: "1em",
-									width: "100%",
-								},
-							}
-						),
-						tray.flex(
-							[
-								tray.button("\u200b", {
-									intent: "gray-subtle",
-									disabled: state.isSaving.get() || state.isDeleting.get(),
-									loading: state.isFetching.get(),
-									style: {
-										width: "2.5rem",
-										height: "2.5rem",
-										borderRadius: "50%",
-										// prettier-ignore
-										backgroundImage: state.isFetching.get() ? "" : "url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iI2ZmZiIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik04IDNhNSA1IDAgMSAwIDQuNTQ2IDIuOTE0LjUuNSAwIDAgMSAuOTA4LS40MTdBNiA2IDAgMSAxIDggMnoiLz48cGF0aCBkPSJNOCA0LjQ2NlYuNTM0YS4yNS4yNSAwIDAgMSAuNDEtLjE5MmwyLjM2IDEuOTY2Yy4xMi4xLjEyLjI4NCAwIC4zODRMOC40MSA0LjY1OEEuMjUuMjUgMCAwIDEgOCA0LjQ2NiIvPjwvc3ZnPg==)",
-										backgroundRepeat: "no-repeat",
-										backgroundPosition: "center",
-										backgroundSize: "1rem 1rem",
-										padding: "0",
-										paddingInlineStart: "0.5rem",
-									},
-									onClick: ctx.eventHandler(`refresh-notes`, () => {
-										state.isFetching.set(true);
-										notes
-											.fetch()
-											.then(() => ctx.setTimeout(() => ctx.toast.success("Successfully fetched all notes from AniList!"), 2_000))
-											.catch((err) => ctx.toast.error(`An error occured while fetching notes: ${err.message}`))
-											.finally(() =>
-												ctx.setTimeout(() => {
-													state.isFetching.set(false);
-													tray.update();
-												}, 2_000)
-											);
-									}),
-								}),
-								tray.button("\u200b", {
-									intent: "gray-subtle",
-									style: {
-										width: "2.5rem",
-										height: "2.5rem",
-										borderRadius: "50%",
-										// prettier-ignore
-										backgroundImage: "url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iI2ZmZiIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBkPSJNOS40MDUgMS4wNWMtLjQxMy0xLjQtMi4zOTctMS40LTIuODEgMGwtLjEuMzRhMS40NjQgMS40NjQgMCAwIDEtMi4xMDUuODcybC0uMzEtLjE3Yy0xLjI4My0uNjk4LTIuNjg2LjcwNS0xLjk4NyAxLjk4N2wuMTY5LjMxMWMuNDQ2LjgyLjAyMyAxLjg0MS0uODcyIDIuMTA1bC0uMzQuMWMtMS40LjQxMy0xLjQgMi4zOTcgMCAyLjgxbC4zNC4xYTEuNDY0IDEuNDY0IDAgMCAxIC44NzIgMi4xMDVsLS4xNy4zMWMtLjY5OCAxLjI4My43MDUgMi42ODYgMS45ODcgMS45ODdsLjMxMS0uMTY5YTEuNDY0IDEuNDY0IDAgMCAxIDIuMTA1Ljg3MmwuMS4zNGMuNDEzIDEuNCAyLjM5NyAxLjQgMi44MSAwbC4xLS4zNGExLjQ2NCAxLjQ2NCAwIDAgMSAyLjEwNS0uODcybC4zMS4xN2MxLjI4My42OTggMi42ODYtLjcwNSAxLjk4Ny0xLjk4N2wtLjE2OS0uMzExYTEuNDY0IDEuNDY0IDAgMCAxIC44NzItMi4xMDVsLjM0LS4xYzEuNC0uNDEzIDEuNC0yLjM5NyAwLTIuODFsLS4zNC0uMWExLjQ2NCAxLjQ2NCAwIDAgMS0uODcyLTIuMTA1bC4xNy0uMzFjLjY5OC0xLjI4My0uNzA1LTIuNjg2LTEuOTg3LTEuOTg3bC0uMzExLjE2OWExLjQ2NCAxLjQ2NCAwIDAgMS0yLjEwNS0uODcyek04IDEwLjkzYTIuOTI5IDIuOTI5IDAgMSAxIDAtNS44NiAyLjkyOSAyLjkyOSAwIDAgMSAwIDUuODU4eiIvPjwvc3ZnPg==)",
-										backgroundRepeat: "no-repeat",
-										backgroundPosition: "center",
-										backgroundSize: "1rem 1rem",
-									},
-									onClick: ctx.eventHandler(`notes-settings`, () => {
-										tabs.current.set(Tabs.Settings);
-									}),
-								}),
-							],
-							{
-								style: {
-									alignItems: "center",
-								},
-							}
-						),
+					],
+					{ className: "justify-between items-center" },
+				);
+
+				const prompt = tray.p(
+					[
+						tray.span("Are you sure you want to delete the notes for "),
+						tray.span(`${entry.mediaTitle}`, { className: "text-lg text-red-400 font-semibold leading-tight" }),
+						tray.span("?"),
+					],
+					{ className: "break-words" },
+				);
+				const subtext = tray.text("🛈 This action cannot be undone", { className: "text-sm text-[--muted]" });
+				const actionBtns = tray.flex([
+					tray.button("Cancel", {
+						intent: "gray-subtle",
+						size: "md",
+						className: "w-full",
+						onClick: ctx.eventHandler("close-modal-2", () => tabs.currentOverlay.set(null)),
+					}),
+					tray.button("Delete", {
+						intent: "alert-subtle",
+						size: "md",
+						className: "w-full",
+						onClick: ctx.eventHandler("perform-modal-action", () => {
+							tabs.currentOverlay.set(null);
+							state.isDeleting.set(true);
+							ctx.setTimeout(() => {
+								const currentMedia = state.currentMedia.get();
+								notes
+									.save(entry.mediaId, { ...entry, notes: "" })
+									.then(() => {
+										ctx.toast.success(`Deleted notes for ${entry.mediaTitle}!`);
+										if (currentMedia?.mediaId === entry.mediaId) {
+											state.currentMedia.set({ ...entry, notes: "" });
+											ctx.screen.loadCurrent();
+										}
+									})
+									.catch((err) => ctx.toast.error(`An error occured while deleting your note: ${err.message}`))
+									.finally(() => state.isDeleting.set(false));
+							}, 1_500);
+						}),
+					}),
+				]);
+
+				const body = tray.stack([prompt, subtext]);
+
+				this.currentOverlay.set([tray.stack([header, body, actionBtns], { className: "p-5 m-2 bg-gray-900 border rounded-lg" })]);
+			},
+
+			formatEntryDefault(entry: $notes.BaseNote) {
+				const background = tray.div([], {
+					className: "notes-tab-general-entry-card-background absolute top-0 left-0 w-full h-full bg-gray-900 bg-center bg-cover pointer-events-none",
+					style: {
+						backgroundImage: settings.appearance.hideBannerOnList.current ? "" : `url(${entry.bannerImage ?? entry.coverImage})`,
+						maskImage: settings.appearance.hideBannerOnList.current ? "" : "linear-gradient(to left, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.1) 100%)",
+						filter: !!entry.bannerImage ? "" : "blur(2px)",
+					},
+				});
+
+				const info = tray.stack(
+					[
+						tray.text(String(entry.mediaTitle ?? ""), {
+							className: "font-semibold break-words overflow-hidden line-clamp-2",
+						}),
+						tray.text(`\u201c${entry.notes}\u201d`, {
+							className: "text-sm break-words overflow-hidden italic line-clamp-3 text-[--muted] leading-tight",
+						}),
+					],
+					{ className: "w-full leading-tight pointer-events-none" },
+				);
+
+				const actionGroup = tray.stack(
+					[
+						tray.button("\u200b", {
+							intent: "primary-subtle",
+							disabled: state.isFetching.get() || state.isDeleting.get() || state.isSaving.get(),
+							loading: state.isFetching.get(),
+							className: "w-10 h-10 rounded-full bg-no-repeat bg-center p-0",
+							style: {
+								backgroundImage: state.isFetching.get() || state.isDeleting.get() ? "" : `url(${icons.get("edit")})`,
+								paddingInlineStart: "0.5rem",
+								backdropFilter: "blur(4px)",
+							},
+							onClick: ctx.eventHandler(`edit-note:${entry.mediaId}`, () => {
+								state.isEditInvokedFromTray.set(true);
+								state.currentMedia.set(entry);
+								fieldRefs.textArea.setValue(entry.notes);
+								tabs.current.set(Tabs.Editor);
+							}),
+						}),
+						tray.button("\u200b", {
+							intent: "alert-subtle",
+							disabled: state.isFetching.get() || state.isDeleting.get() || state.isSaving.get(),
+							loading: state.isFetching.get() || state.isDeleting.get(),
+							className: "w-10 h-10 rounded-full bg-no-repeat bg-center p-0",
+							style: {
+								backgroundImage: state.isFetching.get() || state.isDeleting.get() ? "" : `url(${icons.get("delete")})`,
+								paddingInlineStart: "0.5rem",
+								backdropFilter: "blur(4px)",
+								backgroundSize: "1.3rem",
+							},
+							onClick: ctx.eventHandler(`delete-note:${entry.mediaId}`, () => tabs.deleteModal(entry)),
+						}),
+					],
+					{ className: "z-[2]" },
+				);
+
+				return tray.div(
+					[
+						background,
+						tray.flex([info, actionGroup], { className: "relative p-2" }),
+						tray.button("\u200b", {
+							className: "absolute top-0 left-0 w-full h-full bg-transparent",
+							onClick: ctx.eventHandler(`navigate-to:${entry.mediaId}`, () => {
+								const path = String(entry.type) === "ANIME" ? "/entry" : "/manga/entry";
+								ctx.screen.navigateTo(path, { id: entry.mediaId.toString() });
+								tray.close();
+							}),
+						}),
 					],
 					{
-						gap: 3,
-						style: {
-							marginBottom: "1rem",
-						},
-					}
+						className: "note-tab-general-container relative p-2 rounded-lg border overflow-hidden h-fit cursor-pointer shrink-0",
+					},
 				);
+			},
+
+			formatEntryCompact(entry: $notes.BaseNote) {
+				const background = tray.div([], {
+					className: "notes-tab-general-entry-card-background absolute top-0 left-0 w-full h-full bg-gray-900 bg-center bg-cover pointer-events-none",
+					style: {
+						backgroundImage: settings.appearance.hideBannerOnList.current ? "" : `url(${entry.bannerImage ?? entry.coverImage})`,
+						maskImage: settings.appearance.hideBannerOnList.current ? "" : "linear-gradient(to left, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.1) 100%)",
+						filter: !!entry.bannerImage ? "" : "blur(2px)",
+					},
+				});
+
+				const actionGroup = tray.flex(
+					[
+						tray.button("\u200b", {
+							intent: "primary-subtle",
+							disabled: state.isFetching.get() || state.isDeleting.get() || state.isSaving.get(),
+							loading: state.isFetching.get(),
+							className: "w-8 h-full rounded-none bg-no-repeat bg-center p-0",
+							style: {
+								backgroundImage: state.isFetching.get() || state.isDeleting.get() ? "" : `url(${icons.get("edit")})`,
+								paddingInlineStart: "0.5rem",
+							},
+							onClick: ctx.eventHandler(`edit-note:${entry.mediaId}`, () => {
+								state.isEditInvokedFromTray.set(true);
+								state.currentMedia.set(entry);
+								fieldRefs.textArea.setValue(entry.notes);
+								tabs.current.set(Tabs.Editor);
+							}),
+						}),
+						tray.button("\u200b", {
+							intent: "alert-subtle",
+							disabled: state.isFetching.get() || state.isDeleting.get() || state.isSaving.get(),
+							loading: state.isFetching.get() || state.isDeleting.get(),
+							className: "w-8 h-full rounded-none bg-no-repeat bg-center p-0",
+							style: {
+								backgroundImage: state.isFetching.get() || state.isDeleting.get() ? "" : `url(${icons.get("delete")})`,
+								paddingInlineStart: "0.5rem",
+								backgroundSize: "1.3rem",
+							},
+							onClick: ctx.eventHandler(`delete-note:${entry.mediaId}`, () => tabs.deleteModal(entry)),
+						}),
+					],
+					{ gap: 0, className: "pr-3", style: { backdropFilter: "blur(4px)" } },
+				);
+
+				return tray.flex(
+					[
+						background,
+						tray.div([tray.text(`${entry.mediaTitle}`, { className: "w-full py-1 px-2 line-clamp-1 font-semibold cursor-pointer" })], {
+							className: "flex-1",
+							onClick: ctx.eventHandler(`navigate-to:${entry.mediaId}`, () => {
+								const path = String(entry.type) === "ANIME" ? "/entry" : "/manga/entry";
+								ctx.screen.navigateTo(path, { id: entry.mediaId.toString() });
+								tray.close();
+							}),
+						}),
+						actionGroup,
+					],
+					{ className: "note-tab-general-container w-full border rounded-full relative overflow-hidden shrink-0", gap: 0 },
+				);
+			},
+
+			[Tabs.General]() {
+				const refresh = tray.button("\u200b", {
+					intent: "gray-subtle",
+					disabled: state.isSaving.get() || state.isDeleting.get(),
+					loading: state.isFetching.get(),
+					className: "w-10 h-10 rounded-full bg-transparent bg-no-repeat bg-center p-0",
+					style: {
+						...(state.isFetching.get() ? {} : { backgroundImage: `url(${icons.get("refresh")})` }),
+						backgroundSize: "1.2rem",
+						paddingInlineStart: "0.5rem",
+					},
+					onClick: ctx.eventHandler(`refresh-notes`, () => {
+						state.isFetching.set(true);
+						notes
+							.fetch()
+							.then(() => ctx.setTimeout(() => ctx.toast.success("Successfully fetched all notes from AniList!"), 2_000))
+							.catch((err) => ctx.toast.error(`An error occured while fetching notes: ${err.message}`))
+							.finally(() =>
+								ctx.setTimeout(() => {
+									state.isFetching.set(false);
+									tray.update();
+								}, 2_000),
+							);
+					}),
+				});
+
+				const cog = tray.button("\u200b", {
+					intent: "gray-subtle",
+					className: "w-10 h-10 rounded-full bg-transparent bg-no-repeat bg-center",
+					style: { backgroundImage: `url(${icons.get("settings")})`, backgroundSize: "1.2rem" },
+					onClick: ctx.eventHandler(`notes-settings`, () => tabs.current.set(Tabs.Settings)),
+				});
+
+				const header = this.header("Notes", "Your thoughts, saved here!", [
+					tray.flex([tray.tooltip(refresh, { text: "Refresh" }), tray.tooltip(cog, { text: "Settings" })], {
+						className: "items-center",
+					}),
+				]);
 
 				const entries = Object.values(notes.getAll())
 					// Filter by search result
@@ -757,166 +980,7 @@ function init() {
 					// Filter by type
 					.filter((a) => state.listMediaType.get() === "All" || state.listMediaType.get().toLowerCase() === a.type?.toLowerCase())
 					.sort((A, B) => (A.mediaTitle ?? "").localeCompare(B.mediaTitle ?? ""))
-					.map((entry) =>
-						tray.div(
-							[
-								tray.div([], {
-									className: "notes-tab-general-entry-card-background",
-									style: {
-										position: "absolute",
-										top: "0",
-										left: "0",
-										width: "100%",
-										height: "100%",
-										backgroundColor: settings.appearance.hideBannerOnList.current ? "rgb(var(--color-gray-900))" : "",
-										backgroundImage: settings.appearance.hideBannerOnList.current ? "" : `url(${entry.bannerImage ?? entry.coverImage})`,
-										backgroundPosition: "center",
-										backgroundSize: "cover",
-										maskImage: settings.appearance.hideBannerOnList.current ? "" : "linear-gradient(to left, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.1) 100%)",
-										pointerEvents: "none",
-										borderRadius: "0.5rem",
-										filter: !!entry.bannerImage ? "" : "blur(2px)",
-									},
-								}),
-								tray.flex(
-									[
-										tray.stack(
-											[
-												tray.text(String(entry.mediaTitle ?? ""), {
-													style: {
-														color: "#fff",
-														wordBreak: "break-word",
-														fontWeight: "500",
-														overflow: "hidden",
-														textOverflow: "ellipsis",
-														display: "-webkit-box",
-														"-webkit-line-clamp": "2",
-														"-webkit-box-orient": "vertical",
-													},
-												}),
-												tray.text(`\u201c${entry.notes}\u201d`, {
-													style: {
-														fontSize: "0.8rem",
-														wordBreak: "break-word",
-														overflow: "hidden",
-														fontStyle: "italic",
-														textOverflow: "ellipsis",
-														display: "-webkit-box",
-														"-webkit-line-clamp": "3",
-														"-webkit-box-orient": "vertical",
-													},
-												}),
-											],
-											{
-												style: {
-													lineHeight: "1.15rem",
-													width: "100%",
-													textShadow: "0 0 4px black",
-													pointerEvents: "none",
-												},
-											}
-										),
-										tray.button("\u200b", {
-											onClick: ctx.eventHandler(`navigate-to:${entry.mediaId}`, () => {
-												const path = String(entry.type) === "ANIME" ? "/entry" : "/manga/entry";
-												ctx.screen.navigateTo(path, { id: entry.mediaId.toString() });
-												tray.close();
-											}),
-											style: {
-												width: "calc(100% + 1rem)",
-												height: "calc(100% + 1rem)",
-												position: "absolute",
-												marginTop: "-1rem",
-												marginLeft: "-1rem",
-												zIndex: "1",
-												background: "none",
-											},
-										}),
-										tray.stack(
-											[
-												tray.button("\u200b", {
-													// intent: "gray-subtle",
-													disabled: state.isFetching.get() || state.isDeleting.get() || state.isSaving.get(),
-													style: {
-														width: "2.4rem",
-														height: "2.4rem",
-														borderRadius: "50%",
-														// prettier-ignore
-														backgroundImage: "url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iI2ZmZiIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBkPSJNMTUuNTAyIDEuOTRhLjUuNSAwIDAgMSAwIC43MDZMMTQuNDU5IDMuNjlsLTItMkwxMy41MDIuNjQ2YS41LjUgMCAwIDEgLjcwNyAwbDEuMjkzIDEuMjkzem0tMS43NSAyLjQ1Ni0yLTJMNC45MzkgOS4yMWEuNS41IDAgMCAwLS4xMjEuMTk2bC0uODA1IDIuNDE0YS4yNS4yNSAwIDAgMCAuMzE2LjMxNmwyLjQxNC0uODA1YS41LjUgMCAwIDAgLjE5Ni0uMTJsNi44MTMtNi44MTR6Ii8+PHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBkPSJNMSAxMy41QTEuNSAxLjUgMCAwIDAgMi41IDE1aDExYTEuNSAxLjUgMCAwIDAgMS41LTEuNXYtNmEuNS41IDAgMCAwLTEgMHY2YS41LjUgMCAwIDEtLjUuNWgtMTFhLjUuNSAwIDAgMS0uNS0uNXYtMTFhLjUuNSAwIDAgMSAuNS0uNUg5YS41LjUgMCAwIDAgMC0xSDIuNUExLjUgMS41IDAgMCAwIDEgMi41eiIvPjwvc3ZnPg==)",
-														backgroundRepeat: "no-repeat",
-														backgroundPosition: "center",
-														backgroundSize: "1rem 1rem",
-													},
-													onClick: ctx.eventHandler(`edit-note:${entry.mediaId}`, () => {
-														state.isEditInvokedFromTray.set(true);
-														state.currentMedia.set(entry);
-														fieldRefs.textArea.setValue(entry.notes);
-														tabs.current.set(Tabs.Editor);
-													}),
-												}),
-												tray.button("\u200b", {
-													intent: "alert",
-													disabled: state.isFetching.get() || state.isDeleting.get() || state.isSaving.get(),
-													loading: state.isDeleting.get(),
-													style: {
-														width: "2.4rem",
-														height: "2.4rem",
-														borderRadius: "50%",
-														// prettier-ignore
-														backgroundImage: state.isDeleting.get() ? "" :"url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iI2ZmZiIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBkPSJNMTEgMS41djFoMy41YS41LjUgMCAwIDEgMCAxaC0uNTM4bC0uODUzIDEwLjY2QTIgMiAwIDAgMSAxMS4xMTUgMTZoLTYuMjNhMiAyIDAgMCAxLTEuOTk0LTEuODRMMi4wMzggMy41SDEuNWEuNS41IDAgMCAxIDAtMUg1di0xQTEuNSAxLjUgMCAwIDEgNi41IDBoM0ExLjUgMS41IDAgMCAxIDExIDEuNW0tNSAwdjFoNHYtMWEuNS41IDAgMCAwLS41LS41aC0zYS41LjUgMCAwIDAtLjUuNU00LjUgNS4wMjlsLjUgOC41YS41LjUgMCAxIDAgLjk5OC0uMDZsLS41LTguNWEuNS41IDAgMSAwLS45OTguMDZtNi41My0uNTI4YS41LjUgMCAwIDAtLjUyOC40N2wtLjUgOC41YS41LjUgMCAwIDAgLjk5OC4wNThsLjUtOC41YS41LjUgMCAwIDAtLjQ3LS41MjhNOCA0LjVhLjUuNSAwIDAgMC0uNS41djguNWEuNS41IDAgMCAwIDEgMFY1YS41LjUgMCAwIDAtLjUtLjUiLz48L3N2Zz4=)",
-														backgroundRepeat: "no-repeat",
-														backgroundPosition: "center",
-														backgroundSize: "1rem 1rem",
-														padding: "0",
-														paddingInlineStart: "0.5rem",
-													},
-													onClick: ctx.eventHandler(`delete-note:${entry.mediaId}`, () => {
-														state.isDeleting.set(true);
-														ctx.setTimeout(() => {
-															const currentMedia = state.currentMedia.get();
-															notes
-																.save(entry.mediaId, { ...entry, notes: "" })
-																.then(() => {
-																	ctx.toast.success(`Deleted notes for ${entry.mediaTitle}!`);
-																	if (currentMedia?.mediaId === entry.mediaId) {
-																		state.currentMedia.set({ ...entry, notes: "" });
-																		ctx.screen.loadCurrent();
-																	}
-																})
-																.catch((err) => ctx.toast.error(`An error occured while deleting your note: ${err.message}`))
-																.finally(() => state.isDeleting.set(false));
-														}, 1_500);
-													}),
-												}),
-											],
-											{
-												style: {
-													zIndex: "2",
-												},
-											}
-										),
-									],
-									{
-										style: {
-											position: "relative",
-											padding: "0.5rem",
-										},
-									}
-								),
-							],
-							{
-								className: "note-tab-general-container",
-								style: {
-									position: "relative",
-									padding: "0.5rem",
-									borderRadius: "0.5rem",
-									border: "1px solid var(--border)",
-									overflow: "hidden",
-									minHeight: "fit-content",
-								},
-							}
-						)
-					);
+					.map(settings.appearance.listDensity.current === "default" ? tabs.formatEntryDefault : tabs.formatEntryCompact);
 
 				const body = tray.stack(
 					[
@@ -928,38 +992,32 @@ function init() {
 									style: {
 										borderRadius: "0.5rem 0 0 0.5rem",
 										paddingInlineStart: "2.5rem",
-										backgroundImage: `url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9IiM1YTVhNWEiIGhlaWdodD0iNTEyIiB3aWR0aD0iNTEyIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI+PHBhdGggZD0iTTQ5NSA0NjYuMiAzNzcuMiAzNDguNGMyOS4yLTM1LjYgNDYuOC04MS4yIDQ2LjgtMTMwLjlDNDI0IDEwMy41IDMzMS41IDExIDIxNy41IDExIDEwMy40IDExIDExIDEwMy41IDExIDIxNy41UzEwMy40IDQyNCAyMTcuNSA0MjRjNDkuNyAwIDk1LjItMTcuNSAxMzAuOC00Ni43TDQ2Ni4xIDQ5NWM4IDggMjAuOSA4IDI4LjkgMCA4LTcuOSA4LTIwLjkgMC0yOC44bS0yNzcuNS04My4zQzEyNi4yIDM4Mi45IDUyIDMwOC43IDUyIDIxNy41UzEyNi4yIDUyIDIxNy41IDUyQzMwOC43IDUyIDM4MyAxMjYuMyAzODMgMjE3LjVzLTc0LjMgMTY1LjQtMTY1LjUgMTY1LjQiLz48L3N2Zz4=)`,
+										backgroundImage: `url(${icons.get("search")})`,
 										backgroundSize: "1rem",
 										backgroundRepeat: "no-repeat",
 										backgroundPosition: "calc(0% + 0.75rem) center",
 									},
-									onChange: ctx.eventHandler("search-notes", (e) => {
-										state.searchQuery.set(String(e.value));
-									}),
+									onChange: ctx.eventHandler("search-notes", (e) => state.searchQuery.set(String(e.value))),
 								}),
-								tray.button(state.listMediaType.get(), {
-									intent: "gray-subtle",
-									style: {
-										height: "initial",
-										width: "8rem",
-										borderRadius: "0 0.5rem 0.5rem 0",
-										marginLeft: "-1px",
-										// prettier-ignore
-										backgroundImage: "url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iI2ZmZiIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBkPSJNNiAxMC41YS41LjUgMCAwIDEgLjUtLjVoM2EuNS41IDAgMCAxIDAgMWgtM2EuNS41IDAgMCAxLS41LS41bS0yLTNhLjUuNSAwIDAgMSAuNS0uNWg3YS41LjUgMCAwIDEgMCAxaC03YS41LjUgMCAwIDEtLjUtLjVtLTItM2EuNS41IDAgMCAxIC41LS41aDExYS41LjUgMCAwIDEgMCAxaC0xMWEuNS41IDAgMCAxLS41LS41Ii8+PC9zdmc+)",
-										backgroundPosition: "calc(100% - 0.5rem) center",
-										backgroundSize: "25%",
-										backgroundRepeat: "no-repeat",
-										paddingRight: "2rem",
-										paddingLeft: "0.75rem",
-										justifyContent: "start",
-									},
-									onClick: ctx.eventHandler("mediatype-filter", function () {
-										const mediaType = state.listMediaType.get();
-										state.listMediaType.set(({ All: "Anime", Anime: "Manga", Manga: "All" } as const)[mediaType]);
+								tray.tooltip(
+									tray.button(state.listMediaType.get(), {
+										intent: "gray-subtle",
+										className: "w-28 rounded-tl-none rounded-bl-none bg-no-repeat pr-8 pl-3 justify-start",
+										style: {
+											height: "-webkit-fill-available",
+											marginLeft: "-1px",
+											backgroundImage: `url(${icons.get("sort")})`,
+											backgroundPosition: "calc(100% - 0.25rem * 3) center",
+										},
+										onClick: ctx.eventHandler("mediatype-filter", function () {
+											const mediaType = state.listMediaType.get();
+											state.listMediaType.set(({ All: "Anime", Anime: "Manga", Manga: "All" } as const)[mediaType]);
+										}),
 									}),
-								}),
+									{ text: "Filter by media" },
+								),
 							],
-							{ gap: 0 }
+							{ gap: 0 },
 						),
 						tray.stack(
 							entries.length
@@ -967,99 +1025,57 @@ function init() {
 								: [
 										tray.stack(
 											[
-												tray.text("Nothing here yet", {
-													style: {
-														color: "#777",
-														fontSize: "1.5rem",
-													},
-												}),
+												tray.text("Nothing here yet", { className: "text-xl font-bold text-[--muted]" }),
 												tray.text(kaomojis[Math.floor(Math.random() * kaomojis.length)], {
-													style: {
-														color: "#777",
-														fontSize: "1.2rem",
-													},
+													className: "text-xl text-[--muted]",
 												}),
 											],
-											{ style: { width: "100%", height: "100%", textAlign: "center", justifyContent: "center" } }
+											{ className: "w-full h-full text-center justify-center" },
 										),
-								  ],
+									],
 							{
 								style: {
 									height: "25rem",
 									overflowY: "scroll",
 									overflowX: "hidden",
 								},
-							}
+							},
 						),
 					],
-					{}
+					{},
 				);
 
-				return tray.stack([header, body], { style: { padding: "0.5rem" } });
+				return tray.stack([this.overlay(), header, body], { className: "p-2" });
 			},
 
 			[Tabs.Editor]() {
+				const back = tray.button("\u200b", {
+					intent: "gray-subtle",
+					className: "w-10 h-10 rounded-full bg-no-repeat bg-center bg-transparent",
+					style: { backgroundImage: `url(${icons.get("back")})`, backgroundSize: "1.5rem" },
+					onClick: ctx.eventHandler(`notes-goback`, () => tabs.current.set(Tabs.General)),
+				});
+
 				const header = tray.flex(
 					[
 						tray.stack(
 							[
 								tray.text(`${state.currentMedia.get()?.notes.toString().length ? "Edit" : "Add"} Notes`, {
-									style: { fontSize: "1.5em", fontWeight: "bold", color: "#fff" },
+									className: "text-xl font-bold text-white",
 								}),
 								tray.text(`${state.currentMedia.get()?.mediaTitle}`, {
-									style: {
-										fontSize: "1rem",
-										color: "#fff",
-										wordBreak: "break-word",
-										overflow: "hidden",
-										textOverflow: "ellipsis",
-										display: "-webkit-box",
-										"-webkit-line-clamp": "2",
-										"-webkit-box-orient": "vertical",
-									},
+									className: "text-white overflow-hidden line-clamp-2 break-words leading-tight",
 								}),
 							],
 							{
-								style: {
-									lineHeight: "1em",
-									width: "100%",
-									textShadow: "0 0 10px black",
-								},
-							}
+								className: "w-full",
+							},
 						),
-						tray.stack(
-							state.isEditInvokedFromTray.get()
-								? [
-										tray.button("\u200b", {
-											intent: "gray-subtle",
-											style: {
-												width: "2.5rem",
-												height: "2.5rem",
-												borderRadius: "50%",
-												// prettier-ignore
-												backgroundImage: "url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iI2ZmZiIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xNSA4YS41LjUgMCAwIDAtLjUtLjVIMi43MDdsMy4xNDctMy4xNDZhLjUuNSAwIDEgMC0uNzA4LS43MDhsLTQgNGEuNS41IDAgMCAwIDAgLjcwOGw0IDRhLjUuNSAwIDAgMCAuNzA4LS43MDhMMi43MDcgOC41SDE0LjVBLjUuNSAwIDAgMCAxNSA4Ii8+PC9zdmc+)",
-												backgroundRepeat: "no-repeat",
-												backgroundPosition: "center",
-												backgroundSize: "1rem 1rem",
-											},
-											onClick: ctx.eventHandler(`notes-goback`, () => {
-												tabs.current.set(Tabs.General);
-											}),
-										}),
-								  ]
-								: [],
-							{
-								style: {
-									alignItems: "center",
-								},
-							}
-						),
+						tray.flex(state.isEditInvokedFromTray.get() ? [tray.tooltip(back, { text: "Go Back" })] : [], {
+							className: "items-start",
+						}),
 					],
-					{
-						style: {
-							paddingTop: "0.75rem",
-						},
-					}
+					{ className: "pt-3" },
 				);
 
 				const body = tray.stack(
@@ -1067,18 +1083,14 @@ function init() {
 						tray.input({
 							textarea: true,
 							fieldRef: fieldRefs.textArea,
-							style: {
-								height: "12rem",
-								backgroundColor: "rgb(var(--color-gray-900))",
-							},
+							className: "bg-gray-900",
+							style: { height: "12rem" },
 						}),
+
 						tray.text("Adding a note to a non-existent entry will always create a Planning entry.", {
-							style: {
-								color: "orange",
-								fontSize: "0.7rem",
-								wordBreak: "no-break",
-							},
+							className: "text-xs text-[--muted] break-words",
 						}),
+
 						tray.flex(
 							[
 								tray.button({
@@ -1086,8 +1098,8 @@ function init() {
 									loading: state.isSaving.get(),
 									disabled: state.isDeleting.get() || state.isFetching.get(),
 									size: "md",
-									intent: "success",
-									style: { width: "100%" },
+									intent: "success-subtle",
+									className: "w-full",
 									onClick: ctx.eventHandler("save-note", () => {
 										const currentMedia = state.currentMedia.get();
 										if (!currentMedia) return ctx.toast.error(`Error saving notes: Unable to get current media information.`);
@@ -1117,125 +1129,51 @@ function init() {
 									}),
 								}),
 								tray.button("\u200b", {
-									intent: "alert",
+									intent: "alert-subtle",
 									disabled: state.isFetching.get() || state.isSaving.get() || !state.currentMedia.get()?.notes.toString().length,
 									loading: state.isDeleting.get(),
+									className: "w-11 h-full rounded-lg bg-no-repeat bg-center p-0",
 									style: {
-										width: "2.753rem",
-										height: "100%",
-										borderRadius: "0.5rem",
-										// prettier-ignore
-										backgroundImage: state.isDeleting.get() ? "" : "url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iI2ZmZiIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBkPSJNMTEgMS41djFoMy41YS41LjUgMCAwIDEgMCAxaC0uNTM4bC0uODUzIDEwLjY2QTIgMiAwIDAgMSAxMS4xMTUgMTZoLTYuMjNhMiAyIDAgMCAxLTEuOTk0LTEuODRMMi4wMzggMy41SDEuNWEuNS41IDAgMCAxIDAtMUg1di0xQTEuNSAxLjUgMCAwIDEgNi41IDBoM0ExLjUgMS41IDAgMCAxIDExIDEuNW0tNSAwdjFoNHYtMWEuNS41IDAgMCAwLS41LS41aC0zYS41LjUgMCAwIDAtLjUuNU00LjUgNS4wMjlsLjUgOC41YS41LjUgMCAxIDAgLjk5OC0uMDZsLS41LTguNWEuNS41IDAgMSAwLS45OTguMDZtNi41My0uNTI4YS41LjUgMCAwIDAtLjUyOC40N2wtLjUgOC41YS41LjUgMCAwIDAgLjk5OC4wNThsLjUtOC41YS41LjUgMCAwIDAtLjQ3LS41MjhNOCA0LjVhLjUuNSAwIDAgMC0uNS41djguNWEuNS41IDAgMCAwIDEgMFY1YS41LjUgMCAwIDAtLjUtLjUiLz48L3N2Zz4=)",
-										backgroundRepeat: "no-repeat",
-										backgroundPosition: "center",
-										backgroundSize: "1rem 1rem",
-										padding: "0",
+										backgroundImage: state.isDeleting.get() ? "" : `url(${icons.get("delete")})`,
+										backgroundSize: "1.2rem",
 										paddingInlineStart: "0.5rem",
 									},
 									onClick: ctx.eventHandler(`delete-current-note`, () => {
-										state.isDeleting.set(true);
 										const entry = state.currentMedia.get();
 										if (!entry) return ctx.toast.error("Note GET error: Could not retrieve the current note!");
-										const currentEntry = { ...entry, notes: "" };
-										ctx.setTimeout(() => {
-											notes
-												.save(entry.mediaId, currentEntry)
-												.then(() => {
-													ctx.toast.success(`Deleted notes for ${entry.mediaTitle}!`);
-													fieldRefs.textArea.setValue("");
-													state.currentMedia.set(currentEntry);
-													ctx.screen.loadCurrent();
-												})
-												.catch((err) => ctx.toast.error(`An error occured while deleting your note: ${err.message}`))
-												.finally(() => state.isDeleting.set(false));
-										}, 1_500);
+										tabs.deleteModal(entry);
 									}),
 								}),
 							],
-							{}
+							{},
 						),
 					],
-					{}
+					{},
 				);
 
-				return this.withBanner([tray.stack([header, body], { style: { padding: "0.5rem", height: "24.5rem", justifyContent: "space-between" } })]);
+				return this.withBanner([
+					tray.stack([this.overlay(), header, body], { style: { padding: "0.5rem", height: "24.5rem", justifyContent: "space-between" } }),
+				]);
 			},
 
 			[Tabs.Settings]() {
-				const stackStyles = {
-					padding: "1rem",
-					borderRadius: "0.5rem",
-					border: "1px solid var(--border)",
-					backgroundColor: "rgb(var(--color-gray-900))",
-				};
+				const back = tray.button("\u200b", {
+					intent: "gray-subtle",
+					className: "w-10 h-10 rounded-full bg-transparent bg-no-repeat bg-center",
+					style: { backgroundImage: `url(${icons.get("back")})`, backgroundSize: "1.5rem" },
+					onClick: ctx.eventHandler(`notes-goback`, () => tabs.current.set(Tabs.General)),
+				});
 
-				const header = tray.flex(
-					[
-						tray.div([], {
-							style: {
-								width: "2.5rem",
-								height: "2.5rem",
-								marginTop: "-0.3rem",
-								backgroundImage: `url(${iconUrl})`,
-								backgroundSize: "contain",
-								backgroundRepeat: "no-repeat",
-								backgroundPosition: "center",
-								flexGrow: "0",
-								flexShrink: "0",
-							},
-						}),
-						tray.stack(
-							[
-								tray.text("Notes Settings", { style: { fontSize: "1.2em", fontWeight: "bold" } }),
-								tray.text("Manage your preferences", { style: { fontSize: "0.8em", color: "#666" } }),
-							],
-							{
-								style: {
-									lineHeight: "1em",
-									width: "100%",
-								},
-							}
-						),
-						tray.flex(
-							[
-								[
-									tray.button("\u200b", {
-										intent: "gray-subtle",
-										style: {
-											width: "2.5rem",
-											height: "2.5rem",
-											borderRadius: "50%",
-											// prettier-ignore
-											backgroundImage: "url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iI2ZmZiIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xNSA4YS41LjUgMCAwIDAtLjUtLjVIMi43MDdsMy4xNDctMy4xNDZhLjUuNSAwIDEgMC0uNzA4LS43MDhsLTQgNGEuNS41IDAgMCAwIDAgLjcwOGw0IDRhLjUuNSAwIDAgMCAuNzA4LS43MDhMMi43MDcgOC41SDE0LjVBLjUuNSAwIDAgMCAxNSA4Ii8+PC9zdmc+)",
-											backgroundRepeat: "no-repeat",
-											backgroundPosition: "center",
-											backgroundSize: "1rem 1rem",
-										},
-										onClick: ctx.eventHandler(`notes-goback`, () => {
-											tabs.current.set(Tabs.General);
-										}),
-									}),
-								],
-							],
-							{
-								style: {
-									alignItems: "center",
-								},
-							}
-						),
-					],
-					{
-						gap: 3,
-						style: {
-							marginBottom: "1rem",
-						},
-					}
-				);
+				const header = this.header("Notes Settings", "Manage your preferences", [
+					tray.flex([tray.tooltip(back, { text: "Refresh" })], {
+						className: "items-center",
+					}),
+				]);
 
 				const malVerifier = tray.stack(
 					!providers.mal.authorized.get()
 						? [
-								tray.text("Please authorize this application first", { style: { fontSize: "0.8rem", color: "var(--red-300)", lineHeight: "normal" } }),
+								tray.text("Please authorize this application first", { className: "text-sm text-red-300 leading-none" }),
 								tray.input({
 									placeholder: "Paste authorization code here",
 									fieldRef: fieldRefs.malAuthCode,
@@ -1244,9 +1182,8 @@ function init() {
 									[
 										tray.anchor("Authorize", {
 											href: providers.mal.generateAuthUrl(),
-											target: "_blank",
 											className:
-												"UI-Button_root whitespace-nowrap font-semibold rounded-lg inline-flex items-center transition ease-in text-center justify-center focus-visible:outline-none focus-visible:ring-2 ring-offset-1 ring-offset-[--background] focus-visible:ring-[--ring] disabled:opacity-50 disabled:pointer-events-none shadow-none text-[--brand] border bg-brand-50 border-transparent hover:bg-brand-100 active:bg-brand-200 dark:bg-opacity-10 dark:hover:bg-opacity-20 text-sm h-10 px-4 no-underline",
+												"whitespace-nowrap font-semibold rounded-lg inline-flex items-center transition ease-in text-center justify-center focus-visible:outline-none focus-visible:ring-2 ring-offset-1 ring-offset-[--background] focus-visible:ring-[--ring] disabled:opacity-50 disabled:pointer-events-none shadow-none text-[--brand] border bg-brand-50 border-transparent hover:bg-brand-100 active:bg-brand-200 dark:bg-opacity-10 dark:hover:bg-opacity-20 text-sm h-10 px-4 no-underline",
 											style: { fontSize: "0.95rem", borderRadius: "0.5rem 0 0 0.5rem", flex: "1" },
 										}),
 										tray.button("Verify Code", {
@@ -1269,9 +1206,9 @@ function init() {
 											}),
 										}),
 									],
-									{ gap: 0 }
+									{ gap: 0 },
 								),
-						  ]
+							]
 						: [
 								tray.text("Application authorized", { style: { fontSize: "0.8rem", color: "var(--green-200)", lineHeight: "normal" } }),
 								tray.button("Log-out", {
@@ -1288,14 +1225,14 @@ function init() {
 										}, 2_500);
 									}),
 								}),
-						  ],
+							],
 					{
 						style: {
 							paddingTop: "0.5rem",
 							marginTop: "-1px",
 							borderTop: "1px solid var(--border)",
 						},
-					}
+					},
 				);
 
 				const kitsuVerifier = tray.stack(
@@ -1334,7 +1271,7 @@ function init() {
 												.finally(() => state.isKitsuLoggingIn.set(false));
 										}),
 									}),
-							  ]
+								]
 							: [
 									tray.text("Application authorized", { style: { fontSize: "0.8rem", color: "var(--green-200)", lineHeight: "normal" } }),
 									tray.button("Log-out", {
@@ -1351,7 +1288,7 @@ function init() {
 											}, 2_500);
 										}),
 									}),
-							  ],
+								],
 					],
 					{
 						style: {
@@ -1359,7 +1296,7 @@ function init() {
 							marginTop: "-1px",
 							borderTop: "1px solid var(--border)",
 						},
-					}
+					},
 				);
 
 				const body = tray.stack(
@@ -1367,7 +1304,7 @@ function init() {
 						// General
 						tray.stack(
 							[
-								tray.text("General", { style: { fontSize: "1.5rem", fontWeight: "bold" } }),
+								tray.text("General", { className: "text-xl font-bold" }),
 								tray.stack(
 									[
 										tray.select({
@@ -1410,21 +1347,15 @@ function init() {
 											],
 										}),
 									],
-									{
-										gap: 0,
-										style: {
-											paddingTop: "0.5rem",
-											borderTop: "1px solid var(--border)",
-										},
-									}
+									{ gap: 0, className: "p-2 border-t" },
 								),
 							],
-							{ style: stackStyles, gap: 2 }
+							{ className: "p-4 rounded-lg border bg-gray-900", gap: 2 },
 						),
 						// Preferences
 						tray.stack(
 							[
-								tray.text("Preferences", { style: { fontSize: "1.5rem", fontWeight: "bold" } }),
+								tray.text("Preferences", { className: "text-xl font-bold" }),
 								tray.stack(
 									[
 										tray.switch("Hide adult-only entries from the list", {
@@ -1449,21 +1380,15 @@ function init() {
 											}),
 										}),
 									],
-									{
-										gap: 0,
-										style: {
-											paddingTop: "0.5rem",
-											borderTop: "1px solid var(--border)",
-										},
-									}
+									{ className: "p-2 border-t", gap: 2 },
 								),
 							],
-							{ style: stackStyles, gap: 2 }
+							{ className: "p-4 rounded-lg border bg-gray-900", gap: 2 },
 						),
-						// // Appearance
+						// Appearance
 						tray.stack(
 							[
-								tray.text("Appearance", { style: { fontSize: "1.5rem", fontWeight: "bold" } }),
+								tray.text("Appearance", { className: "text-xl font-bold" }),
 								tray.stack(
 									[
 										tray.switch("Do not show banner on list", {
@@ -1480,29 +1405,44 @@ function init() {
 												settings.appearance.hideBannerOnEdit.setValue(v.value);
 											}),
 										}),
+										tray.flex(
+											[
+												tray.span("List density", { className: "mr-2 font-semibold whitespace-nowrap" }),
+												tray.select("", {
+													fieldRef: settings.appearance.listDensity,
+													size: "sm",
+													onChange: ctx.eventHandler("note:settings:listdensity", (v) => {
+														$storage.set(Keys.Settings.Appearance.ListDensity, v.value);
+														settings.appearance.listDensity.setValue(v.value);
+													}),
+													options: [
+														{
+															label: "Default",
+															value: "default",
+														},
+														{
+															label: "Compact",
+															value: "compact",
+														},
+													],
+												}),
+											],
+											{ className: "items-center" },
+										),
 									],
-									{
-										gap: 0,
-										style: {
-											paddingTop: "0.5rem",
-											borderTop: "1px solid var(--border)",
-										},
-									}
+									{ gap: 0, className: "p-2 border-t" },
 								),
 							],
-							{ style: stackStyles, gap: 2 }
+							{ className: "p-4 rounded-lg border bg-gray-900", gap: 2 },
 						),
 						// MyAnimeList
 						tray.stack(
 							[
 								tray.div([], {
+									className: "h-7 pointer-events-none bg-contain bg-no-repeat",
 									style: {
-										height: "1.75rem",
-										pointerEvents: "none",
-										background: `url(https://nnotwen.github.io/n-seanime-extensions/plugins/MyAnimeListSync/logo.png)`,
+										backgroundImage: `url(https://nnotwen.github.io/n-seanime-extensions/plugins/MyAnimeListSync/logo.png)`,
 										backgroundPosition: "left center",
-										backgroundSize: "contain",
-										backgroundRepeat: "no-repeat",
 									},
 								}),
 								tray.switch("Update my notes to MAL when I save them.", {
@@ -1517,22 +1457,16 @@ function init() {
 								}),
 								malVerifier,
 							],
-							{
-								gap: 0,
-								style: stackStyles,
-							}
+							{ className: "p-4 rounded-lg border bg-gray-900", gap: 0 },
 						),
 						// Kitsu
 						tray.stack(
 							[
 								tray.div([], {
+									className: "h-7 pointer-events-none bg-contain bg-no-repeat",
 									style: {
-										height: "1.75rem",
-										pointerEvents: "none",
-										background: `url(https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/refs/heads/master/plugins/KitsuSync/brand-logo.png)`,
+										backgroundImage: `url(https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/refs/heads/master/plugins/KitsuSync/brand-logo.png)`,
 										backgroundPosition: "left center",
-										backgroundSize: "contain",
-										backgroundRepeat: "no-repeat",
 									},
 								}),
 								tray.switch("Update my notes to Kitsu when I save them.", {
@@ -1547,10 +1481,7 @@ function init() {
 								}),
 								kitsuVerifier,
 							],
-							{
-								gap: 0,
-								style: stackStyles,
-							}
+							{ className: "p-4 rounded-lg border bg-gray-900", gap: 0 },
 						),
 					],
 					{
@@ -1561,10 +1492,10 @@ function init() {
 							paddingRight: "0.2rem",
 							"--color-brand-500": "0 155 187",
 						},
-					}
+					},
 				);
 
-				return tray.stack([header, body], { style: { padding: "0.5rem", minHeight: "24.5rem" } });
+				return tray.stack([header, body], { className: "p-2", style: { minHeight: "24.5rem" } });
 			},
 
 			[Tabs.WarnBeforeSaving]() {
@@ -1584,65 +1515,34 @@ function init() {
 
 				const hasNote = notes.get(state.currentMedia.get()?.mediaId ?? 0);
 
+				const back = tray.button("\u200b", {
+					intent: "gray-subtle",
+					className: "w-10 h-10 rounded-full bg-no-repeat bg-center",
+					style: { backgroundImage: `url(${icons.get("back")})`, backgroundSize: "1.2rem" },
+					onClick: ctx.eventHandler(`notes-goback`, () => tabs.current.set(Tabs.General)),
+				});
+
 				const header = tray.flex(
 					[
 						tray.stack(
 							[
 								tray.text(`${hasNote?.notes?.length ? "Edit" : "Add"} Notes`, {
-									style: { fontSize: "1.5em", fontWeight: "bold", color: "#fff" },
+									className: "text-xl font-bold text-white",
 								}),
 								tray.text(`${state.currentMedia.get()?.mediaTitle}`, {
-									style: {
-										fontSize: "1rem",
-										color: "#fff",
-										wordBreak: "break-word",
-										overflow: "hidden",
-										textOverflow: "ellipsis",
-										display: "-webkit-box",
-										"-webkit-line-clamp": "2",
-										"-webkit-box-orient": "vertical",
-									},
+									className: "text-white overflow-hidden line-clamp-2 break-words",
 								}),
 							],
 							{
-								style: {
-									lineHeight: "1em",
-									width: "100%",
-									textShadow: "0 0 10px black",
-								},
-							}
+								className: "w-full",
+								style: { lineHeight: "1em", textShadow: "0 0 10px black" },
+							},
 						),
-						tray.flex(
-							[
-								tray.button("\u200b", {
-									intent: "gray-subtle",
-									style: {
-										width: "2.5rem",
-										height: "2.5rem",
-										borderRadius: "50%",
-										// prettier-ignore
-										backgroundImage: "url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iI2ZmZiIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xNSA4YS41LjUgMCAwIDAtLjUtLjVIMi43MDdsMy4xNDctMy4xNDZhLjUuNSAwIDEgMC0uNzA4LS43MDhsLTQgNGEuNS41IDAgMCAwIDAgLjcwOGw0IDRhLjUuNSAwIDAgMCAuNzA4LS43MDhMMi43MDcgOC41SDE0LjVBLjUuNSAwIDAgMCAxNSA4Ii8+PC9zdmc+)",
-										backgroundRepeat: "no-repeat",
-										backgroundPosition: "center",
-										backgroundSize: "1rem 1rem",
-									},
-									onClick: ctx.eventHandler(`notes-goback`, () => {
-										tabs.current.set(Tabs.Editor);
-									}),
-								}),
-							],
-							{
-								style: {
-									alignItems: "center",
-								},
-							}
-						),
+						tray.flex([tray.tooltip(back, { text: "Go Back" })], {
+							className: "items-center",
+						}),
 					],
-					{
-						style: {
-							paddingTop: "0.75rem",
-						},
-					}
+					{ className: "pt-3" },
 				);
 
 				const body = tray.stack(
@@ -1650,33 +1550,20 @@ function init() {
 						tray.flex(
 							[
 								tray.div([], {
+									className: "w-32 h-32 bg-contain bg-no-repeat",
 									style: {
-										height: "8rem",
-										width: "8rem",
 										background: `url(https://nnotwen.github.io/n-seanime-extensions/plugins/Notes/bruh.png)`,
 										backgroundPosition: "left center",
-										backgroundSize: "contain",
-										backgroundRepeat: "no-repeat",
 									},
 								}),
 							],
-							{
-								style: {
-									justifyContent: "center",
-								},
-							}
+							{ className: "justify-center" },
 						),
 						tray.text(reason[reasonKey], {
+							className: "break-normal text-center w-full p-4 text-red-300 rounded-xl relative",
 							style: {
-								wordBreak: "normal",
-								textAlign: "center",
-								width: "100%",
-								padding: "1rem",
-								color: "var(--red-300)",
 								backgroundColor: "rgb(from var(--red-700) r g b / 0.3)",
 								border: "1px solid var(--red-700)",
-								borderRadius: "1rem",
-								position: "relative",
 							},
 						}),
 						tray.button("Save", {
@@ -1702,10 +1589,10 @@ function init() {
 							}),
 						}),
 					],
-					{ gap: 5 }
+					{ gap: 5 },
 				);
 
-				return this.withBanner([tray.stack([header, body], { style: { padding: "0.5rem", justifyContent: "space-between" } })]);
+				return this.withBanner([tray.stack([header, body], { className: "p-2 justify-between" })]);
 			},
 
 			get() {
@@ -1764,32 +1651,26 @@ function init() {
 
 		// prettier-ignore
 		const noteIcn = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIj48cmVjdCB4PSI2IiB5PSI0IiB3aWR0aD0iMTMiIGhlaWdodD0iMTciIHJ4PSIyIiBzdHJva2U9IiNjYWNhY2EiIHN0cm9rZS13aWR0aD0iMiIvPjxwYXRoIGQ9Ik0xNSAxMFY4TTQgOWg0bS00IDRoNG0tNCA0aDQiIHN0cm9rZT0iI2NhY2FjYSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4=";
-		const btnstyle = {
-			backgroundImage: `url(${noteIcn})`,
-			backgroundRepeat: "no-repeat",
-			backgroundPosition: "calc(0% + 0.5rem) center",
-			backgroundSize: "1.5rem",
-			paddingInlineStart: "2.3rem",
-		};
-		const animeBtn = ctx.action.newAnimePageButton({
-			label: "Add Note",
-			intent: "gray-subtle",
-			style: btnstyle,
-		});
-		const mangaBtn = ctx.action.newMangaPageButton({
-			label: "Add Note",
-			intent: "gray-subtle",
-			style: btnstyle,
-		});
-		animeBtn.mount();
-		mangaBtn.mount();
-		animeBtn.onClick(onEditBtnClicked);
-		mangaBtn.onClick(onEditBtnClicked);
+		const animeBtn = ctx.action.newAnimePageButton({ label: "\u200b" });
+		const mangaBtn = ctx.action.newMangaPageButton({ label: "\u200b" });
+
+		for (const btn of [animeBtn, mangaBtn]) {
+			btn.setIntent("gray-subtle");
+			btn.setStyle({
+				backgroundImage: `url(${noteIcn})`,
+				backgroundRepeat: "no-repeat",
+				backgroundPosition: "center",
+				backgroundSize: "1.7rem",
+				width: "40px",
+			});
+			btn.mount();
+			btn.onClick(onEditBtnClicked);
+		}
 
 		ctx.dom.onReady(async () => {
 			const style = await ctx.dom.createElement("style");
 			style.setText(
-				".notes-tab-general-entry-card-background { transition: transform ease-in-out 0.2s;  } .note-tab-general-container:hover .notes-tab-general-entry-card-background { mask-image: linear-gradient(to left, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 100%)!important; transform: scale(1.1) }"
+				".notes-tab-general-entry-card-background { transition: transform ease-in-out 0.3s;  } .note-tab-general-container:hover .notes-tab-general-entry-card-background { mask-image: linear-gradient(to left, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 100%)!important; transform: scale(1.2) }",
 			);
 		});
 
@@ -1803,7 +1684,7 @@ function init() {
 					animeBtn.mount();
 				}
 				const note = notes.get(mediaId);
-				animeBtn.setLabel(!!note ? "Edit Note" : "Add Note");
+				animeBtn.setTooltipText(!!note ? "Edit Notes" : "Add Notes");
 			}
 
 			if (e.pathname === "/manga/entry") {
@@ -1814,7 +1695,7 @@ function init() {
 					mangaBtn.mount();
 				}
 				const note = notes.get(mediaId);
-				mangaBtn.setLabel(!!note ? "Edit Note" : "Add Note");
+				mangaBtn.setTooltipText(!!note ? "Edit Notes" : "Add Notes");
 			}
 		});
 
@@ -1830,5 +1711,7 @@ function init() {
 		notes.init();
 		providers.mal.init();
 		providers.kitsu.init();
+
+		ctx.screen.loadCurrent();
 	});
 }
