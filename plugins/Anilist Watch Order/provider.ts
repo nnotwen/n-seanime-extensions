@@ -20,13 +20,18 @@ function init() {
 		];
 
 		const currentMediaId = ctx.state<number | null>(null);
-		const nodes = ctx.state<RelationsTreeNode[]>([]);
-		const edges = ctx.state<RelationsTreeEdge[]>([]);
+		const graphData = ctx.state<{
+			nodes: RelationsTreeNode[];
+			edges: RelationsTreeEdge[];
+			mediaId: number | null;
+			ready: boolean;
+		}>({ nodes: [], edges: [], mediaId: null, ready: false });
 		const queued = ctx.state<number[]>([]);
 		const fetched = ctx.state<number[]>([]);
 		const seen = ctx.state<number[]>([]);
 		const calls = ctx.state<number>(0);
 		const fetching = ctx.state<boolean>(false);
+		const isOpen = ctx.state<boolean>(false);
 
 		const buttonStyle = {
 			// prettier-ignore
@@ -48,12 +53,251 @@ function init() {
 
 		button.mount();
 
+		// Create fixed webview
+		// const webview = ctx.newWebview({
+		// 	slot: "fixed",
+		// 	width: "100%",
+		// 	maxWidth: "1200px",
+		// 	height: "500px",
+		// 	window: {
+		// 		draggable: true,
+		// 		defaultPosition: "bottom-right",
+		// 	},
+		// 	hidden: true,
+		// });
+
+		// Try using a mounted webview
+		const webview = ctx.newWebview({
+			slot: "before-anime-entry-episode-list",
+			width: "100%",
+			height: "500px",
+			maxHeight: "65vh",
+			hidden: true,
+		});
+
+		ctx.effect(() => {
+			if (isOpen.get() && webview.isHidden()) webview.show();
+			else if (!isOpen.get() && !webview.isHidden()) webview.hide();
+		}, [isOpen]);
+
 		// Initialize cache
 		$store.set(CACHED_RESULTS, []);
 
-		// This is important to avoid hitting rate-limit
-		// Querying fate series (large universe) took 15 seconds and 5 API calls to query over 40 entries
-		// i think i could consider that performant (●'◡'●)
+		// Setup webview communication
+		webview.channel.sync("graphData", graphData);
+		webview.channel.sync("fetching", fetching);
+
+		webview.channel.on("close", () => {
+			isOpen.set(false);
+		});
+
+		webview.channel.on("navigate", (mediaId: number) => {
+			ctx.screen.navigateTo("/entry", { id: mediaId.toString() });
+		});
+
+		// Render webview content
+		webview.setContent(
+			() => /*html*/ `
+		<!DOCTYPE html>
+		<html lang="en">
+		<head>
+			<meta charset="UTF-8">
+			<style>
+				html {
+					color-scheme: dark;
+					overflow: hidden;
+					border-radius: 15px;   
+				}
+				
+				body {
+					/*background: #0c0c0c;*/
+					border-radius: 15px;
+					overflow: hidden;
+					color: #fff;
+					font-family: -apple-system, system-ui, sans-serif;
+					margin: 0;
+					/*padding: 1rem;*/
+					display: flex;
+					flex-direction: column;
+					height: 100vh;
+					box-sizing: border-box;
+				}
+
+				.header {
+					display: flex;
+					justify-content: space-between;
+					align-items: center;
+					padding: 0.5rem 0;
+					margin-bottom: 1rem;
+				}
+
+				.header h3 {
+					margin: 0;
+				}
+
+				.close-btn {
+					background: none;
+					border: none;
+					color: #fff;
+					font-size: 1.2rem;
+					cursor: pointer;
+					padding: 0.25rem 0.5rem;
+				}
+
+				.close-btn:hover {
+					opacity: 0.7;
+				}
+
+				.graph-container {
+					flex: 1;
+					background: #111;
+					border-radius: 15px;
+					overflow: hidden;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					border: 1px solid #ffffff0f;
+				}
+
+				.loading {
+					display: flex;
+					flex-direction: column;
+					align-items: center;
+					justify-content: center;
+					gap: 1rem;
+				}
+
+				.spinner {
+					width: 3rem;
+					height: 3rem;
+					border: 3px solid rgba(255, 255, 255, 0.1);
+					border-top-color: #fff;
+					border-radius: 50%;
+					animation: spin 1s linear infinite;
+				}
+
+				@keyframes spin {
+					to { transform: rotate(360deg); }
+				}
+
+				.extras {
+					color: #919191;
+					margin-top: 0.5rem;
+					margin-bottom: 1rem;
+					font-size: 0.9rem;
+				}
+			</style>
+			<script src="https://unpkg.com/dagre/dist/dagre.min.js"></script>
+			<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+			<link rel="stylesheet" href="https://unpkg.com/vis-network/styles/vis-network.min.css">
+		</head>
+		<body>
+			<div class="header">
+				<h3>Watch Order</h3>
+				<button class="close-btn" onclick="closeWebview()">✕</button>
+			</div>
+			
+			<div class="graph-container" id="graph-area">
+				<div class="loading">
+					<div class="spinner"></div>
+					<p>Loading relations data. This won't take long...</p>
+				</div>
+			</div>
+			
+			<div class="extras">
+				You can click on any node to navigate to that page directly.
+			</div>
+
+			<script>
+				let network = null;
+
+				function closeWebview() {
+					window.webview.send("close");
+				}
+
+				function renderGraph(graphData) {
+					if (!graphData || !graphData.nodes || !graphData.edges || graphData.nodes.length === 0) {
+						return;
+					}
+
+					const graphArea = document.getElementById("graph-area");
+					graphArea.innerHTML = "";
+
+					const g = new dagre.graphlib.Graph();
+					g.setGraph({ rankdir: "LR" });
+					g.setDefaultEdgeLabel(() => ({}));
+
+					graphData.nodes.forEach(n => {
+						g.setNode(n.id, { width: 250, height: 100 });
+					});
+
+					graphData.edges.forEach(e => {
+						g.setEdge(e.from, e.to);
+					});
+
+					dagre.layout(g);
+
+					const nodesWithPositions = graphData.nodes.map(n => {
+						const pos = g.node(n.id);
+						return {
+							...n,
+							x: pos.x,
+							y: pos.y,
+							fixed: { x: true, y: true }
+						};
+					});
+
+					const nodes = new vis.DataSet(nodesWithPositions);
+					const edges = new vis.DataSet(graphData.edges);
+					const data = { nodes, edges };
+
+					const options = {
+						physics: false,
+						edges: {
+							smooth: {
+								type: "cubicBezier",
+								forceDirection: "horizontal",
+								roundness: 0.4
+							}
+						}
+					};
+
+					network = new vis.Network(graphArea, data, options);
+					
+					if (graphData.mediaId) {
+						network.selectNodes([graphData.mediaId]);
+						network.once("afterDrawing", () => {
+							network.focus(graphData.mediaId, {
+								scale: 1,
+								animation: { duration: 500, easingFunction: "easeInOutQuad" }
+							});
+						});
+					}
+
+					network.on("click", (params) => {
+						if (params.nodes.length > 0) {
+							const id = params.nodes[0];
+							window.webview.send("navigate", id);
+						}
+					});
+				}
+
+				if (window.webview) {
+					window.webview.on("graphData", (data) => {
+						if (data && data.ready && data.nodes.length > 0) {
+							renderGraph(data);
+						}
+					});
+
+					window.webview.on("fetching", (isFetching) => {
+						// no-op
+					});
+				}
+			</script>
+		</body>
+		</html>`,
+		);
+
 		function delay(ms: number): Promise<void> {
 			return new Promise((resolve) => ctx.setTimeout(resolve, ms));
 		}
@@ -88,7 +332,7 @@ function init() {
 		async function fetchMediaBulk(ids: number[]): Promise<MediaQueryResponse[]> {
 			console.log("[Ext<AnilistWatchOrder>]: (log) fetchMediaBulk called for ", ids);
 			// prettier-ignore
-			const QUERY = "query ($ids: [Int]) { Page { media(id_in: $ids, type: ANIME) { id title { userPreferred } startDate { year } type format status relations { edges { relationType node { id title { userPreferred } startDate { year } type format status relations { edges { relationType node { id title { userPreferred } startDate { year } type format status } } } } } } } } }";
+			const QUERY = "query ($ids: [Int]) { Page { media(id_in: $ids, type: ANIME) { id title { userPreferred } startDate { year } type format status relations { edges { relationType node { id title { userPreferred } startDate { year } type format status relations { edges { relationType node { id title { userPreferred } startDate { year } type format status } } } } } } } } }"
 			const res = await fetch("https://graphql.anilist.co", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -110,6 +354,8 @@ function init() {
 				CANCELLED: "#ed5565", // red
 				HIATUS: "#ac92ec", // purple
 			};
+
+			const statusColor = media.status ? STATUS_BORDER_COLORS[media.status] : "#4a89dc";
 
 			const node = {
 				id: media.id,
@@ -137,24 +383,29 @@ function init() {
 				},
 				color: {
 					background: "#282828",
-					border: STATUS_BORDER_COLORS[media.status!],
+					border: statusColor,
 					highlight: {
 						background: "#333", // dark gray when selected
 						border: "#ff00ff",
 					},
 					hover: {
 						background: "#444", // lighter gray on hover
-						border: STATUS_BORDER_COLORS[media.status!],
+						border: statusColor,
 					},
 				},
 			};
 
-			nodes.set([...nodes.get(), node]);
+			const current = graphData.get();
+			graphData.set({
+				...current,
+				nodes: [...current.nodes, node],
+				ready: false,
+			});
 			return true;
 		}
 
 		function addEdgeNormalized(fromId: number, toId: number, relationType: string) {
-			let edge;
+			let edge: { dashes?: boolean; color?: any; font?: any } & $awo.RelationsTreeEdge;
 
 			// Normalize PREQUEL → SEQUEL
 			if (relationType === "PREQUEL") {
@@ -167,20 +418,21 @@ function init() {
 			if (relationType === "PARENT") return;
 
 			// Dash styles
-			(edge as any).dashes = true;
-			(edge as any).color = { color: "#3d3d3d" };
-			(edge as any).font = {
+			edge.dashes = true;
+			edge.color = { color: "#3d3d3d" };
+			edge.font = {
 				color: "#848484",
 				background: "#111111",
 				strokeWidth: 0,
 			};
 
-			const currentEdges = edges.get();
+			const current = graphData.get();
+			const currentEdges = current.edges;
 
 			let key: string;
 			if (edge.label.trim() === "ALTERNATIVE") {
-				const minId = Math.min(edge.from, edge.to);
-				const maxId = Math.max(edge.from, edge.to);
+				const minId = Math.min(edge.from, edge.to!);
+				const maxId = Math.max(edge.from, edge.to!);
 				key = `${minId}-${maxId}-${edge.label}`;
 			} else {
 				key = `${edge.from}-${edge.to}-${edge.label}`;
@@ -196,7 +448,11 @@ function init() {
 			});
 
 			if (!exists) {
-				edges.set([...currentEdges, edge]);
+				graphData.set({
+					...current,
+					edges: [...currentEdges, edge],
+					ready: false,
+				});
 			}
 		}
 
@@ -220,7 +476,7 @@ function init() {
 					} else {
 						if (!seen.get().includes(node.id)) {
 							seen.set([...seen.get(), node.id]);
-							queued.set([...new Set([...queued.get(), node.id])]);
+							queued.set(Array.from(new Set([...queued.get(), node.id])));
 						}
 					}
 				}
@@ -228,28 +484,36 @@ function init() {
 		}
 
 		async function walkRelations(media: $app.AL_BaseAnime) {
-			// check cache
-			const cache = $store.get(CACHED_RESULTS) as RelationsCache[];
-			const cacheEntry = cache.find((e) => e.family.includes(media.id));
-
-			if (cacheEntry) {
-				nodes.set(cacheEntry.nodes);
-				edges.set(cacheEntry.edges);
-				console.log("[Ext<AnilistWatchOrder>]: (log) Cache hit for media.id:", media.id);
-				return; // early return prevents duplicate work + duplicate cache entries
-			}
-
 			if (fetching.get()) {
 				console.log("[Ext<AnilistWatchOrder>]: (log) Avoiding parallel call");
 				return;
 			}
 
+			// Start fetching
+			fetching.set(true);
+			graphData.set({ nodes: [], edges: [], mediaId: media.id, ready: false });
+
+			// Check cache
+			const cache = $store.get(CACHED_RESULTS) as RelationsCache[];
+			const cacheEntry = cache.find((e) => e.family.includes(media.id));
+
+			if (cacheEntry) {
+				console.log("[Ext<AnilistWatchOrder>]: (log) Cache hit for media.id:", media.id);
+				graphData.set({
+					nodes: cacheEntry.nodes,
+					edges: cacheEntry.edges,
+					mediaId: media.id,
+					ready: true,
+				});
+				fetching.set(false);
+				return;
+			}
+
+			// No cache, fetch
 			$store.set("now", Date.now());
 			queued.set([media.id]);
 			seen.set([]);
-			nodes.set([]);
-			edges.set([]);
-			fetching.set(true);
+			fetched.set([]);
 
 			// add current media to node
 			addNode(media);
@@ -259,10 +523,11 @@ function init() {
 
 				// Monitor api calls
 				calls.set(calls.get() + 1);
-				await delay(2_000);
+				await delay(500);
 				if (typeof list === "string") {
 					button.setStyle(buttonStyle);
 					ctx.toast.error(`An error occured while performing a recursive operation: ${list}`);
+					fetching.set(false);
 					return console.error(`[EXT<AnilistWatchOrder>]: (err) ${list}`);
 				}
 
@@ -276,7 +541,7 @@ function init() {
 					} else {
 						if (!seen.get().includes(media.id)) {
 							seen.set([...seen.get(), media.id]);
-							queued.set([...new Set([...queued.get(), media.id])]);
+							queued.set(Array.from(new Set([...queued.get(), media.id])));
 						}
 					}
 				}
@@ -286,15 +551,25 @@ function init() {
 			const elapsed = ((Date.now() - $store.get("now")) / 1000).toFixed(2);
 			console.log(`Performed ${calls.get()} API calls in ${elapsed} seconds!`);
 
+			// Get final data
+			const finalData = graphData.get();
+
 			// Cache this result
 			$store.set(CACHED_RESULTS, [
 				...$store.get(CACHED_RESULTS),
 				{
 					family: fetched.get(),
-					edges: edges.get(),
-					nodes: nodes.get(),
+					edges: finalData.edges,
+					nodes: finalData.nodes,
 				},
 			]);
+
+			// Mark as ready and set final mediaId
+			graphData.set({
+				...finalData,
+				mediaId: currentMediaId.get(),
+				ready: true,
+			});
 
 			// Reset API calls monitor
 			calls.set(0);
@@ -302,271 +577,61 @@ function init() {
 		}
 
 		async function handleButtonPress(e: { media: $app.AL_BaseAnime }) {
-			// reset nodes
-			nodes.set([]);
-			edges.set([]);
-
-			const oldscript = [
-				...(await ctx.dom.query("[data-relations-graph]")),
-				...(await ctx.dom.query("[data-relations-graph-data]")),
-			];
-
-			if (oldscript.length) {
-				for (const script of oldscript) {
-					script.remove();
-				}
-			}
-
-			const script = await ctx.dom.createElement("script");
-			script.setAttribute("data-relations-graph", "true");
-			script.setText(`
-				(function () {
-					let container = document.getElementById("franchise-graph");
-					if (!container) {
-						container = document.createElement("div");
-						container.className = "sm:max-w-5xl lg:m-[10px] transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-500 data-[state=open]:duration-500 focus:outline-none focus-visible:outline-none select-none data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right rounded-[--radius]";
-						container.id = "franchise-graph";
-						container.style.width = "100%";
-						container.style.height = "500px";
-						container.style.border = "1px solid var(--border)";
-						container.style.marginTop = "1rem";
-						container.style.position = "fixed";
-						container.style.bottom = "10px";
-						container.style.right = "10px";
-						container.style.backgroundColor = "var(--background, #111)";
-						container.style.zIndex = "50";
-						container.style.display = "flex";
-						container.style.flexDirection = "column";
-						container.style.padding = "1rem";
-
-						// --- Header ---
-						const header = document.createElement("div");
-						header.style.display = "flex";
-						header.style.justifyContent = "space-between";
-						header.style.alignItems = "center";
-						header.style.color = "#fff";
-						header.style.padding = "0.5rem 0";
-
-						const title = document.createElement("h3");
-						title.textContent = "Watch Order";
-						header.appendChild(title);
-
-						const dismissBtn = document.createElement("button");
-						dismissBtn.textContent = "✕";
-						dismissBtn.style.background = "none";
-						dismissBtn.style.border = "none";
-						dismissBtn.style.color = "#fff";
-						dismissBtn.style.fontSize = "1.2rem";
-						dismissBtn.style.cursor = "pointer";
-						dismissBtn.addEventListener("click", () => {
-							container.setAttribute("data-state", "closed");
-							setTimeout(() => container.remove(), 400); // match duration
-						});
-						header.appendChild(dismissBtn);
-
-						// --- Body ---
-						const body = document.createElement("div");
-						body.style.flex = "1";
-						body.style.display = "flex";
-						body.style.flexDirection = "column";
-
-						const graphArea = document.createElement("div");
-						graphArea.id = "graph-area";
-						graphArea.style.flex = "1";
-						graphArea.style.background = "#111";
-						graphArea.style.overflow = "hidden";
-						graphArea.style.borderRadius = "15px";
-
-						graphArea.style.display = "flex";
-						graphArea.style.flexDirection = "column";
-						graphArea.style.alignItems = "center";
-						graphArea.style.justifyContent = "center";
-
-						const spinner = document.createElement("div");
-						spinner.className = "UI-Skeleton__root animate-pulse rounded-[--radius-md] bg-[--subtle] w-full h-full flex justify-center items-center flex-col space-y-4";
-
-						const spinIcon = document.createElement("div");
-						spinIcon.className = "UI-LoadingSpinner__container flex flex-col w-full items-center h-24 justify-center";
-
-						// build the SVG
-						const spinSVG = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-						spinSVG.setAttribute("stroke", "currentColor");
-						spinSVG.setAttribute("fill", "currentColor");
-						spinSVG.setAttribute("stroke-width", "0");
-						spinSVG.setAttribute("version", "1.1");
-						spinSVG.setAttribute("viewBox", "0 0 16 16");
-						spinSVG.setAttribute("class", "size-14 lg:size-20 text-white animate-spin");
-						spinSVG.setAttribute("height", "1em");
-						spinSVG.setAttribute("width", "1em");
-						spinSVG.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-
-						const spinPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-						spinPath.setAttribute("d","M16 8c-0.020-1.045-0.247-2.086-0.665-3.038-0.417-0.953-1.023-1.817-1.766-2.53s-1.624-1.278-2.578-1.651c-0.953-0.374-1.978-0.552-2.991-0.531-1.013 0.020-2.021 0.24-2.943 0.646-0.923 0.405-1.758 0.992-2.449 1.712s-1.237 1.574-1.597 2.497c-0.361 0.923-0.533 1.914-0.512 2.895 0.020 0.981 0.234 1.955 0.627 2.847 0.392 0.892 0.961 1.7 1.658 2.368s1.523 1.195 2.416 1.543c0.892 0.348 1.851 0.514 2.799 0.493 0.949-0.020 1.89-0.227 2.751-0.608 0.862-0.379 1.642-0.929 2.287-1.604s1.154-1.472 1.488-2.335c0.204-0.523 0.342-1.069 0.415-1.622 0.019 0.001 0.039 0.002 0.059 0.002 0.552 0 1-0.448 1-1 0-0.028-0.001-0.056-0.004-0.083h0.004zM14.411 10.655c-0.367 0.831-0.898 1.584-1.55 2.206s-1.422 1.112-2.254 1.434c-0.832 0.323-1.723 0.476-2.608 0.454-0.884-0.020-1.759-0.215-2.56-0.57-0.801-0.354-1.526-0.867-2.125-1.495s-1.071-1.371-1.38-2.173c-0.31-0.801-0.457-1.66-0.435-2.512s0.208-1.694 0.551-2.464c0.342-0.77 0.836-1.468 1.441-2.044s1.321-1.029 2.092-1.326c0.771-0.298 1.596-0.438 2.416-0.416s1.629 0.202 2.368 0.532c0.74 0.329 1.41 0.805 1.963 1.387s0.988 1.27 1.272 2.011c0.285 0.74 0.418 1.532 0.397 2.32h0.004c-0.002 0.027-0.004 0.055-0.004 0.083 0 0.516 0.39 0.94 0.892 0.994-0.097 0.544-0.258 1.075-0.481 1.578z");
-						spinSVG.appendChild(spinPath);
-						spinIcon.appendChild(spinSVG);
-
-						const spinText = document.createElement("div");
-						spinText.className = "text-center text-xs lg:text-sm";
-						spinText.innerHTML = "<p>Loading relations data. This won't take long...</p>";
-
-						spinner.appendChild(spinIcon);
-						spinner.appendChild(spinText);
-
-						graphArea.appendChild(spinner);
-						body.appendChild(graphArea);
-
-						const extras = document.createElement("div");
-						extras.textContent = "You can click on any node to navigate on that page directly.";
-						extras.style.color = "#cacaca";
-						extras.style.marginTop = "0.5rem";
-						body.appendChild(extras);
-
-						// Assemble
-						container.setAttribute("data-state", "open");
-						container.appendChild(header);
-						container.appendChild(body);
-						document.body.appendChild(container);
-					}
-				})();
-			`);
+			currentMediaId.set(e.media.id);
+			isOpen.set(true);
 
 			await walkRelations(e.media);
-
-			// Poll until fetching is false
-			while (fetching.get()) {
-				await delay(100); // check every 100ms
-			}
-
-			const dataScript = await ctx.dom.createElement("script");
-			dataScript.setAttribute("data-relations-graph-data", "true");
-			dataScript.setText(`
-				(function () {
-					const nodesData = ${JSON.stringify(nodes.get())};
-					const edgesData = ${JSON.stringify(edges.get())};
-					const graphArea = document.getElementById("graph-area");
-					if (!graphArea) return;
-
-					const g = new dagre.graphlib.Graph();
-					g.setGraph({ rankdir: "LR" });
-					g.setDefaultEdgeLabel(() => ({}));
-
-					nodesData.forEach(n => {
-						g.setNode(n.id, { width: 250, height: 100 });
-					});
-
-					edgesData.forEach(e => {
-						g.setEdge(e.from, e.to)
-					});
-
-					dagre.layout(g)
-
-					nodesData.forEach(n => {
-						const pos = g.node(n.id);
-						n.x = pos.x;
-						n.y = pos.y;
-						n.fixed = { x: true, y: true };
-					});
-
-					graphArea.innerHTML = ""; // clear loading
-
-					const nodes = new vis.DataSet(nodesData);
-					const edges = new vis.DataSet(edgesData);
-					const data = { nodes, edges };
-
-					const options = {
-						physics: false,
-						edges: {
-							smooth: {
-								type: "cubicBezier",   
-								forceDirection: "horizontal", 
-								roundness: 0.4
-							}
-						}
-					};
-
-					const network = new vis.Network(graphArea, data, options);
-					network.selectNodes([${e.media.id}]);
-
-					network.once("afterDrawing", () => {
-						network.focus(${e.media.id}, {
-							scale: 1,
-							animation: { duration: 500, easingFunction: "easeInOutQuad" }
-						});
-					});
-
-
-					network.on("click", (params) => {
-						if (params.nodes.length > 0) {
-							const id = params.nodes[0];
-							let marker = document.getElementById("franchise-navigate-marker");
-							if (!marker) {
-								marker = document.createElement("div");
-								marker.id = "franchise-navigate-marker";
-								marker.style.display = "none";
-								document.body.appendChild(marker);
-							}
-							marker.setAttribute("data-id", id);
-							marker.setAttribute("data-clicked", "true");
-						}
-					});
-				})();
-			`);
 		}
 
 		ctx.effect(() => {
-			// No abortcontroller so do this to avoid parallel api calls
+			// Update button loading state
 			button.setLoading(fetching.get());
+			button.setTooltipText(fetching.get() ? "Fetching relations data..." : "Watch Order");
 			button.setStyle({
 				...buttonStyle,
-				...(fetching.get() ? { backgroundImage: "" } : {}),
+				...(fetching.get()
+					? {
+							backgroundImage: "",
+							textIndent: "",
+						}
+					: {}),
 			});
 		}, [fetching]);
 
 		// When users navigate to other page
 		ctx.screen.onNavigate(async (e) => {
-			const franchiseGraph = await ctx.dom.queryOne("#franchise-graph");
+			// isOpen.set(false); // comment to leave open
 			if (e.pathname === "/entry" && !!e.searchParams.id) {
-				currentMediaId.set(parseInt(e.searchParams.id) || null);
+				const newMediaId = parseInt(e.searchParams.id) || null;
+				const previousMediaId = currentMediaId.get();
 
-				const franchiseGraph = await ctx.dom.queryOne("#franchise-graph");
-				const fgMarker = await ctx.dom.queryOne("#franchise-navigate-marker");
-				const markerId = await fgMarker?.getAttribute("data-id");
+				if (newMediaId && newMediaId !== previousMediaId) {
+					currentMediaId.set(newMediaId);
 
-				if (!(markerId && parseInt(markerId) === currentMediaId.get())) franchiseGraph?.remove();
+					// devnote: won't happen
+					// If the webview is open, fetch data for the new media
+					if (isOpen.get()) {
+						const entry = await ctx.anime.getAnimeEntry(newMediaId);
+						if (entry && entry.media) {
+							await walkRelations(entry.media);
+						}
+					}
+				}
 			} else {
-				franchiseGraph?.remove();
+				isOpen.set(false);
 				currentMediaId.set(null);
 			}
 		});
 
-		// load vis module
-		ctx.dom.onReady(async () => {
-			const dagreScript = await ctx.dom.createElement("script");
-			const visScript = await ctx.dom.createElement("script");
-			const visStyles = await ctx.dom.createElement("style");
-			const head = await ctx.dom.queryOne("head");
-			dagreScript.setAttribute("src", "https://unpkg.com/dagre/dist/dagre.min.js");
-			visScript.setAttribute("src", "https://unpkg.com/vis-network/standalone/umd/vis-network.min.js");
-			visStyles.setAttribute("href", "https://unpkg.com/vis-network/styles/vis-network.min.css");
-			visStyles.setAttribute("rel", "stylesheet");
-			visStyles.setAttribute("type", "text/css");
-
-			head?.append(dagreScript);
-			head?.append(visScript);
-			head?.append(visStyles);
-
-			button.onClick(handleButtonPress);
+		ctx.dom.onReady(() => {
+			console.log(ctx.dom.viewport.getSize());
 		});
 
-		ctx.dom.observe("#franchise-navigate-marker", (elements) => {
-			if (!currentMediaId.get()) return;
-			const id = elements[0]?.attributes["data-id"];
-			const clicked = elements[0]?.attributes["data-clicked"];
-			if (id && clicked === "true") {
-				ctx.screen.navigateTo("/entry", { id });
-				elements[0]?.setAttribute("data-clicked", "false");
-			}
+		ctx.dom.viewport.onResize((v) => {
+			console.log("onResize", v);
 		});
+
+		button.onClick(handleButtonPress);
 
 		ctx.screen.loadCurrent();
 	});
