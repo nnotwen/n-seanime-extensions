@@ -77,6 +77,10 @@ function init() {
 						<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2"/>
 						<circle cx="12" cy="12" r="3"/>
 					</svg>`,
+				share: /*html*/ `
+					<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+						<path d="M16 11.875c-1.103 0-2-.897-2-2s.897-2 2-2 2 .897 2 2-.897 2-2 2M4 18c-1.103 0-2-.897-2-2s.897-2 2-2c2.643 0 2.644 4 0 4M4 6c-1.103 0-2-.897-2-2s.897-2 2-2c2.643 0 2.644 4 0 4m12-.125c-1.221 0-2.3.559-3.034 1.421L7.959 4.405C8.212 1.919 6.269 0 4 0a4 4 0 0 0 0 8 3.99 3.99 0 0 0 3.257-1.691l4.822 2.784a3.9 3.9 0 0 0 .009 1.611l-4.947 2.847A3.98 3.98 0 0 0 4 12a4 4 0 0 0 0 8c2.362 0 4.324-2.072 3.939-4.601l5.056-2.909A3.97 3.97 0 0 0 16 13.875a4 4 0 0 0 0-8" fill="#cacaca" fill-rule="evenodd"/>
+					</svg>`,
 			},
 			get(name: keyof typeof this.html, raw: boolean = false) {
 				if (raw) return this.html[name];
@@ -164,7 +168,7 @@ function init() {
 			remove(uuid: string) {
 				$storage.set(
 					this.id,
-					this.storage.filter((x) => x.uuid !== uuid)
+					this.storage.filter((x) => x.uuid !== uuid),
 				);
 				this.updateCSS();
 			},
@@ -200,7 +204,7 @@ function init() {
 			},
 			async fetchMarketplace() {
 				const res = await ctx.fetch(
-					"https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Custom%20CSS%20Manager/community-styles.json"
+					"https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Custom%20CSS%20Manager/community-styles.json",
 				);
 
 				if (!res.ok) throw new Error(res.statusText);
@@ -259,7 +263,7 @@ function init() {
 								borderRadius: "0.5rem",
 								border: "1px solid var(--border)",
 							},
-					  })
+						})
 					: ([] as any[]);
 			},
 			header(primary: string, subtext?: string, additionalComponents?: any[]) {
@@ -273,7 +277,7 @@ function init() {
 						tray.span(`${primary}`, { className: " text-lg font-bold" }), //
 						subtext ? tray.span(`${subtext}`, { className: "text-[--muted] text-sm" }) : [],
 					],
-					{ gap: 0, className: "flex-1" }
+					{ gap: 0, className: "flex-1" },
 				);
 
 				return tray.flex([icon, text, tray.div(additionalComponents ?? [])], {
@@ -376,6 +380,22 @@ function init() {
 
 				return tray.tooltip(button, { text: "Delete" });
 			},
+			shareButton(style: $cssm.Style) {
+				const params = new URLSearchParams({
+					title: `[Custom Style]: ${style.name}`,
+					body: `**Style**:\n\`\`\`css\n/*Desktop*/\n${style.style.desktop}\n\n/*Mobile*/\n${style.style.mobile}\n\`\`\`\n\n**Data**:\n\`\`\`json\n${JSON.stringify(style, null, 2)}\n\`\`\`\n\n**Additional info:**\n`,
+				});
+
+				const button = tray.button("\u200b", {
+					intent: "primary-subtle",
+					className: "w-10 h-10 rounded-full bg-no-repeat bg-center",
+					style: { backgroundImage: `url(${icons.get("share")})`, backgroundSize: "1.3rem" },
+				});
+
+				const anchor = tray.a([button], { href: `https://github.com/nnotwen/n-seanime-extensions/issues/new?${params.toString()}`.substring(0, 8190) });
+
+				return tray.tooltip(anchor, { text: "Share" });
+			},
 			formatManagerItem(item: $cssm.Style, index?: number, array?: $cssm.Style[]) {
 				const name = tray.text(`${item.name}`, {
 					className: "break-words overflow-hidden overflow-ellipsis line-clamp-2 text-md font-semibold",
@@ -451,7 +471,7 @@ function init() {
 						tray.tooltip(toggle, { text: item.enabled ? "Disable" : "Enable" }), //
 						tray.tooltip(edit, { text: "Edit" }),
 					],
-					{ gap: 0 }
+					{ gap: 0 },
 				);
 
 				const btnGroupRight = tray.stack(
@@ -459,7 +479,7 @@ function init() {
 						index === 0 ? moveup : tray.tooltip(moveup, { text: "Move up" }),
 						(index && array?.length ? index >= array?.length - 1 : false) ? movedown : tray.tooltip(movedown, { text: "Move down" }),
 					],
-					{ gap: 0 }
+					{ gap: 0 },
 				);
 
 				return tray.flex([left, tray.flex([btnGroupLeft, btnGroupRight])], {
@@ -509,8 +529,8 @@ function init() {
 									backgroundImage: `url(${icons.get("link")})`,
 								},
 							}),
-							{ text: "Reference URL" }
-					  )
+							{ text: "Reference URL" },
+						)
 					: [];
 
 				const downloadWithTooltip = alreadyDownloaded ? download : tray.tooltip(download, { text: "Apply Styles" });
@@ -547,7 +567,7 @@ function init() {
 					"Saving styles without validation may cause unexpected behavior inside your application. Invalid or unsupported rules may break layout inheritance. It is strongly recommended to validate your CSS before saving changes.",
 					{
 						className: "p-2 text-sm break-words leading-none border rounded-lg bg-red-950 text-red-400 mt-1",
-					}
+					},
 				);
 
 				return tray.stack([header, disableCSSValidation, fieldRef.disableCSSValidation.current ? disableCSSValidationWarning : []], {
@@ -591,7 +611,7 @@ function init() {
 						],
 						{
 							className: "items-center",
-						}
+						},
 					),
 				]);
 
@@ -606,12 +626,12 @@ function init() {
 										alignContent: "center",
 										border: "0.25rem dashed var(--border)",
 									},
-							  }),
+								}),
 					],
 					{
 						className: "overflow-scroll",
 						style: { height: "28rem" },
-					}
+					},
 				);
 
 				return tray.stack([header, body], { style: { padding: "0.5rem" } });
@@ -660,7 +680,7 @@ function init() {
 					{
 						gap: 0,
 						className: "items-center",
-					}
+					},
 				);
 
 				const desktop = tray.button("Desktop", {
@@ -673,10 +693,10 @@ function init() {
 							? {
 									border: "1px solid var(--border)",
 									borderBottom: "1px solid transparent",
-							  }
+								}
 							: {
 									borderBottom: "1px solid var(--border)",
-							  }),
+								}),
 					},
 					onClick: ctx.eventHandler("screen-desktop", () => switchTab("desktop")),
 				});
@@ -690,10 +710,10 @@ function init() {
 							? {
 									border: "1px solid var(--border)",
 									borderBottom: "1px solid transparent",
-							  }
+								}
 							: {
 									borderBottom: "1px solid var(--border)",
-							  }),
+								}),
 					},
 					onClick: ctx.eventHandler("screen-mobile", () => switchTab("mobile")),
 				});
@@ -719,12 +739,19 @@ function init() {
 							onChange: ctx.eventHandler("screen-controller", ({ value }) => fieldRef.editor[state.editorSelectedScreen.get()].setValue(value)),
 						}),
 					],
-					{ gap: 0 }
+					{ gap: 0 },
 				);
 
-				const actionGroup = tray.flex([currentStyle ? this.deleteButton(currentStyle) : [], this.saveButton(currentStyle ?? undefined)], {
-					className: "justify-end",
-				});
+				const actionGroup = tray.flex(
+					[
+						currentStyle?.author === "You" ? this.shareButton(currentStyle) : [],
+						currentStyle ? this.deleteButton(currentStyle) : [],
+						this.saveButton(currentStyle ?? undefined),
+					],
+					{
+						className: "justify-end",
+					},
+				);
 
 				const body = tray.stack([nameInput, panel, actionGroup], {
 					gap: 5,
@@ -776,7 +803,7 @@ function init() {
 					],
 					{
 						style: { height: "28rem", overflow: "scroll" },
-					}
+					},
 				);
 
 				return tray.stack([header, body], { style: { padding: "0.5rem" } });
