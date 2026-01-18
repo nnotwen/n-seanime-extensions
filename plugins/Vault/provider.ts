@@ -154,7 +154,7 @@ function init() {
 					},
 					coverImage: media.coverImage?.large ?? "",
 					season: media.season ?? null,
-					seasonYear: "seasonYear" in media ? media.seasonYear ?? null : null,
+					seasonYear: "seasonYear" in media ? (media.seasonYear ?? null) : null,
 					addedAt: date,
 				};
 
@@ -237,7 +237,7 @@ function init() {
 								width: "calc(100%)",
 								height: "calc(100% - 1rem)",
 							},
-					  })
+						})
 					: ([] as any[]);
 			},
 			header(primary: string, subtext?: string, additionalComponents?: any[]) {
@@ -251,7 +251,7 @@ function init() {
 						tray.span(`${primary}`, { className: " text-lg font-bold" }), //
 						subtext ? tray.span(`${subtext}`, { className: "text-[--muted] text-sm line-clamp-1" }) : [],
 					],
-					{ gap: 0, className: "flex-1" }
+					{ gap: 0, className: "flex-1" },
 				);
 
 				return tray.flex([icon, text, tray.div(additionalComponents ?? [])], {
@@ -316,11 +316,11 @@ function init() {
 									ctx.toast.success(`Successfully added ${entry.title.userPreferred} to ${shelf.name}!`);
 									tabs.currentOverlay.set([this.addToOtherShelf(entry, type, uuid)]);
 								}),
-							})
+							}),
 						),
 					{
 						style: { overflowY: "scroll" },
-					}
+					},
 				);
 
 				return tray.stack(
@@ -338,7 +338,7 @@ function init() {
 					{
 						className: "bg-gray-900 rounded-xl p-5",
 						style: { boxShadow: "0 0 10px black", width: "25rem", margin: "1rem" },
-					}
+					},
 				);
 			},
 			sortShelf() {
@@ -426,7 +426,7 @@ function init() {
 							onChange: ctx.eventHandler("create-shelf-type", ({ value }) => fieldRef.shelfCreate.type.setValue(value)),
 						}),
 					],
-					{ gap: 0, className: "items-center" }
+					{ gap: 0, className: "items-center" },
 				);
 
 				const action = tray.flex(
@@ -453,7 +453,7 @@ function init() {
 							}),
 						}),
 					],
-					{ className: "mt-4" }
+					{ className: "mt-4" },
 				);
 
 				return tray.stack(
@@ -468,7 +468,7 @@ function init() {
 					{
 						className: "bg-gray-900 rounded-xl p-5",
 						style: { boxShadow: "0 0 10px black", width: "25rem", margin: "1rem" },
-					}
+					},
 				);
 			},
 			importShelf() {
@@ -592,7 +592,7 @@ function init() {
 							}),
 						}),
 					],
-					{ className: "mt-4" }
+					{ className: "mt-4" },
 				);
 
 				return tray.stack([tabs.customStyles(), header, body, tray.span("This action cannot be undone."), action], {
@@ -677,7 +677,7 @@ function init() {
 							}),
 						}),
 					],
-					{ gap: 0, className: "w-full" }
+					{ gap: 0, className: "w-full" },
 				);
 
 				const rename = tray.stack(
@@ -688,7 +688,7 @@ function init() {
 					{
 						gap: 1,
 						className: "items-center",
-					}
+					},
 				);
 
 				const importString = tray.input({
@@ -753,7 +753,7 @@ function init() {
 						tray.text("Import Items to shelf", { className: "font-semibold", style: { alignContent: "center" } }),
 						tray.flex([importString, importBtn], { gap: 0 }),
 					],
-					{ gap: 1 }
+					{ gap: 1 },
 				);
 
 				const exportShelf = tray.button("Export shelf", {
@@ -797,7 +797,7 @@ function init() {
 					],
 					{
 						className: "w-full h-full pointer-events-none absolute left-0 right-0 justify-end",
-					}
+					},
 				);
 
 				const name = tray.text(`${shelf.name}`, {
@@ -848,7 +848,7 @@ function init() {
 					],
 					{
 						className: "w-full h-full pointer-events-none absolute left-0 right-0 justify-end",
-					}
+					},
 				);
 
 				const content = tray.stack(
@@ -865,10 +865,10 @@ function init() {
 									style: { maxWidth: "24rem" },
 								}),
 							],
-							{ className: "overflow-hidden line-clamp-2 break-words" }
+							{ className: "overflow-hidden line-clamp-2 break-words" },
 						),
 					],
-					{ gap: 0, className: "h-24 p-3" }
+					{ gap: 0, className: "h-24 p-3" },
 				);
 
 				return tray.div([background, content], {
@@ -903,7 +903,7 @@ function init() {
 					],
 					{
 						className: "h-full p-2 relative justify-end",
-					}
+					},
 				);
 
 				const button = tray.button("\u200b", {
@@ -986,7 +986,7 @@ function init() {
 						],
 						{
 							className: "items-center",
-						}
+						},
 					),
 				]);
 
@@ -1016,17 +1016,17 @@ function init() {
 								},
 								onClick: ctx.eventHandler("goto:sort", () => tabs.currentOverlay.set([this.sortShelf()])),
 							}),
-							{ text: "Sort" }
+							{ text: "Sort" },
 						),
 					],
-					{ gap: 0 }
+					{ gap: 0 },
 				);
 
 				const entries = Object.values(vault.storage)
 					.filter((x) =>
 						state.vaultSearch.get().length
 							? `${x.name} ${x.entries.map((e) => e.title.synonyms).flat()}`.toLowerCase().includes(state.vaultSearch.get().toLowerCase())
-							: true
+							: true,
 					)
 					.sort(shelfSort)
 					.map(this.formatShelfItem);
@@ -1070,7 +1070,7 @@ function init() {
 						],
 						{
 							className: "items-center",
-						}
+						},
 					),
 				]);
 
@@ -1090,7 +1090,7 @@ function init() {
 
 				const entries = shelf.entries
 					.filter((x) =>
-						state.shelfSearch.get().length ? x.title.synonyms.join(" ").toLowerCase().includes(state.shelfSearch.get().toLowerCase()) : true
+						state.shelfSearch.get().length ? x.title.synonyms.join(" ").toLowerCase().includes(state.shelfSearch.get().toLowerCase()) : true,
 					)
 					.sort(entrySort)
 					.map((e) => this.formatMediaItem(e, shelf.type, shelf.uuid));
@@ -1098,7 +1098,7 @@ function init() {
 				const body = entries.length
 					? tray.div(entries, {
 							style: { height: "25rem", overflowY: "scroll", gap: "0.5rem", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(8rem, 1fr))" },
-					  })
+						})
 					: tray.div([this.noEntries()], { style: { height: "25rem " } });
 
 				return tray.stack([this.overlay(), header, search, body], { style: { padding: "0.5rem" } });
@@ -1125,7 +1125,7 @@ function init() {
 						],
 						{
 							className: "items-center",
-						}
+						},
 					),
 				]);
 
@@ -1145,7 +1145,7 @@ function init() {
 							onChange: ctx.eventHandler("search-query", (e) => state.vaultSearch.set(String(e.value))),
 						}),
 					],
-					{ gap: 0 }
+					{ gap: 0 },
 				);
 
 				const entries = Object.values(vault.storage)
@@ -1230,40 +1230,33 @@ function init() {
 			return `${month}/${day}/${year} ${hours}:${minutes} ${ampm}`;
 		}
 
-		const btnstyle = {
-			backgroundImage: `url(${icons.get("addShelf")})`,
-			backgroundRepeat: "no-repeat",
-			backgroundPosition: "calc(0% + 0.5rem) center",
-			backgroundSize: "1.5rem",
-			paddingInlineStart: "2.3rem",
-		};
-
-		const animePageButton = ctx.action.newAnimePageButton({
-			label: "Add to shelf",
-			intent: "gray-subtle",
-			style: btnstyle,
-		});
-
-		const mangaPageButton = ctx.action.newMangaPageButton({
-			label: "Add to shelf",
-			intent: "gray-subtle",
-			style: btnstyle,
-		});
-
+		const animePageButton = ctx.action.newAnimePageButton({ label: "\u200b" });
+		const mangaPageButton = ctx.action.newMangaPageButton({ label: "\u200b" });
 		for (const button of [animePageButton, mangaPageButton]) {
-			button.mount();
+			button.setStyle({
+				backgroundImage: `url(${icons.get("addShelf")})`,
+				backgroundRepeat: "no-repeat",
+				backgroundPosition: " center",
+				backgroundSize: "1.5rem",
+				width: "40px",
+			});
+
+			button.setTooltipText("Add to Shelf");
+
 			//@ts-ignore
 			button.onClick((e) => {
 				state.currentMedia.set(e.media);
 				tabs.current.set(Tabs.AddToShelf);
 				tray.open();
 			});
+
+			button.mount();
 		}
 
 		ctx.dom.onReady(async () => {
 			const style = await ctx.dom.createElement("style");
 			style.setText(
-				".vault-shelf-entry-card-background, .vault-shelf-entry-card-media-background { transition: transform ease-in-out 0.2s;  } .vault-shelf-entry-card-container:hover .vault-shelf-entry-card-background { transform: scale(1.1); mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, transparent 100%)!important } .vault-shelf-entry-card-media-container:hover .vault-shelf-entry-card-media-background { transform: scale(1.1); }"
+				".vault-shelf-entry-card-background, .vault-shelf-entry-card-media-background { transition: transform ease-in-out 0.2s;  } .vault-shelf-entry-card-container:hover .vault-shelf-entry-card-background { transform: scale(1.1); mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, transparent 100%)!important } .vault-shelf-entry-card-media-container:hover .vault-shelf-entry-card-media-background { transform: scale(1.1); }",
 			);
 		});
 
