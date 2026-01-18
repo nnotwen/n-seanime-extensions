@@ -32,15 +32,18 @@ function init() {
 			// prettier-ignore
 			backgroundImage: "url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNOSA0djltMyAwSDZtNiAxNEg2bTAtN3MzLTMgNSAwLTUgNy01IDdtMCA3LjVzMi0zIDUtMSAwIDQuNSAwIDQuNSAzIDIuNSAwIDQuNS01LTEtNS0xbTUtMy41SDlNOSA0IDYgNm0xNSAxOGgyMk0yMSAzOGgyMk0yMSAxMGgyMiIgc3Ryb2tlPSIjY2FjYWNhIiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg==)",
 			backgroundRepeat: "no-repeat",
-			backgroundPosition: "0.85em center",
-			textIndent: "2.5em",
+			backgroundPosition: "center",
 			backgroundSize: "21.5px 21.5px",
+			width: "40px",
+			padding: "0",
 			paddingInlineStart: "0.5rem",
 		};
+
 		const button = ctx.action.newAnimePageButton({
-			label: "Watch Order",
+			label: "\u200b",
 			intent: "gray-subtle",
 			style: buttonStyle,
+			tooltipText: "Watch Order",
 		});
 
 		button.mount();
@@ -515,12 +518,7 @@ function init() {
 			button.setLoading(fetching.get());
 			button.setStyle({
 				...buttonStyle,
-				...(fetching.get()
-					? {
-							backgroundImage: "",
-							textIndent: "",
-					  }
-					: {}),
+				...(fetching.get() ? { backgroundImage: "" } : {}),
 			});
 		}, [fetching]);
 
