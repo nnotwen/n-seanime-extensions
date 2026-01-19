@@ -468,16 +468,16 @@ function init() {
 
 				const btnGroupLeft = tray.stack(
 					[
-						tray.tooltip(toggle, { text: item.enabled ? "Disable" : "Enable" }), //
-						tray.tooltip(edit, { text: "Edit" }),
+						tray.tooltip(toggle, { text: "Toggle", side: "left" }), //
+						tray.tooltip(edit, { text: "Edit", side: "left" }),
 					],
 					{ gap: 0 },
 				);
 
 				const btnGroupRight = tray.stack(
 					[
-						index === 0 ? moveup : tray.tooltip(moveup, { text: "Move up" }),
-						(index && array?.length ? index >= array?.length - 1 : false) ? movedown : tray.tooltip(movedown, { text: "Move down" }),
+						index === 0 ? moveup : tray.tooltip(moveup, { text: "Move up", side: "right" }),
+						(index && array?.length ? index >= array?.length - 1 : false) ? movedown : tray.tooltip(movedown, { text: "Move down", side: "right" }),
 					],
 					{ gap: 0 },
 				);
@@ -529,7 +529,7 @@ function init() {
 									backgroundImage: `url(${icons.get("link")})`,
 								},
 							}),
-							{ text: "Reference URL" },
+							{ text: "Reference URL", side: "right" },
 						)
 					: [];
 
