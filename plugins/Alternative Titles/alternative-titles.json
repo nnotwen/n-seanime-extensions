@@ -1,0 +1,47 @@
+{
+	"id": "alternative-titles",
+	"name": "Alternative Titles",
+	"version": "1.0.0",
+	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Alternative%20Titles/alternative-titles.json",
+	"language": "typescript",
+	"type": "plugin",
+	"description": "Choose how anime and manga titles are displayed in their respective pages.",
+	"author": "nnotwen",
+	"icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Alternative%20Titles/icon.png",
+	"website": "",
+	"lang": "multi",
+	"payloadURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Alternative%20Titles/provider.ts",
+	"plugin": {
+		"version": "1",
+		"permissions": {
+			"scopes": []
+		}
+	},
+
+	"userConfig": {
+		"requiresConfig": true,
+		"version": 1,
+		"fields": [
+			{
+				"name": "order",
+				"label": "Choose how titles are displayed",
+				"type": "select",
+				"default": "4",
+				"options": [
+					{ "value": "1", "label": "Native → Romaji" },
+					{ "value": "2", "label": "Native → English" },
+					{ "value": "3", "label": "Romaji → Native" },
+					{ "value": "4", "label": "Romaji → English" },
+					{ "value": "5", "label": "English → Native" },
+					{ "value": "6", "label": "English → Romaji" }
+				]
+			},
+			{
+				"name": "synonyms",
+				"label": "Include synonyms in the titles",
+				"type": "switch",
+				"default": "false"
+			}
+		]
+	}
+}
