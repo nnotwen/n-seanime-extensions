@@ -1,7 +1,7 @@
 {
 	"id": "alternative-titles",
 	"name": "Alternative Titles",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Alternative%20Titles/alternative-titles.json",
 	"language": "typescript",
 	"type": "plugin",
@@ -20,7 +20,7 @@
 
 	"userConfig": {
 		"requiresConfig": true,
-		"version": 1,
+		"version": 2,
 		"fields": [
 			{
 				"name": "order",
@@ -39,6 +39,12 @@
 			{
 				"name": "synonyms",
 				"label": "Include synonyms in the titles",
+				"type": "switch",
+				"default": "false"
+			},
+			{
+				"name": "malbtn",
+				"label": "Display MAL Quick button",
 				"type": "switch",
 				"default": "false"
 			}
