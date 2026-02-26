@@ -756,25 +756,24 @@ function init() {
 					{ gap: 1 },
 				);
 
-				const exportShelf = tray.button("Export shelf", {
-					intent: "primary-subtle",
-					size: "md",
-					className: "mt-2",
-					onClick: ctx.eventHandler("export", async () => {
-						try {
-							const data = Buffer.from(JSON.stringify(shelf), "utf8").toString("base64");
-							const script = await ctx.dom.createElement("script");
-							script.setText(`navigator.clipboard.writeText(${JSON.stringify(data).replace(/=+$/, "")})`);
-							ctx.setTimeout(() => {
-								script.remove();
-								tabs.currentOverlay.set(null);
-								ctx.toast.success("Copied the import string to clipboard!");
-							}, 500);
-						} catch (error) {
-							ctx.toast.error((error as Error).message);
-						}
-					}),
-				});
+				const exportShelf = tray.stack(
+					[
+						tray.text("Export string", { className: "font-semibold" }),
+						tray.div(
+							[
+								tray.text(Buffer.from(JSON.stringify(shelf)).toString("base64").replace(/=+$/, ""), {
+									className: "font-mono text-green-300 overflow-hidden cursor-pointer select-all",
+									style: { "white-space": "nowrap" },
+								}),
+							],
+							{ className: "p-2 bg-gray-950 border rounded-lg " },
+						),
+						tray.text("Copy the above string and enter it on import shelf prompts.", {
+							className: "break-words text-xs text-gray-400",
+						}),
+					],
+					{ gap: 1 },
+				);
 
 				return tray.stack([tabs.customStyles(), header, sort, rename, importItems, exportShelf], {
 					className: "bg-gray-900 rounded-xl p-5 m-4",
