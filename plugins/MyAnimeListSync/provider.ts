@@ -394,7 +394,7 @@ function init() {
 				async patch<T extends "Anime" | "Manga">(
 					type: T,
 					malId: number,
-					body: T extends "Anime" ? $malsync.ListUpdateAnimeBody : $malsync.ListUpdateMangaBody
+					body: T extends "Anime" ? $malsync.ListUpdateAnimeBody : $malsync.ListUpdateMangaBody,
 				) {
 					const normalized = type.toLowerCase() as "anime" | "manga";
 
@@ -437,11 +437,10 @@ function init() {
 				},
 
 				async fetchAll<T extends "Anime" | "Manga">(
-					type: T
+					type: T,
 				): Promise<Array<(T extends "Anime" ? $malsync.AnimeListEntryWrapper : $malsync.MangaListEntryWrapper) & { idMal: number }>> {
-					let path:
-						| string
-						| null = `users/@me/${type.toLowerCase()}list?fields=list_status{comments,num_times_rewatched,num_times_reread}&nsfw=true&limit=1000`;
+					let path: string | null =
+						`users/@me/${type.toLowerCase()}list?fields=list_status{comments,num_times_rewatched,num_times_reread}&nsfw=true&limit=1000`;
 					const all = [];
 
 					while (path) {
@@ -520,7 +519,7 @@ function init() {
 						style: {
 							"justify-content": "center",
 						},
-					}
+					},
 				);
 			},
 
@@ -583,7 +582,7 @@ function init() {
 								borderRadius: "0.75em",
 								marginBottom: "1em",
 							},
-					  })
+						})
 					: [];
 
 				const info = tray.text(
@@ -593,7 +592,7 @@ function init() {
 							textAlign: "center",
 							wordBreak: "normal",
 						},
-					}
+					},
 				);
 
 				if (!application.currentAuthUrl.get()) {
@@ -753,7 +752,7 @@ function init() {
 						style: {
 							justifyContent: "center",
 						},
-					}
+					},
 				);
 
 				const userInfo = tray.flex(
@@ -823,7 +822,7 @@ function init() {
 							{
 								gap: 0.5,
 								direction: "column",
-							}
+							},
 						),
 					],
 					{
@@ -832,7 +831,7 @@ function init() {
 						style: {
 							width: "100%",
 						},
-					}
+					},
 				);
 
 				const tempDisable = tray.switch("Temporarily disable syncing progress", {
@@ -912,7 +911,7 @@ function init() {
 							justifyContent: "space-around",
 							width: "100%",
 						},
-					}
+					},
 				);
 
 				const entries = log.getEntries().map(([message, type]) => {
@@ -1118,7 +1117,7 @@ function init() {
 							borderRadius: "999px",
 							overflow: "hidden",
 						},
-					}
+					},
 				);
 
 				const progressDetails = tray.flex(
@@ -1143,7 +1142,7 @@ function init() {
 							textWrap: "nowrap",
 							marginTop: "-0.5em",
 						},
-					}
+					},
 				);
 
 				const container = tray.stack([jobType, jobTypeSubText, mediaType, syncType, syncTypeSubText], { gap: 2 });
@@ -1166,7 +1165,7 @@ function init() {
 									border: "1px solid #bb5f5f",
 									color: "#e39e9e",
 								},
-							}
+							},
 						),
 						fieldRefs.manageListJobtype.current === ManageListJobType.Import
 							? tray.switch("Delete private entries", {
@@ -1177,7 +1176,7 @@ function init() {
 										"--color-gray-800": "26 46 94",
 										"--color-brand-500": "255 95 95",
 									},
-							  })
+								})
 							: [],
 						tray.button({
 							label: "Proceed",
@@ -1196,7 +1195,7 @@ function init() {
 							justifyContent: "center",
 							height: "100%",
 						},
-					}
+					},
 				);
 
 				return this.stack([this.logo(), container, this.backBtn()]);
@@ -1478,7 +1477,7 @@ function init() {
 										b.num_watched_episodes = entry.progress;
 									if ((unwrap(entry.repeat) ?? 0) !== (malAnime?.num_times_rewatched ?? 0)) b.num_times_rewatched = entry.repeat;
 									return b;
-							  })()
+								})()
 							: (() => {
 									const b: $malsync.ListUpdateMangaBody = { ...shared };
 									const malManga = malEntry?.list_status as $malsync.MangaListEntry | undefined;
@@ -1490,7 +1489,7 @@ function init() {
 										b.num_chapters_read = entry.progress;
 									if ((unwrap(entry.repeat) ?? 0) !== (malManga?.num_times_reread ?? 0)) b.num_times_reread = entry.repeat;
 									return b;
-							  })();
+								})();
 
 					if (!Object.keys(body).length) {
 						log.sendWarning(`[SYNCLIST] Skipping ${title}. (no-new-update)...`);
@@ -1568,7 +1567,7 @@ function init() {
 							// private: e.list_status.is_private,
 							startedAt: e.list_status.start_date ?? undefined,
 							completedAt: e.list_status.finish_date ?? undefined,
-						}))
+						})),
 					)
 					.catch((e) => (e as Error).message);
 
@@ -1642,7 +1641,7 @@ function init() {
 					await anilistQuery(query, body)
 						.then(() => log.sendSuccess(`[SYNCLIST] Added ${title ?? entry.title} to Anilist.`))
 						.catch((e) =>
-							log.sendError(`[SYNCLIST] Failed to add ${title ?? entry.title} to Anilist ${(e as Error).message} ${JSON.stringify(body, null, 2)}`)
+							log.sendError(`[SYNCLIST] Failed to add ${title ?? entry.title} to Anilist ${(e as Error).message} ${JSON.stringify(body, null, 2)}`),
 						);
 					await $_wait(2_000);
 				}
@@ -1676,7 +1675,7 @@ function init() {
 						anilistQuery(query, { id: anilistEntry.id })
 							.then(() => log.sendSuccess(`[SYNCLIST] Removed ${mediaTitle ?? "anilist-id/" + anilistEntry.id} from Anilist!`))
 							.catch((e) =>
-								log.sendError(`[SYNCLIST] Failed to remove ${mediaTitle ?? "anilist-id/" + anilistEntry.id} from Anilist: ${(e as Error).message}`)
+								log.sendError(`[SYNCLIST] Failed to remove ${mediaTitle ?? "anilist-id/" + anilistEntry.id} from Anilist: ${(e as Error).message}`),
 							);
 
 						await $_wait(2_000);
@@ -1866,6 +1865,9 @@ function init() {
 
 		tray.render(() => tabs.get());
 
+		// Dismiss badge when opening tray;
+		tray.onOpen(() => tray.updateBadge({ number: 0 }));
+
 		ctx.setInterval(() => {
 			if (tabs.current.get() === Tab.logs) tray.update();
 		}, 1_500);
@@ -1890,6 +1892,7 @@ function init() {
 					application.token.set(null);
 					log.send("Session invalid. Please log in again.");
 					tabs.current.set(Tab.logon);
+					tray.updateBadge({ number: 1, intent: "alert" });
 				});
 		}
 
@@ -1916,12 +1919,14 @@ function init() {
 					log.send("Session Expired. Please login again.");
 					state.loginError.set("Session Expired. Please login again.");
 					tabs.current.set(Tab.logon);
+					tray.updateBadge({ number: 1, intent: "alert" });
 				});
 		}
 
 		log.sendWarning("Refresh token not found!");
 		log.sendWarning("User authentication required.");
 		tabs.current.set(Tab.logon);
+		tray.updateBadge({ number: 1, intent: "warning" });
 
 		// END OF CODE //
 	});
