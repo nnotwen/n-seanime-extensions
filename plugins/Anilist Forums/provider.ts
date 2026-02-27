@@ -128,7 +128,7 @@ function init() {
 				const response: { data: { ToggleThreadSubscription: { id: number; isSubscribed: boolean } } } | $forums.AnilistError = await this.fetch(
 					query,
 					{ threadId, subscribe },
-					true
+					true,
 				);
 
 				if (!response.data) throw new Error(response.errors.map((e) => `[${e.status}] ${e.message}`).join("\n"));
@@ -141,7 +141,7 @@ function init() {
 				const response: { data: { SaveThreadComment: $forums.ThreadComment } } | $forums.AnilistError = await this.fetch(
 					query,
 					{ threadId, comment },
-					true
+					true,
 				);
 
 				this.threadComment.isReplying.set(false);
@@ -159,7 +159,7 @@ function init() {
 						parentCommentId,
 						comment,
 					},
-					true
+					true,
 				);
 
 				this.threadComment.isReplying.set(false);
@@ -177,7 +177,7 @@ function init() {
 						threadId,
 						comment,
 					},
-					true
+					true,
 				);
 
 				this.threadComment.isReplying.set(false);
@@ -658,7 +658,7 @@ function init() {
 							],
 							{
 								onClick: ctx.eventHandler(`preview:${node.src}:${Math.random().toFixed(5)}`, () => tabs.previewImage(node.src ?? "")),
-							}
+							},
 						);
 					case "italic":
 						return tray.div(node.children.map(MarkdownParser.renderTray), { className: "inline italic" });
@@ -677,8 +677,8 @@ function init() {
 												tray.text(`${node.href}`, { className: "p-3 rounded-lg border text-sm bg-gray-950 opacity-70" }),
 											]),
 										],
-										node.href
-									)
+										node.href,
+									),
 								),
 							});
 						}
@@ -688,9 +688,9 @@ function init() {
 								tray.flex([
 									tray.text(`${node.ordered ? i + 1 : "•"}`, { className: "w-fit" }),
 									tray.div([MarkdownParser.renderTray(item)], { style: { alignItems: "flex-start" } }),
-								])
+								]),
 							),
-							{ gap: 0, className: "ml-2" }
+							{ gap: 0, className: "ml-2" },
 						);
 					case "newline":
 						return tray.text("\u200b");
@@ -705,7 +705,7 @@ function init() {
 									style: { borderRadius: "0 0.25rem 0.25rem 0" },
 								}),
 							],
-							{ gap: 0, className: "my-2" }
+							{ gap: 0, className: "my-2" },
 						);
 					case "spoiler":
 						return tray.stack(
@@ -720,22 +720,22 @@ function init() {
 															size: "xs",
 															className: "bg-transparent hover:bg-transparent hover:underline text-blue-400 p-0 w-fit font-normal",
 															onClick: ctx.eventHandler(`spoiler:hide:${node.uid}`, () =>
-																state.spoilers.set([...state.spoilers.get().filter((x) => x !== node.uid)])
+																state.spoilers.set([...state.spoilers.get().filter((x) => x !== node.uid)]),
 															),
 														}),
 													],
-													{ className: "mt-4" }
+													{ className: "mt-4" },
 												),
 											],
-											{ className: "bg-blue-900 bg-opacity-30 p-2" }
-									  )
+											{ className: "bg-blue-900 bg-opacity-30 p-2" },
+										)
 									: tray.button("Spoiler, click to view", {
 											size: "xs",
 											className: "bg-transparent hover:bg-transparent hover:underline text-blue-400 p-0 w-fit font-normal",
 											onClick: ctx.eventHandler(`spoiler:reveal:${node.uid}`, () => state.spoilers.set([...new Set([...state.spoilers.get(), node.uid])])),
-									  }),
+										}),
 							],
-							{ className: "justify-left" }
+							{ className: "justify-left" },
 						);
 					case "strikethrough":
 						return tray.div(node.children.map(MarkdownParser.renderTray), { className: "inline", style: { textDecoration: "line-through" } });
@@ -766,7 +766,7 @@ function init() {
 									aspectRatio: "4",
 									"--tw-bg-opacity": "0",
 								},
-							}
+							},
 						);
 					default:
 						return [] as any;
@@ -867,7 +867,7 @@ function init() {
 								backdropFilter: type === "blur" ? "blur(5px)" : "",
 								overflow: "scroll",
 							},
-					  })
+						})
 					: ([] as any[]);
 			},
 			confirmationModal(title: string | any[], body: string | any, confirmButtonIntent: $ui.Intent, successCallback: () => void) {
@@ -904,7 +904,7 @@ function init() {
 						{
 							gap: 4,
 							className: "p-4 m-2 bg-gray-900 border rounded-lg",
-						}
+						},
 					),
 				]);
 			},
@@ -937,7 +937,7 @@ function init() {
 							"cursor-pointer px-2 bg-gray-100 rounded-lg bg-opacity-10 hover:bg-red-500 hover:bg-opacity-100 transition ease-in hover:text-white text-sm font-semibold" +
 							(acceptButtonProps.className ?? ""),
 						onClick: acceptButtonProps.onClick ?? ctx.eventHandler("modal:extlink", () => tabs.currentOverlay.set(null)),
-					}
+					},
 				);
 
 				tabs.currentOverlay.set([
@@ -950,7 +950,7 @@ function init() {
 						{
 							gap: 4,
 							className: "p-4 m-2 bg-gray-900 border rounded-lg",
-						}
+						},
 					),
 				]);
 			},
@@ -1160,7 +1160,7 @@ function init() {
 						{
 							gap: 0,
 							className: "bg-gray-900 border rounded-lg p-2",
-						}
+						},
 					),
 					tray.input("", {
 						size: "sm",
@@ -1168,7 +1168,7 @@ function init() {
 						fieldRef: ThreadsManager.threadComment.replyFieldRef,
 						style: { fontSize: "0.875rem", lineHeight: "1.25rem", borderRadius: "0.5rem" },
 						onSelect: ctx.eventHandler(`input:thread_comment_sel:${rto.id}`, ({ cursorStart, cursorEnd }: { cursorStart: number; cursorEnd: number }) =>
-							selected.set({ cursorStart, cursorEnd })
+							selected.set({ cursorStart, cursorEnd }),
 						),
 					}),
 				]);
@@ -1183,7 +1183,7 @@ function init() {
 						{
 							gap: 4,
 							className: "p-4 m-2 bg-gray-900 border rounded-lg",
-						}
+						},
 					),
 				]);
 			},
@@ -1212,7 +1212,10 @@ function init() {
 			},
 			loadingComment() {
 				const AVATAR = tray.div([], { className: "animate-pulse bg-gray-800 shrink-0 rounded-full w-8 h-8" });
-				const REPLY_LINE = tray.div([], { className: "absolute h-full w-1/2 right-0 border-b border-l", style: { borderRadius: "0 0 0 0.75rem" } });
+				const REPLY_LINE = tray.div([], {
+					className: "absolute h-full right-0 border-b border-l",
+					style: { borderRadius: "0 0 0 0.75rem", width: "50%" },
+				});
 				const REPLY_CONTAINER = tray.div([REPLY_LINE], { className: "w-full relative", style: { height: "calc(100% - 2.5rem)" } });
 				const LEFT_STACK = tray.stack([AVATAR, REPLY_CONTAINER], { gap: 0, className: "mr-4" });
 
@@ -1260,7 +1263,7 @@ function init() {
 					className: "h-fit w-fit bg-opacity-100 hover:bg-opacity-70 bg-gray-800 rounded-full hover:underline text-white bg-purple-600 whitespace-nowrap",
 					style: { padding: "0.15rem 0.5rem", fontSize: "0.65rem", lineHeight: "normal" },
 					onClick: ctx.eventHandler(`toggle:goto_page:${media.id}:${Math.random().toFixed(5)}`, () =>
-						ctx.screen.navigateTo(media.type === "ANIME" ? "/entry" : "/manga/entry", { id: media.id.toString() })
+						ctx.screen.navigateTo(media.type === "ANIME" ? "/entry" : "/manga/entry", { id: media.id.toString() }),
 					),
 				});
 			},
@@ -1283,7 +1286,7 @@ function init() {
 							style: { order: thread.replyCount > 0 ? "1" : "2" },
 						}),
 					],
-					{ gap: 1 }
+					{ gap: 1 },
 				);
 
 				const [, ep, num] = thread.title.match(/(episode|chapter)\s*(\d+)/i) ?? [];
@@ -1298,12 +1301,12 @@ function init() {
 							tabs.parseMarkdownPreviewText(
 								thread.categories.some((c) => c.id === 5)
 									? `Preview hidden. May contain spoilers${ep && num ? ` for <a>__${ep} ${num}__</a>` : ""}.`
-									: thread.body.slice(0, 250)
+									: thread.body.slice(0, 250),
 							),
 							{
 								className: "line-clamp-1 opacity-70",
 								style: { fontSize: "0.8rem", color: "#cacaca" },
-							}
+							},
 						),
 						tray.flex([AVATAR, AVATAR_LABEL], { style: { fontSize: "0.8rem" } }),
 						tray.flex([...thread.categories.map(tabs.threadCategory), ...thread.mediaCategories.map(tabs.threadMediaCategory)], {
@@ -1322,7 +1325,7 @@ function init() {
 					{
 						gap: 0,
 						className: "bg-gray-900 transition ease-in hover:bg-gray-800 border p-3 rounded-lg relative",
-					}
+					},
 				);
 			},
 			formatPinnedThreadOverview(thread: $forums.ThreadOverview) {
@@ -1349,7 +1352,7 @@ function init() {
 					{
 						gap: 0,
 						className: "bg-gray-900 transition ease-in hover:bg-gray-800 border p-3 rounded-lg relative",
-					}
+					},
 				);
 			},
 			formatComment(level: number, comment: $forums.ThreadComment, index: number, array: $forums.ThreadComment[]): void {
@@ -1361,8 +1364,8 @@ function init() {
 					style: { "--tw-translate-x": "-100%" },
 				});
 				const THREAD_LINE = tray.div([], {
-					className: "absolute w-1/2 right-0 border-l border-b rounded-bl-xl",
-					style: { height: "calc(100% - 0.75rem)" },
+					className: "absolute right-0 border-l border-b rounded-bl-xl",
+					style: { height: "calc(100% - 0.75rem)", width: "50%" },
 				});
 				const AVATAR = tray.div([level !== 0 ? THREAD_ATTACHMENT : []], {
 					className: `relative shrink-0 bg-cover bg-no-repeat bg-center rounded-full w-${level === 0 ? "10" : "6"} h-${level === 0 ? "10" : "6"}`,
@@ -1387,7 +1390,7 @@ function init() {
 						? tray.text(`${comment.user.moderatorRoles[0].replace(/_/g, " ")}`, {
 								className: "w-fit h-fit leading-none font-semibold rounded-full bg-red-600",
 								style: { alignContent: "center", fontSize: "0.6rem", padding: "0.2rem 0.5rem" },
-						  })
+							})
 						: [];
 					USER_INFO = tray.flex([USERNAME, MODROLES, RELTIME], { className: "h-fit items-center" });
 				} else {
@@ -1493,9 +1496,9 @@ function init() {
 								loading: ThreadsManager.isFetching.get() || ThreadsManager.threadComment.isReplying.get() || ThreadsManager.threadComment.isDeleting.get(),
 								className: "bg-transparent rounded-full text-xs",
 								onClick: ctx.eventHandler(`toggle:thread_comment_edit:${comment.id}`, () =>
-									ThreadsManager.threadComment.edit.commentId.set(ThreadsManager.threadComment.edit.commentId.get() === comment.id ? null : comment.id)
+									ThreadsManager.threadComment.edit.commentId.set(ThreadsManager.threadComment.edit.commentId.get() === comment.id ? null : comment.id),
 								),
-						  })
+							})
 						: [];
 
 					const COMMENT_DELETE = isSelfAuthored
@@ -1519,7 +1522,7 @@ function init() {
 											.catch((err) => ctx.toast.error(`Error on thread_comment_delete: ${(err as Error).message}`));
 									});
 								}),
-						  })
+							})
 						: [];
 
 					COMMENT_STATISTICS = tray.flex([COMMENT_LIKES, COMMENT_REPLY, COMMENT_EDIT, COMMENT_DELETE], { className: "my-2" });
@@ -1540,7 +1543,7 @@ function init() {
 								backgroundSize: "1.4rem",
 							},
 							onClick: ctx.eventHandler(`toggle:forum_thread_replies_collapse:${comment.id}`, () =>
-								state.expandedReplies.set([...state.expandedReplies.get().filter((x) => x !== comment.id)])
+								state.expandedReplies.set([...state.expandedReplies.get().filter((x) => x !== comment.id)]),
 							),
 						});
 						COMMENT_REPLIES = tray.stack([REPLY_ITEMS, tray.div([HIDE_BUTTON], { className: "relatve w-full h-6" })]);
@@ -1556,7 +1559,7 @@ function init() {
 								backgroundSize: "1.4rem",
 							},
 							onClick: ctx.eventHandler(`toggle:forum_thread_replies_expand:${comment.id}`, () =>
-								state.expandedReplies.set([...state.expandedReplies.get(), comment.id])
+								state.expandedReplies.set([...state.expandedReplies.get(), comment.id]),
 							),
 						});
 						COMMENT_REPLIES = tray.div([SHOW_BUTTON], { className: "relative full h-6" });
@@ -1573,7 +1576,7 @@ function init() {
 			parseMarkdownPreviewText(md: string, uid?: string) {
 				return MarkdownParser.parse(md, {}, uid)
 					.filter((node) =>
-						(["bold", "code", "heading", "highlight", "italic", "link", "paragraph", "strikethrough", "text"] as (typeof node.type)[]).includes(node.type)
+						(["bold", "code", "heading", "highlight", "italic", "link", "paragraph", "strikethrough", "text"] as (typeof node.type)[]).includes(node.type),
 					)
 					.map((node) => (node.type === "heading" ? { ...node, level: 5 } : node))
 					.map(MarkdownParser.renderTray)
@@ -1686,26 +1689,26 @@ function init() {
 										onClick: ctx.eventHandler(`toggle:tabs:group_thread_view:${type}`, () => {
 											if (type === "pinnedThreads") return;
 											ThreadsManager.threadGroup.title.set(
-												{ recentlyActive: "Recently Active", newlyCreated: "Newly Created", releaseDiscussions: "Release Discussion" }[type] + " Threads"
+												{ recentlyActive: "Recently Active", newlyCreated: "Newly Created", releaseDiscussions: "Release Discussion" }[type] + " Threads",
 											);
 											ThreadsManager.threadGroup.type.set(type);
 											tabs.current.set(Tabs.ThreadGroupView);
 										}),
 									}),
 								],
-								{ style: { justifyContent: "space-between" } }
+								{ style: { justifyContent: "space-between" } },
 							),
 							ThreadsManager.isFetching.get()
 								? Array.from({ length: 5 }).map(this.loadingCard_lg)
 								: (overview as Partial<$forums.ThreadListOverview["data"]>)[type]?.threads.length
-								? (overview as Partial<$forums.ThreadListOverview["data"]>)[type]?.threads.map(
-										type === "pinnedThreads" ? this.formatPinnedThreadOverview : this.formatThreadOverview
-								  )
-								: tray.text("No threads found", {
-										className: "bg-gray-900 border opacity-30",
-										style: { padding: "0.5rem", borderRadius: "0.5rem", textAlign: "center", alignContent: "center", height: "5rem" },
-								  }),
-						])
+									? (overview as Partial<$forums.ThreadListOverview["data"]>)[type]?.threads.map(
+											type === "pinnedThreads" ? this.formatPinnedThreadOverview : this.formatThreadOverview,
+										)
+									: tray.text("No threads found", {
+											className: "bg-gray-900 border opacity-30",
+											style: { padding: "0.5rem", borderRadius: "0.5rem", textAlign: "center", alignContent: "center", height: "5rem" },
+										}),
+						]),
 					),
 					{
 						gap: 5,
@@ -1713,7 +1716,7 @@ function init() {
 							height: "25rem",
 							overflowY: "scroll",
 						},
-					}
+					},
 				);
 
 				return tray.stack([header, search, body], { style: { padding: "0.5rem" } });
@@ -1734,7 +1737,7 @@ function init() {
 						loading: ThreadsManager.isFetching.get(),
 						style: { ...tabs.styles.button_md, backgroundImage: ThreadsManager.isFetching.get() ? "" : `url(${icons.refresh})`, backgroundSize: "1.2rem" },
 						onClick: ctx.eventHandler("toggle:threads_manager:refresh_overview", () =>
-							ThreadsManager.searchThreads(currentQueryString, pageInfo.currentPage)
+							ThreadsManager.searchThreads(currentQueryString, pageInfo.currentPage),
 						),
 					}),
 				]);
@@ -1776,14 +1779,14 @@ function init() {
 							onClick: ctx.eventHandler("toggle:cancel_search", () => ThreadsManager.threadSearch.current.setValue("")),
 						}),
 					],
-					{ className: "relative h-full" }
+					{ className: "relative h-full" },
 				);
 
 				const stacks = ThreadsManager.isFetching.get()
 					? Array.from({ length: 6 }).map(this.loadingCard_lg)
 					: threads.length
-					? threads.map(tabs.formatThreadOverview)
-					: [tray.text(`No results for ${currentQueryString}`, { className: "text-center font-semibold" })];
+						? threads.map(tabs.formatThreadOverview)
+						: [tray.text(`No results for ${currentQueryString}`, { className: "text-center font-semibold" })];
 
 				const pagination = tray.flex(
 					[
@@ -1804,16 +1807,16 @@ function init() {
 												className: "bg-transparent",
 												disabled: ThreadsManager.isFetching.get(),
 												onClick: ctx.eventHandler(`toggle:search_threads:fetch_page:${page}`, () =>
-													ThreadsManager.searchThreads(currentQueryString, page).catch((error) => ctx.toast.error((error as Error).message))
+													ThreadsManager.searchThreads(currentQueryString, page).catch((error) => ctx.toast.error((error as Error).message)),
 												),
 											});
 										}
 									}),
-									{ gap: 0 }
-							  )
+									{ gap: 0 },
+								)
 							: [],
 					],
-					{ className: "justify-center mt-4" }
+					{ className: "justify-center mt-4" },
 				);
 
 				const body = tray.stack(
@@ -1830,7 +1833,7 @@ function init() {
 							height: "25rem",
 							overflowY: "scroll",
 						},
-					}
+					},
 				);
 
 				return tray.stack([header, search, body], { style: { padding: "0.5rem" } });
@@ -1868,8 +1871,8 @@ function init() {
 				const stacks = ThreadsManager.isFetching.get()
 					? Array.from({ length: 6 }).map(this.loadingCard_lg)
 					: threads.length
-					? threads.map(tabs.formatThreadOverview)
-					: [tray.text(`No results for ${title}`, { className: "text-center font-semibold" })];
+						? threads.map(tabs.formatThreadOverview)
+						: [tray.text(`No results for ${title}`, { className: "text-center font-semibold" })];
 
 				const pagination = tray.flex(
 					[
@@ -1890,16 +1893,16 @@ function init() {
 												className: "bg-transparent",
 												disabled: ThreadsManager.isFetching.get(),
 												onClick: ctx.eventHandler(`toggle:group_threads:fetch_page:${page}`, () =>
-													ThreadsManager.fetchThreadsType(type, page).catch((error) => ctx.toast.error((error as Error).message))
+													ThreadsManager.fetchThreadsType(type, page).catch((error) => ctx.toast.error((error as Error).message)),
 												),
 											});
 										}
 									}),
-									{ gap: 0 }
-							  )
+									{ gap: 0 },
+								)
 							: [],
 					],
-					{ className: "justify-center pt-4 mt-4" }
+					{ className: "justify-center pt-4 mt-4" },
 				);
 
 				const body = tray.stack(
@@ -1916,7 +1919,7 @@ function init() {
 							height: "28rem",
 							overflowY: "scroll",
 						},
-					}
+					},
 				);
 
 				return tray.stack([header, body], { style: { padding: "0.5rem" } });
@@ -1977,7 +1980,7 @@ function init() {
 									? tray.text(`${thread.user.moderatorRoles[0].replace(/_/g, " ")}`, {
 											className: "w-fit h-fit whitespace-nowrap leading-none font-semibold rounded-full bg-red-600",
 											style: { alignContent: "center", fontSize: "0.6rem", padding: "0.2rem 0.5rem" },
-									  })
+										})
 									: [],
 								tray.text(`${getRelativeTime(thread.createdAt)}`, {
 									className: "w-full opacity-50 text-xs leading-tight whitespace-nowrap",
@@ -1989,8 +1992,8 @@ function init() {
 										tabs.externalLinkModal(
 											"Thread Reporting Unavailable",
 											"AniList does not support reporting threads via API. You can report or flag the discussion directly on AniList by opening the thread.",
-											`https://anilist.co/forum/thread/${thread.id}/`
-										)
+											`https://anilist.co/forum/thread/${thread.id}/`,
+										),
 									),
 								}),
 								tray.anchor(`\u200b`, {
@@ -2000,7 +2003,7 @@ function init() {
 									style: { backgroundSize: "1rem", backgroundImage: `url(${icons.link})` },
 								}),
 							],
-							{ className: "items-center" }
+							{ className: "items-center" },
 						),
 						tray.div(this.parseMarkdownText(thread.body, thread.id.toString()), { className: "text-sm" }),
 						tray.flex(
@@ -2031,7 +2034,7 @@ function init() {
 										}),
 										tray.text(`${thread.likeCount}`, { className: "opacity-50 text-sm" }),
 									],
-									{ gap: 1, className: "h-full items-center" }
+									{ gap: 1, className: "h-full items-center" },
 								),
 								tray.button(thread.isSubscribed ? "Subscribed" : "Subscribe", {
 									size: "sm",
@@ -2051,7 +2054,7 @@ function init() {
 									}),
 								}),
 							],
-							{ className: "justify-start items-center" }
+							{ className: "justify-start items-center" },
 						),
 						tray.flex(
 							[
@@ -2078,12 +2081,12 @@ function init() {
 											}),
 										}),
 									],
-									{ gap: 0, style: { alignItems: "center" } }
+									{ gap: 0, style: { alignItems: "center" } },
 								),
 							],
 							{
 								className: "justify-between border-t pt-4 mt-4",
-							}
+							},
 						),
 						ThreadsManager.isFetching.get()
 							? tray.stack(Array.from({ length: 5 }).map(tabs.loadingComment), { gap: 4 })
@@ -2109,16 +2112,16 @@ function init() {
 														onClick: ctx.eventHandler(`toggle:thread_comments:fetch_page:${page}`, () =>
 															ThreadsManager.fetchThreadCommentsPage(thread.id, page)
 																.then((comments) => state.currentThread.set({ ...thread, comments }))
-																.catch((error) => ctx.toast.error((error as Error).message))
+																.catch((error) => ctx.toast.error((error as Error).message)),
 														),
 													});
 												}
 											}),
-											{ gap: 0 }
-									  )
+											{ gap: 0 },
+										)
 									: [],
 							],
-							{ className: "justify-center pt-4 mt-4" }
+							{ className: "justify-center pt-4 mt-4" },
 						),
 						tray.stack(
 							[
@@ -2167,7 +2170,7 @@ function init() {
 											}),
 										}),
 									],
-									{ gap: 0 }
+									{ gap: 0 },
 								),
 								tray.flex(
 									[
@@ -2186,16 +2189,16 @@ function init() {
 									],
 									{
 										className: "justify-between items-center",
-									}
+									},
 								),
 							],
 							{
 								className: "sticky p-2 m-1 mb-1 rounded-lg bg-gray-900 border",
 								style: { bottom: "0.25rem", boxShadow: "0 0 0.5rem #000" },
-							}
+							},
 						),
 					],
-					{ style: { height: "28rem", overflow: "hidden scroll", paddingRight: "0.25rem" } }
+					{ style: { height: "28rem", overflow: "hidden scroll", paddingRight: "0.25rem" } },
 				);
 
 				return tray.stack([tabs.overlay(), header, body], { style: { padding: "0.5rem" } });
