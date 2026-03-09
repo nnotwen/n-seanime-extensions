@@ -81,7 +81,7 @@ function init() {
 					($anilist[`get${mediaType}Collection`](false).MediaListCollection?.lists ?? [])
 						.flatMap((list) => list.entries)
 						.filter((entry): entry is EntryWithMedia => Boolean(entry?.media && entry?.private?.valueOf()))
-						.forEach((entry) => this.add(entry.media.id));
+						.forEach((entry) => $store.set(this.id, [...new Set([...this.store, entry.media.id])]));
 				}
 			},
 		};
