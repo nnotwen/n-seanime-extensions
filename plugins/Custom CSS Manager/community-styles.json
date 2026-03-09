@@ -185,7 +185,6 @@
 		},
 		"link": "https://discord.com/channels/1224767201551192224/1446383540823658628"
 	},
-
 	{
 		"name": "Compact download button on Anime Page",
 		"author": "nnotwen",
@@ -193,6 +192,17 @@
 		"enabled": true,
 		"style": {
 			"desktop": "[data-torrent-search-button] {\n\twidth: 40px;\n}\n\n[data-torrent-search-button] span.md\\:inline-block {\n\tdisplay: none;\n}\n\n[data-torrent-search-button] span.UI-Button__icon {\n\tmargin-inline-end: 0!important;\n}",
+			"mobile": ""
+		},
+		"link": "https://discord.com/channels/1224767201551192224/1446383540823658628"
+	},
+	{
+		"name": "Clean Sidebar - fits seanime good",
+		"author": "Kolex06",
+		"uuid": "bbc478d0-6ff8-413a-999b-cd987a38b338",
+		"enabled": true,
+		"style": {
+			"desktop": "/* ============================= */\n/* CLEAN SIDEBAR – Optimized     */\n/* ============================= */\n\n/* Sidebar container – transparent, no panel */\n.sidebar,\n.nav-drawer,\naside[role=\"complementary\"],\naside[class*=\"side\"],\nnav[aria-label*=\"sidebar\"],\nnav[aria-label*=\"Side\"],\nnav[aria-label*=\"Navigation\"] {\n  background: transparent !important;\n  border-right: 0 !important;\n  box-shadow: none !important;\n  backdrop-filter: none !important;\n  -webkit-backdrop-filter: none !important;\n}\n\n/* Sidebar items – dark pill with soft teal edge */\n.sidebar a,\n.sidebar button,\n.nav-drawer a,\n.nav-drawer button,\naside a,\naside button {\n  display: flex;\n  align-items: center;\n  gap: 0.55rem;\n  padding: 0.55rem 0.9rem;\n  margin: 2px 4px;\n  border-radius: 999px !important;\n\n  background: rgba(15, 23, 42, 0.75) !important;\n  border: 1px solid rgba(148, 163, 184, 0.28) !important;\n\n  backdrop-filter: blur(10px) !important;\n  -webkit-backdrop-filter: blur(10px) !important;\n\n  text-decoration: none;\n  transition:\n    background-color 140ms ease,\n    border-color 140ms ease,\n    transform 140ms ease;\n}\n\n/* Hover – tiny move, slight teal */\n.sidebar a:hover,\n.sidebar button:hover,\n.nav-drawer a:hover,\n.nav-drawer button:hover,\naside a:hover,\naside button:hover {\n  background: rgba(15, 23, 42, 0.95) !important;\n  border-color: rgba(45, 212, 191, 0.6) !important;\n  transform: translateX(2px);\n}\n\n/* Active / current item – thin teal outline */\n.sidebar .active,\n.nav-drawer .active,\naside .active,\n.sidebar a[aria-current],\n.sidebar button[aria-current],\nnav[aria-label*=\"sidebar\"] a[aria-current],\nnav[aria-label*=\"sidebar\"] button[aria-current] {\n  background: rgba(15, 23, 42, 0.98) !important;\n  border-color: rgba(45, 212, 191, 0.9) !important;\n}",
 			"mobile": ""
 		},
 		"link": "https://discord.com/channels/1224767201551192224/1446383540823658628"
