@@ -351,6 +351,11 @@ function init() {
 				},
 			},
 
+			connection: {
+				success: ctx.state<number>(0),
+				fail: ctx.state<number>(0),
+			},
+
 			userInfo: {
 				id: ctx.state<number | null>(null),
 				name: ctx.state<string | null>(null),
@@ -481,6 +486,12 @@ function init() {
 						...(init.headers as Record<string, string>),
 					},
 				} as FetchOptions);
+
+				if (res.ok) {
+					this.connection.success.set(this.connection.success.get() + 1);
+				} else {
+					this.connection.fail.set(this.connection.fail.get() + 1);
+				}
 
 				return res;
 			},
