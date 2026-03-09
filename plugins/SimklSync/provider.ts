@@ -1,7 +1,7 @@
-/// <reference path="./plugin.d.ts" />
-/// <reference path="./system.d.ts" />
-/// <reference path="./app.d.ts" />
-/// <reference path="./core.d.ts" />
+/// <reference path="../../typings/plugin.d.ts" />
+/// <reference path="../../typings/system.d.ts" />
+/// <reference path="../../typings/app.d.ts" />
+/// <reference path="../../typings/core.d.ts" />
 /// <reference path="./simklsync.d.ts" />
 
 // @ts-ignore
@@ -163,7 +163,7 @@ function init() {
 						...this.withAuthHeaders(),
 						...(init.headers as Record<string, string>),
 					},
-				});
+				} as FetchOptions);
 
 				if (!res.ok) throw new Error(res.json()?.message ?? res.statusText);
 				return res.json();
@@ -260,7 +260,7 @@ function init() {
 						style: {
 							"justify-content": "center",
 						},
-					}
+					},
 				);
 			},
 			stack(content: any[], props: { gap?: number } & $ui.ComponentProps = {}) {
@@ -298,7 +298,7 @@ function init() {
 								borderRadius: "0.75em",
 								marginBottom: "1em",
 							},
-					  })
+						})
 					: [];
 
 				return this.stack(
@@ -375,7 +375,7 @@ function init() {
 									}),
 								}),
 							],
-							{ style: { flex: "1", justifyContent: "center" } }
+							{ style: { flex: "1", justifyContent: "center" } },
 						),
 						tray.button("View Logs", {
 							intent: "gray-subtle",
@@ -383,7 +383,7 @@ function init() {
 							onClick: ctx.eventHandler("goto:logs", () => tabs.current.set(Tab.Logs)),
 						}),
 					],
-					{ style: { justifyContent: "space-between" } }
+					{ style: { justifyContent: "space-between" } },
 				);
 			},
 			[Tab.Landing]() {
@@ -471,7 +471,7 @@ function init() {
 							{
 								gap: 0.5,
 								direction: "column",
-							}
+							},
 						),
 					],
 					{
@@ -480,7 +480,7 @@ function init() {
 						style: {
 							width: "100%",
 						},
-					}
+					},
 				);
 
 				const tempDisable = tray.switch("Temporarily disable syncing progress", {
@@ -553,7 +553,7 @@ function init() {
 							justifyContent: "space-around",
 							width: "100%",
 						},
-					}
+					},
 				);
 
 				const entries = log.getEntries().map(([message, type]) => {
@@ -728,7 +728,7 @@ function init() {
 							borderRadius: "999px",
 							overflow: "hidden",
 						},
-					}
+					},
 				);
 
 				const progressDetails = tray.flex(
@@ -753,7 +753,7 @@ function init() {
 							textWrap: "nowrap",
 							marginTop: "-0.5em",
 						},
-					}
+					},
 				);
 
 				const container = tray.stack([jobType, jobTypeSubText, mediaType, syncType, syncTypeSubText], { gap: 2 });

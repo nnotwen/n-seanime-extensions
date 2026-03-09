@@ -1,7 +1,7 @@
-/// <reference path="./plugin.d.ts" />
-/// <reference path="./system.d.ts" />
-/// <reference path="./app.d.ts" />
-/// <reference path="./core.d.ts" />
+/// <reference path="../../typings/plugin.d.ts" />
+/// <reference path="../../typings/system.d.ts" />
+/// <reference path="../../typings/app.d.ts" />
+/// <reference path="../../typings/core.d.ts" />
 /// <reference path="./shikimorisync.d.ts" />
 
 // @ts-ignore
@@ -291,7 +291,7 @@ function init() {
 									width: "100%",
 									height: "2.5em",
 								},
-							}
+							},
 						),
 						tray.text("Для Сианиме", {
 							style: { fontSize: "14px", textAlign: "center", marginTop: "-0.75em" },
@@ -303,7 +303,7 @@ function init() {
 						style: {
 							"justify-content": "center",
 						},
-					}
+					},
 				);
 			},
 
@@ -362,7 +362,7 @@ function init() {
 								borderRadius: "0.75em",
 								marginBottom: "1em",
 							},
-					  })
+						})
 					: [];
 
 				const info = tray.text("Нажмите кнопку ниже, чтобы авторизовать приложение, затем скопируйте токен с сайта и вставьте его в поле ниже.", {
@@ -507,7 +507,7 @@ function init() {
 						style: {
 							justifyContent: "center",
 						},
-					}
+					},
 				);
 
 				const userInfo = tray.flex(
@@ -545,13 +545,13 @@ function init() {
 											},
 										}),
 									],
-									{ gap: 0 }
+									{ gap: 0 },
 								),
 							],
 							{
 								gap: 0.5,
 								direction: "column",
-							}
+							},
 						),
 					],
 					{
@@ -560,7 +560,7 @@ function init() {
 						style: {
 							width: "100%",
 						},
-					}
+					},
 				);
 
 				const tempDisable = tray.switch("Временно отключить синхронизацию прогресса", {
@@ -635,7 +635,7 @@ function init() {
 							justifyContent: "space-around",
 							width: "100%",
 						},
-					}
+					},
 				);
 
 				const entries = log.getEntries().map(([message, type]) => {
@@ -826,7 +826,7 @@ function init() {
 							borderRadius: "999px",
 							overflow: "hidden",
 						},
-					}
+					},
 				);
 
 				const progressDetails = tray.flex(
@@ -851,7 +851,7 @@ function init() {
 							textWrap: "nowrap",
 							marginTop: "-0.5em",
 						},
-					}
+					},
 				);
 
 				const container = tray.stack([jobType, jobTypeSubText, mediaType, syncType, syncTypeSubText], { gap: 2 });
@@ -874,7 +874,7 @@ function init() {
 									border: "1px solid #bb5f5f",
 									color: "#e39e9e",
 								},
-							}
+							},
 						),
 						tray.button({
 							label: "Продолжить",
@@ -893,7 +893,7 @@ function init() {
 							justifyContent: "center",
 							height: "100%",
 						},
-					}
+					},
 				);
 
 				return this.stack([this.logo(), container, this.backBtn()]);
@@ -1272,7 +1272,7 @@ function init() {
 							status: normalizeShikomoriStatus(e.status),
 							notes: e.text,
 							repeat: e.rewatches,
-						}))
+						})),
 					)
 					.catch((e) => (e as Error).message);
 

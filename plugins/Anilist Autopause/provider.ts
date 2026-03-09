@@ -1,7 +1,7 @@
-/// <reference path="./plugin.d.ts" />
-/// <reference path="./system.d.ts" />
-/// <reference path="./app.d.ts" />
-/// <reference path="./core.d.ts" />
+/// <reference path="../../typings/plugin.d.ts" />
+/// <reference path="../../typings/system.d.ts" />
+/// <reference path="../../typings/app.d.ts" />
+/// <reference path="../../typings/core.d.ts" />
 
 // @ts-ignore
 function init() {
@@ -122,53 +122,53 @@ function init() {
 		// prettier-ignore
 		const query = "mutation ($mediaId: Int!) { SaveMediaListEntry(mediaId: $mediaId, status: PAUSED) { id status media { id title { userPreferred } } } }";
 		const isUpdated = ctx.state<boolean>(false);
-		ctx.setInterval(async () => {
-			// Do a cleanup first to prevent finished media from being updated to PAUSED
-			cleanupLastWatchedStore(false);
+		ctx.setInterval(
+			async () => {
+				// Do a cleanup first to prevent finished media from being updated to PAUSED
+				cleanupLastWatchedStore(false);
 
-			isUpdated.set(false);
+				isUpdated.set(false);
 
-			if (!$storage.has(storageId)) {
-				$storage.set(storageId, []);
-			}
-
-			const duration = $getUserPreference("duration");
-			if (!duration) return;
-
-			const threshold = parseInt(duration);
-			const localStore: Map<string, number> = new Map($storage.get(storageId));
-			for (const [mediaId, timestamp] of localStore) {
-				if (timestamp + threshold > Date.now()) continue;
-				await $_wait(2_500); // prevents hitting the rate limit
-				// prettier-ignore
-				console.log(`[${mediaId}] has reached it's update threshold. Updating to status:PAUSED`);
-
-				if (!$database.anilist.getToken()) {
-					// prettier-ignore
-					console.log(`[${mediaId}] was not updated -> Not logged in to Anilist.`)
-					// prettier-ignore
-					ctx.toast.error(`Cannot update [${mediaId}] status to PAUSED. Not logged in to Anilist`);
-					return;
+				if (!$storage.has(storageId)) {
+					$storage.set(storageId, []);
 				}
 
-				const res = await $anilist.customQuery(
-					{ query, variables: { mediaId } },
-					$database.anilist.getToken()
-				);
+				const duration = $getUserPreference("duration");
+				if (!duration) return;
 
-				isUpdated.set(true);
+				const threshold = parseInt(duration);
+				const localStore: Map<string, number> = new Map($storage.get(storageId));
+				for (const [mediaId, timestamp] of localStore) {
+					if (timestamp + threshold > Date.now()) continue;
+					await $_wait(2_500); // prevents hitting the rate limit
+					// prettier-ignore
+					console.log(`[${mediaId}] has reached it's update threshold. Updating to status:PAUSED`);
 
-				if (res.errors?.length) {
-					// prettier-ignore
-					console.log(`[${mediaId}] was not updated -> ${res}`);
-					// prettier-ignore
-					ctx.toast.error(`Failed updating [${mediaId}] status to PAUSED: ${res.errors.map((e: { message: string }) => e.message).join()}`)
+					if (!$database.anilist.getToken()) {
+						// prettier-ignore
+						console.log(`[${mediaId}] was not updated -> Not logged in to Anilist.`)
+						// prettier-ignore
+						ctx.toast.error(`Cannot update [${mediaId}] status to PAUSED. Not logged in to Anilist`);
+						return;
+					}
+
+					const res = await $anilist.customQuery({ query, variables: { mediaId } }, $database.anilist.getToken());
+
+					isUpdated.set(true);
+
+					if (res.errors?.length) {
+						// prettier-ignore
+						console.log(`[${mediaId}] was not updated -> ${res}`);
+						// prettier-ignore
+						ctx.toast.error(`Failed updating [${mediaId}] status to PAUSED: ${res.errors.map((e: { message: string }) => e.message).join()}`)
+					}
 				}
-			}
 
-			// Refresh anilist
-			if (isUpdated.get()) $anilist.refreshAnimeCollection();
-		}, 5 * 60 * 1000);
+				// Refresh anilist
+				if (isUpdated.get()) $anilist.refreshAnimeCollection();
+			},
+			5 * 60 * 1000,
+		);
 
 		populateLastWatchedStore(false);
 	});

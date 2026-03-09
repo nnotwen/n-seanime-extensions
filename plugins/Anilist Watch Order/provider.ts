@@ -1,7 +1,7 @@
-/// <reference path="./plugin.d.ts" />
-/// <reference path="./system.d.ts" />
-/// <reference path="./app.d.ts" />
-/// <reference path="./core.d.ts" />
+/// <reference path="../../typings/plugin.d.ts" />
+/// <reference path="../../typings/system.d.ts" />
+/// <reference path="../../typings/app.d.ts" />
+/// <reference path="../../typings/core.d.ts" />
 /// <reference path="./anilist-watch-order.d.ts" />
 
 // @ts-ignore
@@ -9,15 +9,7 @@ function init() {
 	$ui.register(async (ctx) => {
 		// prettier-ignore
 		const CACHED_RESULTS = "0459a6e5-9ca0-41c7-8074-7d32feb46cf3";
-		const ALLOWED_RELATIONS: $app.AL_MediaRelation[] = [
-			"SEQUEL",
-			"PREQUEL",
-			"SPIN_OFF",
-			"PARENT",
-			"SIDE_STORY",
-			"ALTERNATIVE",
-			"SUMMARY",
-		];
+		const ALLOWED_RELATIONS: $app.AL_MediaRelation[] = ["SEQUEL", "PREQUEL", "SPIN_OFF", "PARENT", "SIDE_STORY", "ALTERNATIVE", "SUMMARY"];
 
 		const currentMediaId = ctx.state<number | null>(null);
 		const graphData = ctx.state<{

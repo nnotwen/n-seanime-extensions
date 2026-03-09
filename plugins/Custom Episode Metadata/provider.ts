@@ -1,8 +1,8 @@
-/// <reference path="./plugin.d.ts" />
-/// <reference path="./system.d.ts" />
-/// <reference path="./app.d.ts" />
-/// <reference path="./core.d.ts" />
-/// <reference path="./provider.d.ts" />
+/// <reference path="../../typings/plugin.d.ts" />
+/// <reference path="../../typings/system.d.ts" />
+/// <reference path="../../typings/app.d.ts" />
+/// <reference path="../../typings/core.d.ts" />
+/// <reference path="./custom-episode-metadata.d.ts" />
 
 // @ts-ignore
 function init() {
@@ -194,10 +194,10 @@ function init() {
 								style: {
 									lineHeight: "1rem",
 								},
-							}
+							},
 						),
 					],
-					{ gap: 4, style: { padding: "0.5rem 0" } }
+					{ gap: 4, style: { padding: "0.5rem 0" } },
 				);
 			},
 
@@ -226,7 +226,7 @@ function init() {
 							color: "#fff",
 							textShadow: "0 0 10px black",
 						},
-					}
+					},
 				);
 
 				const entries = (["main", "special"] as const)
@@ -243,7 +243,7 @@ function init() {
 									{
 										gap: 0,
 										style: { justifyContent: "center", textAlign: "center", padding: "1rem", textWrap: "nowrap" },
-									}
+									},
 								),
 								tray.stack(
 									[
@@ -262,7 +262,7 @@ function init() {
 												e?.airDate
 													? `${e.airDate.day?.toString().padStart(2, "0")}-${e.airDate.month?.toString().padStart(2, "0")}-${e.airDate.year}`
 													: "<Unchanged>"
-											}`
+											}`,
 										),
 										tray.text(`Overview: ${e?.overview || "<Unchanged>"}`, {
 											style: { flex: "1", minWidth: "0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
@@ -274,7 +274,7 @@ function init() {
 									{
 										gap: 0,
 										style: { alignItems: "center", padding: "1rem", overflow: "hidden", fontSize: "0.8rem", width: "100%" },
-									}
+									},
 								),
 								tray.flex(
 									[
@@ -309,7 +309,7 @@ function init() {
 											alignItems: "center",
 											padding: "1rem",
 										},
-									}
+									},
 								),
 							],
 							{
@@ -321,8 +321,8 @@ function init() {
 									paddingTop: i === 0 ? "1.5rem" : "",
 									paddingBottom: i === arr.length - 1 ? "1.5rem" : "",
 								},
-							}
-						)
+							},
+						),
 					);
 
 				if (!entries.length) {
@@ -334,7 +334,7 @@ function init() {
 								alignContent: "center",
 								textAlign: "center",
 							},
-						})
+						}),
 					);
 				} else {
 					entries.push(
@@ -344,7 +344,7 @@ function init() {
 								width: "100%",
 								background: `rgb(var(--color-gray-${entries.length % 2 === 0 ? "800" : "900"}))`,
 							},
-						})
+						}),
 					);
 				}
 
@@ -402,7 +402,7 @@ function init() {
 							color: "#fff",
 							textShadow: "0 0 10px black",
 						},
-					}
+					},
 				);
 
 				const buttonStyles = {
@@ -542,7 +542,7 @@ function init() {
 						style: {
 							justifyContent: "space-between",
 						},
-					}
+					},
 				);
 
 				const airDate = tray.flex(
@@ -557,7 +557,7 @@ function init() {
 									style: { ...inputStyle, borderRadius: "0" },
 								}),
 							],
-							{ gap: 0 }
+							{ gap: 0 },
 						),
 						tray.flex(
 							[
@@ -569,7 +569,7 @@ function init() {
 									style: { ...inputStyle, borderRadius: "0" },
 								}),
 							],
-							{ gap: 0 }
+							{ gap: 0 },
 						),
 						tray.flex(
 							[
@@ -581,10 +581,10 @@ function init() {
 									style: inputStyle,
 								}),
 							],
-							{ gap: 0 }
+							{ gap: 0 },
 						),
 					],
-					{ gap: 0 }
+					{ gap: 0 },
 				);
 
 				const form = tray.stack(
@@ -611,7 +611,7 @@ function init() {
 									style: inputStyle,
 								}),
 							],
-							{ gap: 0 }
+							{ gap: 0 },
 						),
 						tray.flex(
 							[
@@ -623,7 +623,7 @@ function init() {
 									style: inputStyle,
 								}),
 							],
-							{ gap: 0 }
+							{ gap: 0 },
 						),
 						airDate,
 						tray.flex(
@@ -637,7 +637,7 @@ function init() {
 									style: inputStyle,
 								}),
 							],
-							{ gap: 0 }
+							{ gap: 0 },
 						),
 						tray.flex(
 							[
@@ -649,7 +649,7 @@ function init() {
 									style: inputStyle,
 								}),
 							],
-							{ gap: 0 }
+							{ gap: 0 },
 						),
 					],
 					{
@@ -657,7 +657,7 @@ function init() {
 							minHeight: "25rem",
 							overflowY: "scroll",
 						},
-					}
+					},
 				);
 
 				return this.withBanner([
@@ -716,7 +716,7 @@ function init() {
 							year: baseAirDate.getFullYear(),
 							month: baseAirDate.getMonth() + 1,
 							day: baseAirDate.getDate(),
-					  }
+						}
 					: undefined,
 			};
 
@@ -767,7 +767,7 @@ function init() {
 				if (episode.length) e.animeMetadata.episodes[key].length = episode.length;
 				if (episode.airDate)
 					e.animeMetadata.episodes[key].airDate = `${episode.airDate.year}-${String(episode.airDate.month).padStart(2, "0")}-${String(
-						episode.airDate.day
+						episode.airDate.day,
 					).padStart(2, "0")}`;
 				if (episode.overview?.length) {
 					e.animeMetadata.episodes[key].overview = episode.overview;

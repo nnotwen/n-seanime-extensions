@@ -1,16 +1,11 @@
 # ────────────── Node.js dependencies ──────────────
 node_modules/
 
-# ────────────── TypeScript build artifacts ──────────────
-*.d.ts
-tsconfig.json
-
 # ────────────── Package management ──────────────
-package.json
 package-lock.json
 
 # ────────────── Config / tooling ──────────────
-.prettierrc
+
 
 # ────────────── Development / environment files ──────────────
 *-dev.json

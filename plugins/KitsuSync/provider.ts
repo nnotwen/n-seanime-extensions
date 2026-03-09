@@ -1,7 +1,7 @@
-/// <reference path="./plugin.d.ts" />
-/// <reference path="./system.d.ts" />
-/// <reference path="./app.d.ts" />
-/// <reference path="./core.d.ts" />
+/// <reference path="../../typings/plugin.d.ts" />
+/// <reference path="../../typings/system.d.ts" />
+/// <reference path="../../typings/app.d.ts" />
+/// <reference path="../../typings/core.d.ts" />
 /// <reference path="./kitsusync.d.ts" />
 
 // @ts-ignore
@@ -379,7 +379,7 @@ function init() {
 						...(await this.withAuthHeaders()),
 						...(init.headers as Record<string, string>),
 					},
-				});
+				} as FetchOptions);
 
 				if (!res.ok) {
 					const json = res.json?.();
@@ -388,7 +388,7 @@ function init() {
 							json?.error ??
 							json?.error_description ??
 							json?.errors?.map((e: any) => `${e?.title ?? "Error"}: ${e.detail ?? "(no details)"}`).join("\n") ??
-							res.statusText
+							res.statusText,
 					);
 				}
 
@@ -429,7 +429,7 @@ function init() {
 						style: {
 							"justify-content": "center",
 						},
-					}
+					},
 				);
 			},
 			stack(content: any[], gap: number = 2) {
@@ -492,7 +492,7 @@ function init() {
 								borderRadius: "0.75em",
 								marginBottom: "1em",
 							},
-					  })
+						})
 					: [];
 
 				const email = tray.input({ label: "Email", fieldRef: fieldRefs.email, disabled: state.loggingIn.get() });
@@ -662,7 +662,7 @@ function init() {
 						style: {
 							justifyContent: "center",
 						},
-					}
+					},
 				);
 
 				const userInfo = tray.flex(
@@ -695,13 +695,13 @@ function init() {
 											style: { fontSize: "0.875em", color: "#6b656b", fontWeight: "600" },
 										}),
 									],
-									{ gap: 0 }
+									{ gap: 0 },
 								),
 							],
 							{
 								gap: 0.5,
 								direction: "column",
-							}
+							},
 						),
 					],
 					{
@@ -710,7 +710,7 @@ function init() {
 						style: {
 							width: "100%",
 						},
-					}
+					},
 				);
 
 				const tempDisable = tray.switch("Temporarily disable syncing progress", {
@@ -783,7 +783,7 @@ function init() {
 							justifyContent: "space-around",
 							width: "100%",
 						},
-					}
+					},
 				);
 
 				const entries = log.getEntries().map(([message, type]) => {
@@ -985,7 +985,7 @@ function init() {
 							borderRadius: "999px",
 							overflow: "hidden",
 						},
-					}
+					},
 				);
 
 				const progressDetails = tray.flex(
@@ -1010,7 +1010,7 @@ function init() {
 							textWrap: "nowrap",
 							marginTop: "-0.5em",
 						},
-					}
+					},
 				);
 
 				const container = tray.stack([jobType, jobTypeSubText, mediaType, syncType, syncTypeSubText], { gap: 2 });
@@ -1034,7 +1034,7 @@ function init() {
 									border: "1px solid #bb5f5f",
 									color: "#e39e9e",
 								},
-							}
+							},
 						),
 						tray.button({
 							label: "Proceed",
@@ -1053,7 +1053,7 @@ function init() {
 							justifyContent: "center",
 							height: "100%",
 						},
-					}
+					},
 				);
 
 				return this.stack([this.logo(), container, this.backBtn()]);
@@ -1092,7 +1092,7 @@ function init() {
 
 		function anilistEntryToKitsuAttributeBody(
 			entry: ReturnType<typeof getAnilistEntries>[number],
-			kitsuEntry?: Awaited<ReturnType<typeof application.list.fetchAll>>[number]
+			kitsuEntry?: Awaited<ReturnType<typeof application.list.fetchAll>>[number],
 		) {
 			// entry is a GO/WASM object so i need to properly unwrap them here
 			const status = unwrap(entry.status);
@@ -1133,7 +1133,7 @@ function init() {
 		function kitsuLibrarytoAnilistBody(
 			mediaId: number,
 			entry: Awaited<ReturnType<typeof application.list.fetchAll>>[number],
-			anilistEntry?: ReturnType<typeof getAnilistEntries>[number]
+			anilistEntry?: ReturnType<typeof getAnilistEntries>[number],
 		) {
 			const startedAt = entry.attributes.startedAt ? new Date(entry.attributes.startedAt) : undefined;
 			const finishedAt = entry.attributes.finishedAt ? new Date(entry.attributes.finishedAt) : undefined;
@@ -1151,14 +1151,14 @@ function init() {
 							year: startedAt.getFullYear(),
 							month: startedAt.getMonth() + 1,
 							day: startedAt.getDate(),
-					  }
+						}
 					: undefined,
 				completedAt: finishedAt
 					? {
 							year: finishedAt.getFullYear(),
 							month: finishedAt.getMonth() + 1,
 							day: finishedAt.getDate(),
-					  }
+						}
 					: undefined,
 			};
 
@@ -1326,9 +1326,10 @@ function init() {
 						continue;
 					}
 
-					await (kitsuLibraryEntry?.libraryId
-						? application.list.patch(Number(kitsuLibraryEntry.libraryId), update)
-						: application.list.post(idKitsu, mediaType.toLowerCase() as "anime" | "manga", update)
+					await (
+						kitsuLibraryEntry?.libraryId
+							? application.list.patch(Number(kitsuLibraryEntry.libraryId), update)
+							: application.list.post(idKitsu, mediaType.toLowerCase() as "anime" | "manga", update)
 					)
 						.then(() => log.sendSuccess(`[SYNCLIST] Updated ${entry.title} on Kitsu: ${JSON.stringify(update)}`))
 						.catch((e) => log.sendError(`[SYNCLIST] Failed to update ${entry.title} on Kitsu ${(e as Error).message} ${JSON.stringify(update)}`))

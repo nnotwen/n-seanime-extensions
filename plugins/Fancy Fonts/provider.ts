@@ -1,8 +1,9 @@
-/// <reference path="./plugin.d.ts" />
-/// <reference path="./system.d.ts" />
-/// <reference path="./app.d.ts" />
-/// <reference path="./core.d.ts" />
+/// <reference path="../../typings/plugin.d.ts" />
+/// <reference path="../../typings/system.d.ts" />
+/// <reference path="../../typings/app.d.ts" />
+/// <reference path="../../typings/core.d.ts" />
 
+//@ts-ignore
 function init() {
 	$ui.register(async (ctx) => {
 		// prettier-ignore
@@ -307,32 +308,30 @@ function init() {
 				},
 			});
 
-			const header = tray.flex(
-				[pluginIcon, tray.stack([header_text, text_helper], { gap: 1 })],
-				{ direction: "row", gap: 3, style: { padding: "10px" } }
-			);
+			const header = tray.flex([pluginIcon, tray.stack([header_text, text_helper], { gap: 1 })], {
+				direction: "row",
+				gap: 3,
+				style: { padding: "10px" },
+			});
 
-			const useFromExtSrcSelect = tray.switch(
-				"Import a font from an external URL.",
-				{
-					fieldRef: isExternalSource,
-					disabled: isBusy.get(),
-					onChange: ctx.eventHandler(`src-sel-change`, (e) => {
-						isExternalSource.setValue(e.value);
+			const useFromExtSrcSelect = tray.switch("Import a font from an external URL.", {
+				fieldRef: isExternalSource,
+				disabled: isBusy.get(),
+				onChange: ctx.eventHandler(`src-sel-change`, (e) => {
+					isExternalSource.setValue(e.value);
 
-						if (e.value === false) {
-							// Reset preview to default font
-							applyDefaultUUIDtoPreview(defaultFontUUID.current);
-						} else {
-							isValidated.set(false);
-						}
+					if (e.value === false) {
+						// Reset preview to default font
+						applyDefaultUUIDtoPreview(defaultFontUUID.current);
+					} else {
+						isValidated.set(false);
+					}
 
-						tray.update();
-					}),
-					size: "lg",
-					style: {},
-				}
-			);
+					tray.update();
+				}),
+				size: "lg",
+				style: {},
+			});
 
 			const defaultFontsSelect = tray.select({
 				label: "Select from one of the following fonts",
@@ -492,18 +491,10 @@ function init() {
 				[
 					useFromExtSrcSelect,
 					isExternalSource.current
-						? [
-								externalSrcInput,
-								isValidated.get() ? buildFontPreview() : [],
-								btnGroup,
-						  ]
-						: [
-								defaultFontsSelect,
-								buildFontPreview(),
-								tray.flex([applyBtn], { direction: "row" }),
-						  ],
+						? [externalSrcInput, isValidated.get() ? buildFontPreview() : [], btnGroup]
+						: [defaultFontsSelect, buildFontPreview(), tray.flex([applyBtn], { direction: "row" })],
 				],
-				{ direction: "column" }
+				{ direction: "column" },
 			);
 
 			return tray.stack([header, body], {});

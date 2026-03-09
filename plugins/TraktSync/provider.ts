@@ -1,7 +1,7 @@
-/// <reference path="./plugin.d.ts" />
-/// <reference path="./system.d.ts" />
-/// <reference path="./app.d.ts" />
-/// <reference path="./core.d.ts" />
+/// <reference path="../../typings/plugin.d.ts" />
+/// <reference path="../../typings/system.d.ts" />
+/// <reference path="../../typings/app.d.ts" />
+/// <reference path="../../typings/core.d.ts" />
 /// <reference path="./traktSync.d.ts" />
 
 // @ts-ignore
@@ -341,7 +341,7 @@ function init() {
 						...(await this.withAuthHeaders()),
 						...(init.headers as Record<string, string>),
 					},
-				});
+				} as FetchOptions);
 
 				// Capture rate-limit headers if present
 				const limit = parseInt(res.headers["X-RateLimit-Limit"] ?? "0", 10);
@@ -439,7 +439,7 @@ function init() {
 									width: "100%",
 									height: "2.5em",
 								},
-							}
+							},
 						),
 						tray.text("for Seanime", {
 							style: { fontSize: "14px", textAlign: "center" },
@@ -451,7 +451,7 @@ function init() {
 						style: {
 							"justify-content": "center",
 						},
-					}
+					},
 				);
 			},
 
@@ -511,7 +511,7 @@ function init() {
 								borderRadius: "0.75em",
 								marginBottom: "1em",
 							},
-					  })
+						})
 					: [];
 
 				const info = tray.text(
@@ -521,7 +521,7 @@ function init() {
 							textAlign: "center",
 							wordBreak: "normal",
 						},
-					}
+					},
 				);
 
 				if (!traktTokenManager.currentAuthUrl.get()) {
@@ -661,7 +661,7 @@ function init() {
 						style: {
 							justifyContent: "center",
 						},
-					}
+					},
 				);
 
 				const userInfo = tray.flex(
@@ -699,13 +699,13 @@ function init() {
 											},
 										}),
 									],
-									{ gap: 0 }
+									{ gap: 0 },
 								),
 							],
 							{
 								gap: 0.5,
 								direction: "column",
-							}
+							},
 						),
 					],
 					{
@@ -714,7 +714,7 @@ function init() {
 						style: {
 							width: "100%",
 						},
-					}
+					},
 				);
 
 				const tempDisable = tray.switch("Temporarily disable syncing progress", {
@@ -789,7 +789,7 @@ function init() {
 							justifyContent: "space-around",
 							width: "100%",
 						},
-					}
+					},
 				);
 
 				const entries = log.getEntries().map(([message, type]) => {
@@ -958,7 +958,7 @@ function init() {
 							borderRadius: "999px",
 							overflow: "hidden",
 						},
-					}
+					},
 				);
 
 				const progressDetails = tray.flex(
@@ -983,7 +983,7 @@ function init() {
 							textWrap: "nowrap",
 							marginTop: "-0.5em",
 						},
-					}
+					},
 				);
 
 				const container = tray.stack([jobType, jobTypeSubText, mediaType, syncType, syncTypeSubText], { gap: 2 });
@@ -1197,7 +1197,7 @@ function init() {
 			const episodesToSync = [];
 
 			for (let epNumber = 1; epNumber <= progress; epNumber++) {
-				const watched_at = epNumber === progress ? now : watchedMap.get(epNumber) ?? now;
+				const watched_at = epNumber === progress ? now : (watchedMap.get(epNumber) ?? now);
 
 				episodesToSync.push({
 					ids: {

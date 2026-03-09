@@ -1,8 +1,9 @@
-/// <reference path="./plugin.d.ts" />
-/// <reference path="./system.d.ts" />
-/// <reference path="./app.d.ts" />
-/// <reference path="./core.d.ts" />
+/// <reference path="../../typings/plugin.d.ts" />
+/// <reference path="../../typings/system.d.ts" />
+/// <reference path="../../typings/app.d.ts" />
+/// <reference path="../../typings/core.d.ts" />
 
+// @ts-ignore
 function init() {
 	$ui.register((ctx) => {
 		// TYPES AND INTERFACES
@@ -80,9 +81,7 @@ function init() {
 			if (!withNote.length) return [noEntries];
 
 			// sort by title
-			const sortedNote = [...withNote].sort(([, a], [, b]) =>
-				(a.title ?? "").localeCompare(b.title ?? "")
-			);
+			const sortedNote = [...withNote].sort(([, a], [, b]) => (a.title ?? "").localeCompare(b.title ?? ""));
 
 			return sortedNote.map(([id, media]) => {
 				const buttonStyle = {
@@ -153,18 +152,14 @@ function init() {
 				});
 
 				const content = tray.stack(
-					[
-						tray.div([title, notes], { style: { lineHeight: "normal" } }),
-						tray.flex([goToPageBtn, editBtn], { direction: "row", gap: 1 }),
-					],
-					{ style: { justifyContent: "space-between" } }
+					[tray.div([title, notes], { style: { lineHeight: "normal" } }), tray.flex([goToPageBtn, editBtn], { direction: "row", gap: 1 })],
+					{ style: { justifyContent: "space-between" } },
 				);
 
 				return tray.flex([coverImage, content], {
 					gap: 3,
 					direction: "row",
-					className:
-						"bg-gray-900 border border-[rgb(255_255_255_/_5%)] rounded-xl",
+					className: "bg-gray-900 border border-[rgb(255_255_255_/_5%)] rounded-xl",
 					style: { padding: "10px", margin: "10px 0" },
 				});
 			});
@@ -236,18 +231,15 @@ function init() {
 				},
 			});
 
-			const text_notSignedIn = tray.text(
-				"You need to be logged in to Anilist to use this plugin.",
-				{
-					style: {
-						fontSize: "13px",
-						color: "#e26f6fff",
-						lineHeight: "normal",
-						wordBreak: "unset",
-						"user-select": "none",
-					},
-				}
-			);
+			const text_notSignedIn = tray.text("You need to be logged in to Anilist to use this plugin.", {
+				style: {
+					fontSize: "13px",
+					color: "#e26f6fff",
+					lineHeight: "normal",
+					wordBreak: "unset",
+					"user-select": "none",
+				},
+			});
 
 			const text_helper = tray.text(
 				'To edit a note, click the "Edit Note" button on the anime’s page, or right‑click the anime and choose "Edit Note" from the menu.',
@@ -260,7 +252,7 @@ function init() {
 						"user-select": "none",
 						fontWeight: "500",
 					},
-				}
+				},
 			);
 
 			const text_MyNotes = tray.text("My Notes", {
@@ -298,20 +290,19 @@ function init() {
 			});
 
 			if (!$database.anilist.getToken()) {
-				return tray.flex(
-					[
-						pluginIcon,
-						tray.stack([header_general, text_notSignedIn], { gap: 1 }),
-					],
-					{ direction: "row", gap: 3, style: { padding: "10px" } }
-				);
+				return tray.flex([pluginIcon, tray.stack([header_general, text_notSignedIn], { gap: 1 })], {
+					direction: "row",
+					gap: 3,
+					style: { padding: "10px" },
+				});
 			}
 
 			if (!currentMediaId.get()) {
-				const header = tray.flex(
-					[pluginIcon, tray.stack([header_general, text_helper], { gap: 1 })],
-					{ direction: "row", gap: 3, style: { padding: "10px" } }
-				);
+				const header = tray.flex([pluginIcon, tray.stack([header_general, text_helper], { gap: 1 })], {
+					direction: "row",
+					gap: 3,
+					style: { padding: "10px" },
+				});
 
 				return tray.stack([header, tray.div([text_MyNotes, formattedNotes])], {
 					gap: 1,
@@ -331,28 +322,19 @@ function init() {
 				textarea: true,
 			});
 
-			const subtext = tray.text(
-				"Note will be automatically saved to Anilist when you click save.",
-				{
-					style: {
-						color: "#666",
-						fontSize: "13px",
-						"user-select": "none",
-					},
-				}
-			);
+			const subtext = tray.text("Note will be automatically saved to Anilist when you click save.", {
+				style: {
+					color: "#666",
+					fontSize: "13px",
+					"user-select": "none",
+				},
+			});
 
-			const mainHeader = tray.flex(
-				[pluginIcon, tray.stack([header_specific, titleField], { gap: 1 })],
-				{ direction: "row", gap: 3 }
-			);
+			const mainHeader = tray.flex([pluginIcon, tray.stack([header_specific, titleField], { gap: 1 })], { direction: "row", gap: 3 });
 
 			const mainBody = tray.stack([noteField, subtext]);
 
-			const mainFooter = tray.flex(
-				[...(editInvokedFromTray.get() ? [backBtn] : []), saveBtn],
-				{ direction: "row", style: { justifyContent: "end" } }
-			);
+			const mainFooter = tray.flex([...(editInvokedFromTray.get() ? [backBtn] : []), saveBtn], { direction: "row", style: { justifyContent: "end" } });
 
 			editInvokedFromTray.set(false);
 			return tray.stack([mainHeader, mainBody, mainFooter], {
@@ -383,10 +365,7 @@ function init() {
 				},
 			};
 
-			const res: SaveNoteResponse | SaveNoteError = await $anilist.customQuery(
-				requestBody,
-				$database.anilist.getToken()
-			);
+			const res: SaveNoteResponse | SaveNoteError = await $anilist.customQuery(requestBody, $database.anilist.getToken());
 
 			// Artificially delay the process by 2 seconds to give breather
 			// for API calls

@@ -1,0 +1,21 @@
+{
+	"name": "seanime-extensions",
+	"version": "1.0.0",
+	"description": "",
+	"homepage": "https://github.com/nnotwen/n-seanime-extensions#readme",
+	"bugs": {
+		"url": "https://github.com/nnotwen/n-seanime-extensions/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/nnotwen/n-seanime-extensions.git"
+	},
+	"license": "ISC",
+	"author": "nnotwen",
+	"type": "commonjs",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"update-typings": "node typings/update.js"
+	},
+	"devDependencies": {}
+}
