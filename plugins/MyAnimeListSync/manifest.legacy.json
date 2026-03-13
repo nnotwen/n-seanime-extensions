@@ -1,0 +1,21 @@
+{
+	"id": "myanimelistsync-legacy",
+	"name": "MyAnimeListSync (LEGACY)",
+	"version": "1.0.0",
+	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/MyAnimeListSync/manifest.legacy.json",
+	"language": "typescript",
+	"type": "plugin",
+	"description": "Synchronize entry progress seamlessly with MyAnimeList.net",
+	"author": "nnotwen",
+	"icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/MyAnimeListSync/icon.png",
+	"website": "https://github.com/nnotwen/n-seanime-extensions",
+	"lang": "en",
+	"notes": "This is the older version pre 1.1.0. If you have this plugin installed, uninstall the other MyAnimeListSync plugin to prevent issues.",
+	"payloadURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/MyAnimeListSync/provider.legacy.ts",
+	"plugin": {
+		"version": "1",
+		"permissions": {
+			"scopes": ["storage", "anilist", "database", "anilist-token"]
+		}
+	}
+}
