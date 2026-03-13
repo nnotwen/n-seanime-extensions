@@ -1,7 +1,7 @@
 {
 	"id": "myanimelistsync",
 	"name": "MyAnimeListSync",
-	"version": "1.0.14",
+	"version": "1.1.0",
 	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/MyAnimeListSync/myanimelistsync.json",
 	"language": "typescript",
 	"type": "plugin",
@@ -10,6 +10,7 @@
 	"icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/MyAnimeListSync/icon.png",
 	"website": "https://github.com/nnotwen/n-seanime-extensions",
 	"lang": "en",
+	"notes": "You must be logged in with AniList and you must enable \"Automatically update progress\" from the app settings for this extension to work.",
 	"payloadURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/MyAnimeListSync/provider.ts",
 	"plugin": {
 		"version": "1",

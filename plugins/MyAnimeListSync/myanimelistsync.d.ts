@@ -133,6 +133,7 @@ declare namespace $malsync {
 	interface MalNode {
 		id: number;
 		title: string;
+		media_type: string;
 		main_picture?: {
 			medium?: string;
 			large?: string;
@@ -140,12 +141,12 @@ declare namespace $malsync {
 	}
 
 	interface AnimeListEntryWrapper {
-		node: MalNode;
+		node: MalNode & { num_episodes: number };
 		list_status: AnimeListEntry;
 	}
 
 	interface MangaListEntryWrapper {
-		node: MalNode;
+		node: MalNode & { num_volumes: number; num_chapters: number };
 		list_status: MangaListEntry;
 	}
 
@@ -161,5 +162,30 @@ declare namespace $malsync {
 		notes?: string;
 		startedAt?: $app.AL_FuzzyDateInput;
 		completedAt?: $app.AL_FuzzyDateInput;
+	}
+
+	interface NotificationManager {
+		id: string;
+		unreads: $ui.State<number>; // Updated when notification is added or a notification is clicked (unread -> read)
+		entries?: Notification[];
+		formattedEntry: void[];
+		modalOpened: $ui.State<boolean>;
+		push: (entry: Omit<Notification, "unread" | "timestamp">) => void;
+		formatEntry: (entry: Notification, idx: number) => void;
+	}
+
+	interface Notification {
+		unread: boolean;
+		title: string;
+		body:
+			| {
+					type: "update" | "progress" | "repeat" | "delete";
+					status: "success" | "error";
+					mediaId: number;
+					payload: ListUpdateAnimeBody | ListUpdateMangaBody;
+					metadata: { image?: string };
+			  }
+			| { entries: number; errors: number; skips: number; updates: number; remarks: string; job_type: string; media_type: string; sync_type: string };
+		timestamp: number;
 	}
 }
