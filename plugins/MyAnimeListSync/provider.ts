@@ -74,6 +74,10 @@ function init() {
 					<svg width="1rem" height="1rem" fill="#cacaca" viewBox="200 350 600 240" xmlns="http://www.w3.org/2000/svg">
 						<path d="M432.49 410.61V590.3l-44.86-.06V479l-43.31 51.29-42.43-52.44-.43 112.75H256V410.65h47l39.79 54.29 43-54.31zm184.06 44.14.53 135.15h-50.45l-.17-61.25h-59.73c1.49 10.65 4.48 27 8.9 38 3.31 8.13 6.36 16 12.44 24.06l-36.37 24c-7.45-13.57-13.27-28.52-18.73-44.42a198.3 198.3 0 0 1-10.82-46.49c-1.81-16-2.07-31.38 2.28-47.19a83.37 83.37 0 0 1 24.77-39.81c6.68-6.25 16-10.67 23.47-14.66s15.85-5.63 23.62-7.66a158 158 0 0 1 25.41-3.9c8.49-.73 23.62-1.41 51-.6l11.63 37.31h-58.78c-12.65.17-18.73 0-28.61 4.46a47.7 47.7 0 0 0-27.26 41l56.81.7.81-38.61h49.26zM701.72 410v141.35L768 552l-9.17 37.87H656.28V409.33z"/>
 					</svg>`,
+				myanimelist_logo: /*html*/ `
+					<svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="477.333" fill="#cacaca" height="85.333" viewBox="0 0 358 64">
+						<path d="M163 6.5V12h13.1l-.3-5.3-.3-5.2-6.2-.3-6.3-.3zm-65.7-2C86.3 10 80.5 24.4 83 40.2 84 47 88.2 58 89.7 58c.4 0 2.9-1.6 5.5-3.5l4.7-3.5-1.4-3.4c-.8-1.9-1.9-5.3-2.4-7.5l-.9-4.1H108v14h13V16h-13v9h-5c-2.7 0-5-.3-5-.8 0-1.6 4-7.1 6-8.2 1.2-.7 5.5-1.4 9.6-1.7l7.4-.6V2h-9.3c-8 0-10 .4-14.4 2.5M295 7v5h12V2h-12zM0 27v23h13V23.5l4 6c2.2 3.3 4.4 6 5 6s2.8-2.7 5.1-6l4.1-6-.5 13.2-.4 13.3H43V4H30.2l-3.8 6c-2.2 3.3-4.2 6-4.5 6s-2.3-2.7-4.3-6l-3.7-6H0zm263 0v23h26.8l.6-3.8c.4-2 .9-4.5 1.2-5.5.5-1.5-.3-1.7-7.5-1.7H276V4h-13zm80.8-19.7c-3.3 1.3-4.8 2.5-4.8 3.8 0 1.2-.7 1.9-2 1.9-1.8 0-2 .7-2 6s.2 6 2 6c1.9 0 2 .7 2 10.8 0 13.1.7 14.2 9.1 14.2 5.3 0 5.6-.1 7.2-3.5 2.2-4.6 2.2-4.3-1.5-4.7l-3.3-.3-.3-8.3-.3-8.2h6.1V13h-3.4c-3.3 0-3.5-.2-3.8-3.8l-.3-3.9zM45 14.8c0 .5 3.1 8.2 7 17.2l6.9 16.3-2.9 7.1c-1.7 3.9-3 7.4-3 7.8 0 .5 2.8.8 6.3.8h6.3l7.7-23.9c4.2-13.2 7.7-24.4 7.7-25 0-.7-2.5-1.1-6.3-1.1h-6.2l-2.1 7.7-2.1 7.8-2.3-7.8-2.3-7.7h-7.4c-4 0-7.3.4-7.3.8m195.5.6c-8.1 3-12.2 12-9.6 21.4 2.4 8.9 8.4 13.2 18.7 13.2 5.8 0 5.9-.1 8.2-4l2.3-4h-10.2l3.9-4.7c6.8-8.2 7.7-15.6 2.7-20.3-3.1-2.9-10.4-3.6-16-1.6m8.5 10.9c0 .7-1.3 2.6-2.9 4.1-4.3 4.1-7 1.7-3.5-3.2 1.6-2.4 6.4-3.1 6.4-.9M137.3 15.8l-10.3.3V51h12V37.4c0-13.5 0-13.5 2.3-13.2 2.1.3 2.2.7 2.5 13l.3 12.8h3.3c1.8 0 4.8.3 6.5.6l3.1.6V35.3c0-20.7.6-20.1-19.7-19.5m62.6 0-18.6.2-.6 16.8c-.3 9.2-.4 16.7-.4 16.8.1.1 2.6.4 5.5.7l5.2.6V24h8v13.6c0 12 .2 13.5 1.6 13 .9-.3 3.1-.6 5-.6h3.4V24h8.2l-.3 13-.4 13h11.7l-.4-15c-.3-13.4-.5-15.1-2.3-16.9-2.7-2.5-4.1-2.6-25.6-2.3M163 33.5V51h12V16h-12zm132-.5v17h12V16h-12zm17.2-15.4c-3.8 2.6-3 8.1 2.3 15.3 2.5 3.4 4.5 6.6 4.5 7.1 0 .6-1.8 1-4 1s-4 .3-4 .7.8 2.7 1.8 5.1l1.7 4.4 7.3-.5c13.8-1 15.6-5.3 7.3-18-2.7-4.1-4.7-7.8-4.4-8.1.4-.3 2.4-.6 4.5-.6 4.3 0 4.3.1 2.4-4.5l-1.5-3.5h-7.8c-5.5 0-8.5.5-10.1 1.6"/>
+					</svg>`,
 				person: /*html*/ `
 					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#cacaca" viewBox="0 0 16 16">
 						<path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/>
@@ -734,11 +738,6 @@ function init() {
 
 		const tabs = {
 			current: ctx.state<Tab>(Tab.logon),
-			config: {
-				logo: "https://nnotwen.github.io/n-seanime-extensions/plugins/MyAnimeListSync/logo.png",
-				width: "25rem",
-				height: "30rem",
-			},
 			currentOverlay: ctx.state<any[] | null>(null),
 
 			overlay() {
@@ -1153,15 +1152,15 @@ function init() {
 					tray.stack(
 						[
 							tray.div([], {
-								style: { backgroundImage: `url(${this.config.logo})` },
+								style: { backgroundImage: `url(${icons.get("myanimelist_logo")})` },
 								className: "w-full h-10 bg-contain bg-no-repeat bg-center grow-0 shrink-0",
 							}),
 							tray.text("for Seanime", {
-								style: { marginTop: "-10px" },
-								className: "text-xs text-center text-white",
+								style: { marginTop: "-8px" },
+								className: "text-sm text-center text-[--muted]",
 							}),
 						],
-						{ className: "justify-center", gap: 0 },
+						{ className: "justify-center mt-3", gap: 0 },
 					),
 					tray.stack([error, info, authButton, authToken, tray.flex([logs, login], { className: "w-full" })], {
 						className: "justify-center items-center p-3",
@@ -1291,7 +1290,10 @@ function init() {
 
 				const header = tray.flex([
 					tray.div(
-						[tray.img({ src: this.config.logo, alt: "MyAnimeList", width: "50%" }), tray.text("for Seanime", { className: "mr-1 text-sm text-[--muted]" })],
+						[
+							tray.div([], { className: "bg-no-repeat bg-contain h-9", style: { backgroundImage: `url(${icons.get("myanimelist_logo")})` } }),
+							tray.text("for Seanime", { className: "mr-1 text-sm text-[--muted]" }),
+						],
 						{ className: "flex-1" },
 					),
 					tray.flex([notification, profileDropdown], { gap: 2 }),
