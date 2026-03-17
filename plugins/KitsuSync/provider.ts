@@ -662,7 +662,7 @@ function init() {
 				// login details
 				const error = state.loginError.get()
 					? tray.text(state.loginError.get() ?? "", {
-							className: "break-normal bg-red-600/70 text-red-100 text-sm border border-red-500 rounded-md mb-4 p-2",
+							className: "break-normal bg-red-600/70 text-red-100 text-sm border border-red-500 rounded-md mb-4 px-2 py-1 line-clamp-3",
 						})
 					: [];
 
