@@ -1,4 +1,4 @@
-/// <reference path="./app.d.ts" />
+/// <reference path="../../typings/app.d.ts" />
 
 declare namespace $kitsusync {
 	interface RequestAccessTokenResponse {
@@ -157,6 +157,31 @@ declare namespace $kitsusync {
 			};
 		};
 		included?: any[];
+	}
+
+	interface NotificationManager {
+		id: string;
+		unreads: $ui.State<number>; // Updated when notification is added or a notification is clicked (unread -> read)
+		entries?: Notification[];
+		formattedEntry: void[];
+		modalOpened: $ui.State<boolean>;
+		push: (entry: Omit<Notification, "unread" | "timestamp">) => void;
+		formatEntry: (entry: Notification, idx: number) => void;
+	}
+
+	interface Notification {
+		unread: boolean;
+		title: string;
+		body:
+			| {
+					type: "update" | "progress" | "repeat" | "delete";
+					status: "success" | "error";
+					mediaId: number;
+					payload: KitsuLibraryEntryWriteAttributes;
+					metadata: { image?: string };
+			  }
+			| { entries: number; errors: number; skips: number; updates: number; remarks: string; job_type: string; media_type: string; sync_type: string };
+		timestamp: number;
 	}
 }
 
