@@ -148,7 +148,8 @@ function init() {
 		const fieldRefs = {
 			authCode: ctx.fieldRef<string>(""),
 			disableSyncing: ctx.fieldRef<boolean>(false),
-			skipPrivate: ctx.fieldRef<boolean>($storage.get("malsync:options-skipPrivate")?.valueOf() ?? false),
+			skipAdult: ctx.fieldRef<boolean>($storage.get("malsync:options-skipAdult")?.valueOf() ?? false),
+			suppressNotificationBadge: ctx.fieldRef<boolean>($storage.get("malsync:options-suppressnotificationbadge")?.valueOf() ?? false),
 			manageListJobtype: ctx.fieldRef<ManageListJobType>(ManageListJobType.Import),
 			manageListMediaType: ctx.fieldRef<"Anime" | "Manga">("Anime"),
 			manageListSyncType: ctx.fieldRef<ManageListSyncType>(ManageListSyncType.Patch),
@@ -1481,10 +1482,17 @@ function init() {
 								style: { "--color-brand-500": "255 95 95" },
 							}),
 							tray.switch("Skip adult entries for livesync", {
-								fieldRef: fieldRefs.skipPrivate,
+								fieldRef: fieldRefs.skipAdult,
 								style: { "--color-brand-500": "255 95 95" },
-								onChange: ctx.eventHandler("malsync:skip-private", (e) => {
-									$storage.set("malsync:options-skipPrivate", e.value);
+								onChange: ctx.eventHandler("malsync:skip-adult", (e) => {
+									$storage.set("malsync:options-skipAdult", e.value);
+								}),
+							}),
+							tray.switch("Disable badge for non-critical notifications", {
+								fieldRef: fieldRefs.suppressNotificationBadge,
+								style: { "--color-brand-500": "255 95 95" },
+								onChange: ctx.eventHandler("kitsu:suppress-notification-badge", (e) => {
+									$storage.set("malsync:options-suppressnotificationbadge", e.value);
 								}),
 							}),
 						]),
@@ -1775,6 +1783,7 @@ function init() {
 				log.send("synclist > Querying Myanimelist entries...");
 				const malEntries = await application.list.fetchAll(mediaType).catch((e) => (e as Error).message);
 				if (typeof malEntries === "string") {
+					state.syncing.set(false);
 					notifications.push({
 						title: "Manual Sync Performed",
 						body: { ...notifUpdt, remarks: "Fetch error" },
@@ -2121,7 +2130,7 @@ function init() {
 				return log.sendWarning(`${actionLabel} > No equivalent MyAnimeList entry found for [${mediaId}]`);
 			}
 
-			if (fieldRefs.skipPrivate.current.valueOf() && entry.media.isAdult?.valueOf()) {
+			if (fieldRefs.skipAdult.current.valueOf() && entry.media.isAdult?.valueOf()) {
 				return log.sendWarning(`${actionLabel} > Skipped ${entry.media.title?.userPreferred ?? mediaId} (livesync-adult-disabled)`);
 			}
 
@@ -2284,7 +2293,8 @@ function init() {
 		ctx.effect(() => {
 			if (application.userInfo.id.get() === null) return tray.updateBadge({ number: 1, intent: "alert" });
 			if (state.syncing.get()) return tray.updateBadge({ number: 1, intent: "alert" });
-			if (notifications.unreads.get() > 0) return tray.updateBadge({ number: notifications.unreads.get(), intent: "warning" });
+			if (notifications.unreads.get() > 0 && fieldRefs.suppressNotificationBadge.current === false)
+				return tray.updateBadge({ number: notifications.unreads.get(), intent: "warning" });
 			return tray.updateBadge({ number: 0 });
 		}, [application.userInfo.id, state.syncing, notifications.unreads]);
 
