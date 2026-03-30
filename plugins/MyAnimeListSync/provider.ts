@@ -1491,7 +1491,7 @@ function init() {
 							tray.switch("Disable badge for non-critical notifications", {
 								fieldRef: fieldRefs.suppressNotificationBadge,
 								style: { "--color-brand-500": "255 95 95" },
-								onChange: ctx.eventHandler("kitsu:suppress-notification-badge", (e) => {
+								onChange: ctx.eventHandler("malsync:suppress-notification-badge", (e) => {
 									$storage.set("malsync:options-suppressnotificationbadge", e.value);
 								}),
 							}),
