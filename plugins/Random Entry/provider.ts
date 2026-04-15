@@ -38,6 +38,10 @@ function init() {
 			withContent: true,
 		});
 
+		const cmd = ctx.newCommandPalette({
+			keyboardShortcut: "alt+r",
+		});
+
 		// Create separate options for anime and manga
 		const animeOptions = {
 			genres: ctx.state<typeof GENRES>([]),
@@ -275,12 +279,7 @@ function init() {
 									backgroundImage: `url(${icons.get("anime")})`,
 									backgroundSize: "1.5rem",
 								},
-								onClick: ctx.eventHandler("anime:random:button", () => {
-									const { media } = getRandomMedia("Anime", animeOptions) ?? {};
-									if (!media) return ctx.toast.warning("No entries found. Adjust your filters from the settings or update your list with more entries!");
-									ctx.toast.success(`Navigating to random anime: ${media.title?.userPreferred ?? "???"} [${media.id}]`);
-									ctx.screen.navigateTo("/entry", { id: media.id.toString() });
-								}),
+								onClick: ctx.eventHandler("anime:random:button", () => navigateRandomMedia("Anime")),
 							}),
 							{ text: "Random Anime" },
 						),
@@ -292,12 +291,7 @@ function init() {
 									backgroundImage: `url(${icons.get("manga")})`,
 									backgroundSize: "1.5rem",
 								},
-								onClick: ctx.eventHandler("manga:random:button", () => {
-									const { media } = getRandomMedia("Manga", mangaOptions) ?? {};
-									if (!media) return ctx.toast.warning("No entries found. Adjust your filters from the settings or update your list with more entries!");
-									ctx.toast.success(`Navigating to random manga: ${media.title?.userPreferred ?? "???"} [${media.id}]`);
-									ctx.screen.navigateTo("/manga/entry", { id: media.id.toString() });
-								}),
+								onClick: ctx.eventHandler("manga:random:button", () => navigateRandomMedia("Manga")),
 							}),
 							{ text: "Random Manga" },
 						),
@@ -342,6 +336,18 @@ function init() {
 			]),
 		);
 
+		cmd.setItems([
+			...(["Anime", "Manga"] as const).map((t) => ({
+				label: `Open random ${t.toLowerCase()}`,
+				value: `random:type:${t}`,
+				filterType: "includes" as const,
+				onSelect: () => {
+					cmd.close();
+					navigateRandomMedia(t);
+				},
+			})),
+		]);
+
 		// Create dropdown items for both anime and manga
 		const animeDropdownEntry = ctx.action.newAnimeLibraryDropdownItem({
 			label: "Open Random Anime",
@@ -356,12 +362,7 @@ function init() {
 
 		animeDropdownEntry.mount();
 
-		animeDropdownEntry.onClick(() => {
-			const { media } = getRandomMedia("Anime", animeOptions) ?? {};
-			if (!media) return ctx.toast.warning("No entries found. Adjust your filters from the settings or update your list with more entries!");
-			ctx.toast.success(`Navigating to random anime: ${media.title?.userPreferred ?? "???"} [${media.id}]`);
-			ctx.screen.navigateTo("/entry", { id: media.id.toString() });
-		});
+		animeDropdownEntry.onClick(() => navigateRandomMedia("Anime"));
 
 		function getRandomMedia<T extends "Anime" | "Manga">(type: T, options: typeof animeOptions, bypassCache: boolean = false) {
 			const { lists } = $anilist[`get${type}Collection`](bypassCache).MediaListCollection ?? {};
@@ -401,6 +402,13 @@ function init() {
 				[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
 			}
 			return shuffled[0];
+		}
+
+		function navigateRandomMedia(type: "Anime" | "Manga") {
+			const { media } = getRandomMedia(type, type === "Anime" ? animeOptions : mangaOptions) ?? {};
+			if (!media) return ctx.toast.warning("No entries found. Adjust your filters from the settings or update your list with more entries!");
+			ctx.toast.success(`Navigating to random ${type}: ${media.title?.userPreferred ?? "???"} [${media.id}]`);
+			ctx.screen.navigateTo(type === "Anime" ? "/entry" : "/manga/entry", { id: media.id.toString() });
 		}
 	});
 }
