@@ -799,7 +799,20 @@ function init() {
 					className: "max-w-5xl",
 					onOpenChange: ctx.eventHandler(generateRandomUUID(), ({ open }) => log.modalOpened.set(open)),
 					items: [
-						tray.button("Copy to Clipboard", { disabled: true, intent: "white", size: "md", className: "w-fit" }),
+						tray.button("Copy to Clipboard", {
+							intent: "white",
+							size: "md",
+							className: "w-fit",
+							onClick: ctx.eventHandler("modal:logs:clipboard", () => {
+								ctx.dom.clipboard.write(
+									log
+										.getEntries()
+										?.map(([message]) => message)
+										.join("\n") ?? "",
+								);
+								ctx.toast.success("Copied logs to clipboard!");
+							}),
+						}),
 						tray.div(
 							[
 								tray.div(
