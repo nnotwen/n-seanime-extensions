@@ -1691,6 +1691,33 @@ function init() {
 			return null;
 		}
 
+		function getListData(mediaId: number) {
+			// Get both anime and manga collections, extract their lists
+			const collections = (["getAnimeCollection", "getMangaCollection"] as const).map((f) => $anilist[f](false).MediaListCollection).filter(Boolean);
+
+			if (collections.length === 0) return null;
+
+			// Find the entry matching the mediaId
+			for (const collection of collections) {
+				const lists = collection?.lists;
+				if (!lists) continue;
+
+				const entry = lists
+					.flatMap(({ entries }) => entries)
+					.filter(Boolean)
+					.find((entry) => entry!.media?.id === mediaId) as
+					| $app.AL_AnimeCollection_MediaListCollection_Lists_Entries
+					| $app.AL_MangaCollection_MediaListCollection_Lists_Entries
+					| undefined;
+
+				if (entry) {
+					return entry;
+				}
+			}
+
+			return null;
+		}
+
 		async function anilistQuery(query: string, variables: any) {
 			const res = await ctx.fetch("https://graphql.anilist.co", {
 				method: "POST",
