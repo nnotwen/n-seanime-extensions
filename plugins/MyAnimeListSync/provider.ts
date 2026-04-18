@@ -2251,8 +2251,14 @@ function init() {
 				actionLabel: "progress",
 				buildBody: (data, entry) => {
 					const body: $malsync.ListUpdateBodyBase = {};
+					const { startedAt, completedAt } = getListData(data.mediaId ?? 0) ?? {};
+					const parsedStartedAt = JSON.parse(JSON.stringify(startedAt ?? {})) as typeof startedAt;
+					const parsedCompletedAt = JSON.parse(JSON.stringify(completedAt ?? {})) as typeof completedAt;
+
+					if (Object.values(parsedStartedAt!).every((v) => !v)) body.start_date = new Date().toISOString().substring(0, 10);
 					if (data.progress && data.progress === data.totalCount) data.status = "COMPLETED";
-					if (data.status === "COMPLETED") body.finish_date = new Date().toISOString().substring(0, 10);
+					if (Object.values(parsedCompletedAt!).every((v) => !v) && data.status === "COMPLETED")
+						body.finish_date = new Date().toISOString().substring(0, 10);
 
 					if (entry.type === "Anime") {
 						return {
