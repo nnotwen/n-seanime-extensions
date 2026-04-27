@@ -7,8 +7,8 @@
 // @ts-ignore
 function init() {
 	$ui.register((ctx) => {
-		const BASE_URI_V2 = "https://shikimori.one/api/v2";
-		const iconUrl = "https://shikimori.one/favicons/favicon-96x96.png";
+		const BASE_URI_V2 = "https://shikimori.io/api/v2";
+		const iconUrl = "https://shikimori.io/favicons/favicon-96x96.png";
 		const tray = ctx.newTray({
 			iconUrl,
 			withContent: true,
@@ -143,7 +143,7 @@ function init() {
 			clientId: "93Vlloacsr3lOZzD8Ttx3F7E4Pv9wUlLqaAuE9XcOhQ",
 			clientSecret: "x49dnkFMduxIseuDSQE4g2mDjo9Nc8qCGMpIVe7mtKs",
 			redirectUri: "urn:ietf:wg:oauth:2.0:oob",
-			baseUri: "https://shikimori.one/oauth/token",
+			baseUri: "https://shikimori.io/oauth/token",
 
 			getAccessToken() {
 				const token = this.token.accessToken.get();
@@ -218,7 +218,7 @@ function init() {
 			},
 
 			async getUserInfo() {
-				const res = await ctx.fetch("https://shikimori.one/api/users/whoami", {
+				const res = await ctx.fetch("https://shikimori.io/api/users/whoami", {
 					method: "GET",
 					headers: await this.withAuthHeaders(),
 				});
@@ -252,8 +252,8 @@ function init() {
 		const tabs = {
 			current: ctx.state<Tab>(Tab.logon),
 			config: {
-				logo: "https://shikimori.one/assets/layouts/l-top_menu-v2/logo.svg",
-				glyph: "https://shikimori.one/assets/layouts/l-top_menu-v2/glyph.svg",
+				logo: "https://shikimori.io/assets/layouts/l-top_menu-v2/logo.svg",
+				glyph: "https://shikimori.io/assets/layouts/l-top_menu-v2/glyph.svg",
 				width: "25rem",
 				height: "30rem",
 			},
@@ -376,7 +376,7 @@ function init() {
 				const authButton = tray.anchor({
 					text: "Авторизовать",
 					// prettier-ignore
-					href:`https://shikimori.one/oauth/authorize?client_id=${tokenManager.clientId}&redirect_uri=${encodeURIComponent(tokenManager.redirectUri)}&response_type=code&scope=user_rates`,
+					href:`https://shikimori.io/oauth/authorize?client_id=${tokenManager.clientId}&redirect_uri=${encodeURIComponent(tokenManager.redirectUri)}&response_type=code&scope=user_rates`,
 					target: "_blank",
 					// prettier-ignore
 					className: "UI-Button_root whitespace-nowrap font-semibold rounded-lg inline-flex items-center transition ease-in text-center justify-center focus-visible:outline-none focus-visible:ring-2 ring-offset-1 ring-offset-[--background] focus-visible:ring-[--ring] disabled:opacity-50 disabled:pointer-events-none shadow-none text-[--gray] border bg-gray-100 border-transparent hover:bg-gray-200 active:bg-gray-300 dark:text-gray-300 dark:bg-opacity-10 dark:hover:bg-opacity-20 h-10 px-4 no-underline",
