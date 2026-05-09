@@ -1,7 +1,7 @@
 {
 	"id": "traktsync",
 	"name": "TraktSync",
-	"version": "1.2.0",
+	"version": "1.1.4",
 	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/TraktSync/traktsync.json",
 	"language": "typescript",
 	"type": "plugin",
@@ -10,12 +10,12 @@
 	"icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/refs/heads/master/plugins/TraktSync/icon.png",
 	"website": "https://github.com/nnotwen/n-seanime-extensions",
 	"lang": "en",
-	"notes": "You must be logged in with AniList and you must enable \"Automatically update progress\" from the app settings for this extension to work.",
-	"payloadURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/TraktSync/provider.ts",
+	"notes": "This is the older version pre 1.2.0. If you have this plugin installed, uninstall the other TraktSync plugin to prevent issues.",
+	"payloadURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/TraktSync/provider.legacy.ts",
 	"plugin": {
 		"version": "1",
 		"permissions": {
-			"scopes": ["storage", "anilist", "playback"],
+			"scopes": ["storage", "anilist"],
 			"allow": {
 				"networkAccess": {
 					"allowedDomains": ["animeapi.my.id"],
