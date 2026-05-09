@@ -328,11 +328,13 @@ function init() {
 										}),
 									],
 								}),
+								tray.text("Filters do not persist between Seanime restarts!", { className: "text-xs text-[--orange]" }),
 							],
 						}),
 					],
 					{ className: "items-center" },
 				),
+				tray.text("You can press Alt+R to open the command palette", { className: "text-sm text-center text-[--muted]" }),
 			]),
 		);
 
@@ -391,7 +393,8 @@ function init() {
 					const sy = ("seasonYear" in e.media ? e.media?.seasonYear : e.media.startDate?.year) ?? 0;
 
 					if (fr && to) return Math.min(fr, to) <= sy && sy <= Math.max(fr, to);
-					if (fr || to) return fr == sy || to == sy;
+					if (fr && !to) return sy >= fr;
+					if (to && !fr) return sy <= to;
 					return true;
 				});
 
