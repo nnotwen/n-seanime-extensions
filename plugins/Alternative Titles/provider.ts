@@ -39,7 +39,7 @@ function init() {
 
 				// Selector for title
 				const titleIdMain = $("[data-media-page-header-entry-details-title-container] div").attr("id");
-				const titleIdSub = $("[data-media-page-header-entry-details-title-container] h4").attr("id");
+				const titleIdSub = $("[data-media-page-header-entry-details-title-container] p").attr("id");
 
 				const sequence = orderMap[order] ?? ["romaji", "english", "native"];
 				const picked = sequence.map((k) => data.title?.[k]).filter(Boolean);
@@ -53,11 +53,11 @@ function init() {
 					let titleIdSyn = $("[data-media-page-header-entry-details-title-container] .synonyms").attr("id");
 					if (!titleIdSyn) {
 						const el = await ctx.dom.createElement("p");
-						const className = "synonyms text-sm text-gray-200 font-semibold line-clamp-2 text-center lg:text-left xl:max-w-[50vw]";
+						const className = "synonyms text-sm italic text-[--muted] font-semibold line-clamp-2 text-center lg:text-left xl:max-w-[50vw]";
 						el.setProperty("className", className.split(/\+/));
 						el.setText([titles.third, ...(data.synonyms ?? [])].filter(Boolean).join(", "));
 
-						ctx.dom.asElement(titleIdSub ?? titleIdSyn!).after(el);
+						ctx.dom.asElement(titleIdSub ?? titleIdMain!).after(el);
 					} else {
 						ctx.dom.asElement(titleIdSyn).setInnerHTML([titles.third, ...(data.synonyms ?? [])].filter(Boolean).join(", "));
 					}
