@@ -1,0 +1,40 @@
+declare namespace $quickaccess {
+	interface MappingData {
+		anidb: number | null;
+		anilist: number | null;
+		animenewsnetwork: number | null;
+		animeplanet: string | null;
+		anisearch: number | null;
+		annict: number | null;
+		hikka: string | null;
+		imdb: string | null;
+		kaize: string | null;
+		kaize_id: number | null;
+		kitsu: number | null;
+		letterboxd_lid: string | null;
+		letterboxd_slug: string | null;
+		letterboxd_uid: string | null;
+		livechart: number | null;
+		myanimelist: number | null;
+		nautiljon: string | null;
+		nautiljon_id: number | null;
+		notify: string | null;
+		otakotaku: number | null;
+		shikimori: number | null;
+		shoboi: number | null;
+		silveryasha: number | null;
+		simkl: number | null;
+		themoviedb: number | null;
+		themoviedb_season_id: number | null;
+		themoviedb_type: string | null;
+		thetvdb: number | null;
+		thetvdb_season_id: number | null;
+		title: string | null;
+		trakt: number | null;
+		trakt_may_invalid: boolean | null;
+		trakt_season: number | null;
+		trakt_season_id: number | null;
+		trakt_slug: string | null;
+		trakt_type: string | null;
+	}
+}

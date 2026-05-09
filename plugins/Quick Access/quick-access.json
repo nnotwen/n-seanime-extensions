@@ -1,0 +1,152 @@
+{
+	"id": "quick-access",
+	"name": "Quick Access",
+	"version": "1.0.2",
+	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Quick%20Access/alternative-titles.json",
+	"language": "typescript",
+	"type": "plugin",
+	"description": "Adds quick-access links to external anime databases and tracking sites.",
+	"author": "nnotwen",
+	"icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Quick%20Access/icon.png",
+	"website": "",
+	"lang": "multi",
+	"payloadURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Quick%20Access/provider.ts",
+	"plugin": {
+		"version": "1",
+		"permissions": {
+			"scopes": [],
+			"allow": {
+				"networkAccess": {
+					"allowedDomains": ["animeapi.my.id"],
+					"reasoning": "Used for mapping anime to other providers."
+				}
+			}
+		}
+	},
+	"userConfig": {
+		"requiresConfig": true,
+		"version": 1,
+		"fields": [
+			{
+				"name": "ann",
+				"label": "Display AnimeNewsNetwork Quick button",
+				"type": "switch",
+				"default": "true"
+			},
+			{
+				"name": "animeplanet",
+				"label": "Display AnimePlanet Quick button",
+				"type": "switch",
+				"default": "true"
+			},
+			{
+				"name": "anisearch",
+				"label": "Display AniSearch Quick button",
+				"type": "switch",
+				"default": "false"
+			},
+			{
+				"name": "annict",
+				"label": "Display Annict Quick button",
+				"type": "switch",
+				"default": "false"
+			},
+			{
+				"name": "hikka",
+				"label": "Display Hikka Quick button",
+				"type": "switch",
+				"default": "false"
+			},
+			{
+				"name": "imdb",
+				"label": "Display IMDB Quick button",
+				"type": "switch",
+				"default": "true"
+			},
+			{
+				"name": "kaize",
+				"label": "Display Kaize Quick button",
+				"type": "switch",
+				"default": "false"
+			},
+			{
+				"name": "kitsu",
+				"label": "Display Kitsu Quick button",
+				"type": "switch",
+				"default": "true"
+			},
+			{
+				"name": "letterboxd",
+				"label": "Display Letterboxd Quick button",
+				"type": "switch",
+				"default": "false"
+			},
+			{
+				"name": "livechart",
+				"label": "Display LiveChart Quick button",
+				"type": "switch",
+				"default": "true"
+			},
+			{
+				"name": "myanimelist",
+				"label": "Display MyAnimeList Quick button",
+				"type": "switch",
+				"default": "true"
+			},
+			{
+				"name": "nautiljon",
+				"label": "Display Nautiljon Quick button",
+				"type": "switch",
+				"default": "false"
+			},
+			{
+				"name": "notify",
+				"label": "Display Notify Quick button",
+				"type": "switch",
+				"default": "false"
+			},
+			{
+				"name": "otakotaku",
+				"label": "Display Otakotaku Quick button",
+				"type": "switch",
+				"default": "false"
+			},
+			{
+				"name": "shikimori",
+				"label": "Display Shikimori Quick button",
+				"type": "switch",
+				"default": "false"
+			},
+			{
+				"name": "shoboi",
+				"label": "Display Shoboi Quick button",
+				"type": "switch",
+				"default": "false"
+			},
+			{
+				"name": "simkl",
+				"label": "Display SIMKL Quick button",
+				"type": "switch",
+				"default": "true"
+			},
+			{
+				"name": "tmdb",
+				"label": "Display TMDB Quick button",
+				"type": "switch",
+				"default": "true"
+			},
+			{
+				"name": "tvdb",
+				"label": "Display TVDB Quick button",
+				"type": "switch",
+				"default": "true"
+			},
+			{
+				"name": "trakt",
+				"label": "Display Trakt Quick button",
+				"type": "switch",
+				"default": "true"
+			}
+		]
+	}
+}
