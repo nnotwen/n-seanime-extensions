@@ -68,6 +68,21 @@ declare namespace $ui {
         autoScanner: AutoScanner
 
         /**
+         * Auto Select
+         */
+        autoSelect: AutoSelect
+
+        /**
+         * Torrent search
+         */
+        torrentSearch: TorrentSearch
+
+        /**
+         * Library scanner
+         */
+        scanner: Scanner
+
+        /**
          * External Player Link
          */
         externalPlayerLink: ExternalPlayerLink
@@ -86,6 +101,41 @@ declare namespace $ui {
          * Torrent Client
          */
         torrentClient: TorrentClient
+
+        /**
+         * Torrent stream helpers
+         */
+        torrentstream: Torrentstream
+
+        /**
+         * Debrid management helpers
+         */
+        debrid: Debrid
+
+        /**
+         * Debrid stream helpers
+         */
+        debridstream: DebridStream
+
+        /**
+         * Cron
+         */
+        cron: Cron
+
+        /**
+         * Auth actions. Requires the auth permission and user approval.
+         */
+        auth: Auth
+
+        /**
+         * App settings. Requires the settings permission and user approval.
+         */
+        appSettings: AppSettings
+
+        /**
+         * Extension management. Requires the extensions permission and user approval.
+         */
+        extensions: Extensions
 
         /**
          * Creates a new state object with an initial value.
@@ -116,7 +166,7 @@ declare namespace $ui {
          * @param deps - Array of dependencies that trigger the effect
          * @returns A function to clean up the effect
          */
-        effect(fn: () => void, deps: State<any>[]): () => void
+        effect(fn: () => void, deps: (State<any> | ReadOnlyState<any>)[]): () => void
 
         /**
          * Makes a fetch request.
@@ -125,6 +175,22 @@ declare namespace $ui {
          * @returns A promise that resolves to the fetch response
          */
         fetch(url: string, options?: FetchOptions): Promise<FetchResponse>
+
+        /**
+         * Runtime-local cache helpers for short-lived plugin UI work.
+         */
+        cache: Cache
+
+        /**
+         * Declarative settings helpers backed by $store and $storage when storage is available.
+         */
+        settings: Settings
+
+        /**
+         * Lightweight UI-runtime jobs for debounce, polling, and singleflight work.
+         * Use cron for calendar-style scheduled jobs.
+         */
+        jobs: Jobs
 
         /**
          * Registers an event handler for the plugin.
@@ -179,6 +245,108 @@ declare namespace $ui {
          * Video Core for controlling the built-in player
          */
         videoCore: VideoCore
+    }
+
+    interface CacheOptions {
+        /** Time to keep the entry in milliseconds. Omit or set 0 to keep it until removed or plugin unload. */
+        ttl?: number
+    }
+
+    interface Cache {
+        get<T = any>(key: string, fallback?: T): T | undefined
+
+        set<T = any>(key: string, value: T, options?: CacheOptions | number): T
+
+        has(key: string): boolean
+
+        remove(key: string): boolean
+
+        delete(key: string): boolean
+
+        clear(): void
+
+        getOrSet<T = any>(key: string, loader: () => T | Promise<T>, options?: CacheOptions | number): T | Promise<T>
+
+        getOrLoad<T = any>(key: string, loader: () => T | Promise<T>, options?: CacheOptions | number): T | Promise<T>
+
+        remember<T = any>(key: string, loader: () => T | Promise<T>, options?: CacheOptions | number): T | Promise<T>
+
+        size(): number
+    }
+
+    interface DefinedSettings<T extends Record<string, any>> {
+        key: string
+        defaults: T
+
+        get(): T
+
+        get<K extends keyof T>(path: K, fallback?: T[K]): T[K]
+
+        get<V = any>(path: string, fallback?: V): V
+
+        set(value: Partial<T>): T
+
+        set<K extends keyof T>(path: K, value: T[K]): T
+
+        set(path: string, value: any): T
+
+        save(value?: Partial<T>): T
+
+        reset(): T
+
+        fieldRef<K extends keyof T>(path: K): FieldRef<T[K]>
+
+        fieldRef<V = any>(path: string): FieldRef<V>
+
+        watch(callback: (value: T) => void): () => void
+    }
+
+    interface Settings {
+        define<T extends Record<string, any>>(name: string, defaults: T): DefinedSettings<T>
+    }
+
+    interface Auth {
+        login(token: string): Promise<boolean>
+
+        logout(): Promise<boolean>
+    }
+
+    interface AppSettings {
+        get<T = Record<string, any>>(): Promise<T>
+
+        get<T = any>(path: string, fallback?: T): Promise<T>
+
+        set<T extends Record<string, any> = Record<string, any>>(settings: T): Promise<T>
+
+        set<T = any>(path: string, value: T): Promise<Record<string, any>>
+
+        patch<T extends Record<string, any> = Record<string, any>>(settings: T): Promise<Record<string, any>>
+    }
+
+    interface Extensions {
+        enable(id: string): Promise<boolean>
+
+        disable(id: string): Promise<boolean>
+
+        setDisabled(id: string, disabled: boolean): Promise<boolean>
+    }
+
+    interface PollOptions {
+        immediate?: boolean
+    }
+
+    interface Jobs {
+        singleflight<T = any>(key: string, fn: () => T | Promise<T>): Promise<T>
+
+        debounce(key: string, fn: () => void, delay: number): () => void
+
+        poll(key: string, fn: () => void | Promise<void>, interval: number, options?: PollOptions): () => void
+
+        cancel(key: string): boolean
+
+        cancelAll(): void
+
+        isRunning(key: string): boolean
     }
 
     interface State<T> {
@@ -345,7 +513,7 @@ declare namespace $ui {
         close(): void
 
         /** Updates the badge number of the tray icon. 0 = no badge. Default intent is "info". */
-        updateBadge(options: { number: number, intent?: "success" | "error" | "warning" | "info" }): void
+        updateBadge(options: { number: number, intent?: "alert" | "success" | "error" | "warning" | "info" }): void
     }
 
     interface WebviewOptions {
@@ -567,12 +735,31 @@ declare namespace $ui {
          */
         resume(): void
 
+
         /**
          * Seeks to a specific position in the playback
          * @param seconds - The position to seek to
          * @throws Error if an error occurs, or if the playback is not running
          */
-        seek(seconds: number): void
+        seekTo(seconds: number): void
+
+        /**
+         * Starts manual tracking for media not being played through an integrated player.
+         * @param opts - The manual tracking options
+         * @returns A promise that resolves when tracking starts
+         */
+        startManualTracking(opts: PlaybackManualTrackingOptions): Promise<void>
+
+        /**
+         * Syncs the current progress with AniList.
+         * @returns A promise that resolves when the progress is synced
+         */
+        syncCurrentProgress(): Promise<void>
+
+        /**
+         * Stops manual tracking for the current media.
+         */
+        cancelManualTracking(): void
 
         /**
          * Gets the next episode to play for the current media being played
@@ -586,6 +773,15 @@ declare namespace $ui {
          */
         playNextEpisode(): Promise<void>
 
+    }
+
+    interface PlaybackManualTrackingOptions {
+        /** The client ID used for tracking. Defaults to the plugin ID. */
+        clientId?: string
+        /** The AniList media ID to track. */
+        mediaId: number
+        /** The episode number to sync when tracking is updated. */
+        episodeNumber: number
     }
 
     interface PlaybackEvent {
@@ -916,6 +1112,49 @@ declare namespace $ui {
         onSelect: () => void
     }
 
+    interface Cron {
+        /**
+         * Adds a cron job
+         * @param id - The id of the cron job
+         * @param cronExpr - The cron expression
+         * @param fn - The function to call
+         */
+        add(id: string, cronExpr: string, fn: () => void): void
+
+        /**
+         * Removes a cron job
+         * @param id - The id of the cron job
+         */
+        remove(id: string): void
+
+        /**
+         * Removes all cron jobs
+         */
+        removeAll(): void
+
+        /**
+         * Gets the total number of cron jobs
+         * @returns The total number of cron jobs
+         */
+        total(): number
+
+        /**
+         * Starts the cron jobs, can be paused by calling stop()
+         */
+        start(): void
+
+        /**
+         * Stops the cron jobs, can be resumed by calling start()
+         */
+        stop(): void
+
+        /**
+         * Checks if the cron jobs have started
+         * @returns True if the cron jobs have started, false otherwise
+         */
+        hasStarted(): boolean
+    }
+
     interface Screen {
         /** Navigates to a specific path */
         navigateTo(path: string, searchParams?: Record<string, string>): void
@@ -962,8 +1201,8 @@ declare namespace $ui {
     } & ComponentProps
 
     type DivComponentFunction = {
-        (props: { items: any[] } & ComponentProps): void
-        (items: any[], props?: ComponentProps): void
+        (props: { items: any[] } & ComponentProps & { onClick?: string }): void
+        (items: any[], props?: ComponentProps & { onClick?: string }): void
     }
     type CSSComponentFunction = {
         (props: { css: string }): void
@@ -1524,6 +1763,30 @@ declare namespace $ui {
 
     interface Anime {
         /**
+         * Registers an episode tab on the anime entry page.
+         * The tab can modify the default episode collection and react to episode selection.
+         */
+        registerEntryEpisodeTab(options: {
+            name: string
+            icon?: string
+            shouldShow?: (event: { mediaId: number }) => boolean | Promise<boolean>
+            onEpisodeCollection?: (event: {
+                mediaId: number
+                episodeCollection: $app.Anime_EpisodeCollection
+            }) => $app.Anime_EpisodeCollection | undefined | Promise<$app.Anime_EpisodeCollection | undefined>
+            onSelectEpisode?: (event: {
+                mediaId: number
+                episodeNumber: number
+                aniDbEpisode?: string
+                episode?: $app.Anime_Episode
+            }) => void | Promise<void>
+        }): {
+            name: string
+            icon?: string
+            getIsOpen(): ReadOnlyState<boolean>
+        }
+
+        /**
          * Get an anime entry
          * @param mediaId - The ID of the anime
          * @returns A promise that resolves to an anime entry
@@ -1539,10 +1802,37 @@ declare namespace $ui {
         getAnimeMetadata(from: "anilist" | "mal" | "kitsu" | "anidb", mediaId: number): Promise<$app.Metadata_AnimeMetadata | undefined>
 
         /**
+         * Get download info for an anime entry.
+         * @param mediaId - The ID of the anime
+         */
+        getEntryDownloadInfo(mediaId: number): Promise<$app.Anime_EntryDownloadInfo>
+
+        /**
+         * Get the episode collection for an anime.
+         * @param mediaId - The ID of the anime
+         */
+        getEpisodeCollection(mediaId: number): Promise<$app.Anime_EpisodeCollection>
+
+        /**
          * Clears episode metadata cache.
          * Note: To clear the anime entry cache, use $anilist.clearCache() (requires 'anilist' permission).
          */
         clearEpisodeMetadataCache(): void
+
+        /**
+         * Clears the server-side episode collection cache without clearing metadata provider cache.
+         */
+        clearEpisodeCollectionCache(): void
+
+        /**
+         * Clears the server-side missing episodes cache.
+         */
+        clearMissingEpisodesCache(): void
+
+        /**
+         * Clears the server-side schedule cache.
+         */
+        clearScheduleCache(): void
     }
 
     interface Manga {
@@ -1670,12 +1960,277 @@ declare namespace $ui {
         getWatchHistoryItem(mediaId: number): $app.Continuity_WatchHistoryItem | undefined
     }
 
+    type AutoSelectPreference = "neutral" | "prefer" | "avoid" | "only" | "never"
+
+    interface AutoSelectProfile {
+        dbId?: number
+        providers?: string[]
+        releaseGroups?: string[]
+        resolutions?: string[]
+        excludeTerms?: string[]
+        preferredLanguages?: string[]
+        preferredCodecs?: string[]
+        preferredSources?: string[]
+        multipleAudioPreference?: AutoSelectPreference
+        multipleSubsPreference?: AutoSelectPreference
+        batchPreference?: AutoSelectPreference
+        bestReleasePreference?: AutoSelectPreference
+        requireLanguage?: boolean
+        requireCodec?: boolean
+        requireSource?: boolean
+        minSeeders?: number
+        minSize?: string
+        maxSize?: string
+    }
+
+    interface ScannerScanOptions {
+        enhanced?: boolean
+        enhanceWithOfflineDatabase?: boolean
+        skipLockedFiles?: boolean
+        skipIgnoredFiles?: boolean
+    }
+
+    interface AutoDownloaderRunCheckOptions {
+        isSimulation?: boolean
+        ruleIds?: number[]
+    }
+
+    interface AutoDownloaderSimulationResult {
+        ruleId: number
+        mediaId: number
+        episode: number
+        link: string
+        hash: string
+        torrentName: string
+        score: number
+        extensionId: string
+        isDelayed: boolean
+    }
+
+    type TorrentstreamPlaybackType = "default" | "externalPlayerLink" | "nativeplayer" | "none" | "noneAndAwait"
+
+    interface TorrentstreamAnimeTorrentFile {
+        index: number
+        path: string
+        name: string
+    }
+
+    interface TorrentstreamBatchEpisodeFiles {
+        current: number
+        currentEpisodeNumber: number
+        currentAniDBEpisode: string
+        files: TorrentstreamAnimeTorrentFile[]
+    }
+
+    interface TorrentstreamStartStreamOptions {
+        mediaId: number
+        episodeNumber: number
+        aniDbEpisode: string
+        autoSelect?: boolean
+        torrent?: $app.HibikeTorrent_AnimeTorrent
+        fileIndex?: number
+        userAgent?: string
+        clientId?: string
+        playbackType: TorrentstreamPlaybackType
+        batchEpisodeFiles?: TorrentstreamBatchEpisodeFiles
+    }
+
+    interface TorrentstreamBatchHistory {
+        torrent?: $app.HibikeTorrent_AnimeTorrent
+        metadata?: any
+        batchEpisodeFiles?: TorrentstreamBatchEpisodeFiles
+    }
+
+    type DebridPlaybackType = "default" | "externalPlayerLink" | "nativeplayer" | "none" | "noneAndAwait"
+
+    interface DebridSettings {
+        enabled: boolean
+        provider: string
+        apiKey: string
+        includeDebridStreamInLibrary: boolean
+        streamAutoSelect: boolean
+        streamPreferredResolution: string
+    }
+
+    interface DebridStartStreamOptions {
+        mediaId: number
+        episodeNumber: number
+        aniDBEpisode: string
+        torrent?: $app.HibikeTorrent_AnimeTorrent
+        fileId?: string
+        fileIndex?: number
+        userAgent?: string
+        clientId?: string
+        playbackType: DebridPlaybackType
+        autoSelect?: boolean
+        batchEpisodeFiles?: TorrentstreamBatchEpisodeFiles
+    }
+
+    interface DebridCancelStreamOptions {
+        removeTorrent?: boolean
+    }
+
+    interface DebridGetTorrentInfoOptions {
+        magnetLink?: string
+        infoHash?: string
+    }
+
+    interface DebridAddTorrentOptions {
+        torrent?: $app.HibikeTorrent_AnimeTorrent
+        magnetLink?: string
+        infoHash?: string
+        selectFileId?: string
+    }
+
+    interface DebridAddAndQueueTorrentOptions {
+        torrent?: $app.HibikeTorrent_AnimeTorrent
+        magnetLink?: string
+        infoHash?: string
+        selectFileId?: string
+        destination: string
+        mediaId?: number
+    }
+
+    interface DebridDownloadTorrentOptions {
+        torrentItem: DebridTorrentItem
+        destination: string
+    }
+
+    interface DebridQueuedDownload {
+        torrentItemId: string
+        destination: string
+        provider: string
+        mediaId: number
+    }
+
+    interface DebridTorrentItemFile {
+        id: string
+        index: number
+        name: string
+        path: string
+        size: number
+    }
+
+    type DebridTorrentItemStatus = "downloading" | "completed" | "seeding" | "error" | "stalled" | "paused" | "other"
+
+    interface DebridTorrentItem {
+        id: string
+        name: string
+        hash: string
+        size: number
+        formattedSize: string
+        completionPercentage: number
+        eta: string
+        status: DebridTorrentItemStatus
+        addedAt: string
+        speed?: string
+        seeders?: number
+        isReady: boolean
+        files?: DebridTorrentItemFile[]
+    }
+
+    interface DebridTorrentInfo {
+        id?: string
+        name: string
+        hash: string
+        size: number
+        files: DebridTorrentItemFile[]
+    }
+
+    interface DebridFilePreview {
+        path: string
+        displayPath: string
+        displayTitle: string
+        episodeNumber: number
+        relativeEpisodeNumber: number
+        isLikely: boolean
+        index: number
+        fileId: string
+    }
+
+    interface DebridGetTorrentFilePreviewsOptions {
+        torrent: $app.HibikeTorrent_AnimeTorrent
+        episodeNumber: number
+        media: $app.AL_BaseAnime
+    }
+
     interface AutoScanner {
         /**
          * Notify the auto scanner to scan the libraries if it is enabled.
          * This is a non-blocking call that simply schedules a scan if one is not already running planned.
          */
         notify(): void
+
+        /**
+         * Run the auto scanner immediately.
+         */
+        runNow(): void
+
+        /**
+         * Whether the auto scanner is enabled.
+         */
+        isEnabled(): boolean
+
+        /**
+         * Whether the auto scanner is waiting for its debounce timer.
+         */
+        isWaiting(): boolean
+
+        /**
+         * Whether the auto scanner is actively scanning.
+         */
+        isScanning(): boolean
+
+        /**
+         * Gets the auto scanner debounce wait time in milliseconds.
+         */
+        getWaitTimeMs(): number
+    }
+
+    interface AutoSelect {
+        /**
+         * Searches for anime torrents using the saved auto select profile, falling back to the default provider when no profile is saved.
+         */
+        search(media: $app.AL_BaseAnime, episodeNumber: number): Promise<$app.HibikeTorrent_AnimeTorrent[]>
+
+        /**
+         * Gets the saved auto select profile.
+         */
+        getProfile(): AutoSelectProfile | undefined
+
+        /**
+         * Saves the auto select profile.
+         */
+        saveProfile(profile: AutoSelectProfile): AutoSelectProfile | undefined
+
+        /**
+         * Deletes the saved auto select profile.
+         */
+        deleteProfile(): void
+    }
+
+    interface TorrentSearch {
+        /**
+         * Gets all available anime torrent provider IDs.
+         */
+        getProviderIds(): string[]
+
+        /**
+         * Gets the default torrent provider ID.
+         */
+        getDefaultProviderId(): string | undefined
+
+        /**
+         * Searches anime torrents using the configured provider extensions.
+         */
+        searchAnime(options: $app.Torrent_AnimeSearchOptions): Promise<$app.Torrent_SearchData>
+    }
+
+    interface Scanner {
+        /**
+         * Runs a library scan immediately.
+         */
+        scan(options?: ScannerScanOptions): Promise<$app.Anime_LocalFile[]>
     }
 
     interface ExternalPlayerLink {
@@ -1693,7 +2248,37 @@ declare namespace $ui {
          * Run the auto downloader if it is enabled.
          * This is a non-blocking call.
          */
-        run(): void
+        run(isSimulation?: boolean): void
+
+        /**
+         * Run the auto downloader immediately.
+         */
+        runNow(): void
+
+        /**
+         * Run a focused auto downloader check and return the simulation results.
+         */
+        runCheck(options?: AutoDownloaderRunCheckOptions): Promise<AutoDownloaderSimulationResult[]>
+
+        /**
+         * Gets the simulation results from the last run.
+         */
+        getSimulationResults(): AutoDownloaderSimulationResult[]
+
+        /**
+         * Clears the stored simulation results.
+         */
+        clearSimulationResults(): void
+
+        /**
+         * Gets the auto downloader settings.
+         */
+        getSettings(): $app.Models_AutoDownloaderSettings | undefined
+
+        /**
+         * Whether the auto downloader is enabled.
+         */
+        isEnabled(): boolean
     }
 
     interface FillerManager {
@@ -1778,6 +2363,124 @@ declare namespace $ui {
         getFiles(hash: string): Promise<string[]>
     }
 
+    interface Torrentstream {
+        /**
+         * Whether torrentstream is enabled.
+         */
+        isEnabled(): boolean
+
+        /**
+         * Gets the previous torrentstream start options.
+         */
+        getPreviousStreamOptions(): TorrentstreamStartStreamOptions | undefined
+
+        /**
+         * Gets batch history for a media entry.
+         */
+        getBatchHistory(mediaId: number): TorrentstreamBatchHistory | undefined
+
+        /**
+         * Starts a torrent stream.
+         */
+        startStream(options: TorrentstreamStartStreamOptions): Promise<void>
+
+        /**
+         * Preloads a torrent stream without starting playback.
+         */
+        preloadStream(options: TorrentstreamStartStreamOptions): Promise<void>
+
+        /**
+         * Stops the active torrent stream.
+         */
+        stopStream(): Promise<void>
+
+        /**
+         * Cancels the prepared torrent stream, if any.
+         */
+        cancelPreparedStream(): void
+    }
+
+    interface Debrid {
+        /**
+         * Whether a debrid provider is configured.
+         */
+        hasProvider(): boolean
+
+        /**
+         * Gets the current debrid settings.
+         */
+        getSettings(): DebridSettings | undefined
+
+        /**
+         * Gets queued local debrid downloads tracked in Seanime's database.
+         */
+        getQueuedDownloads(): DebridQueuedDownload[]
+
+        /**
+         * Adds a torrent to the configured debrid provider.
+         */
+        addTorrent(options: DebridAddTorrentOptions): Promise<string>
+
+        /**
+         * Adds a torrent to the configured debrid provider and queues it for local download.
+         * Requires the destination to be covered by the plugin write allowlist.
+         */
+        addAndQueueTorrent(options: DebridAddAndQueueTorrentOptions): Promise<string>
+
+        /**
+         * Gets torrents from the configured debrid provider.
+         */
+        getTorrents(): Promise<DebridTorrentItem[]>
+
+        /**
+         * Gets torrent info from the configured debrid provider.
+         */
+        getTorrentInfo(options: DebridGetTorrentInfoOptions): Promise<DebridTorrentInfo>
+
+        /**
+         * Gets parsed file previews for a torrent before manual selection.
+         */
+        getTorrentFilePreviews(options: DebridGetTorrentFilePreviewsOptions): Promise<DebridFilePreview[]>
+
+        /**
+         * Deletes a torrent from the configured debrid provider.
+         */
+        deleteTorrent(torrentId: string): Promise<void>
+
+        /**
+         * Cancels an active local debrid download.
+         */
+        cancelDownload(itemId: string): Promise<void>
+
+        /**
+         * Downloads a debrid torrent locally.
+         * Requires the destination to be covered by the plugin write allowlist.
+         */
+        downloadTorrent(options: DebridDownloadTorrentOptions): Promise<void>
+    }
+
+    interface DebridStream {
+        /**
+         * Gets the previous debrid start options.
+         */
+        getPreviousStreamOptions(): DebridStartStreamOptions | undefined
+
+        /**
+         * Gets the active stream URL.
+         */
+        getStreamURL(): string | undefined
+
+        /**
+         * Starts a debrid stream.
+         */
+        startStream(options: DebridStartStreamOptions): Promise<void>
+
+        /**
+         * Cancels the current debrid stream.
+         */
+        cancelStream(options?: DebridCancelStreamOptions): void
+    }
+
     type Intent =
         "primary"
         | "primary-subtle"
@@ -1809,6 +2512,15 @@ declare namespace $storage {
      * @throws Error if something goes wrong
      */
     function get<T = any>(key: string): T | undefined
+
+    /**
+     * Gets a value from the storage without cloning.
+     * Use with caution. Do not mutate the returned object or its nested values.
+     * @param key - The key to get
+     * @returns The value associated with the key
+     * @throws Error if something goes wrong
+     */
+    function getUnsafe<T = any>(key: string): T | undefined
 
     /**
      * Removes a value from the storage.
@@ -2008,53 +2720,6 @@ declare namespace $anilist {
 }
 
 /**
- * Cron
- */
-
-declare namespace $cron {
-    /**
-     * Adds a cron job
-     * @param id - The id of the cron job
-     * @param cronExpr - The cron expression
-     * @param fn - The function to call
-     */
-    function add(id: string, cronExpr: string, fn: () => void): void
-
-    /**
-     * Removes a cron job
-     * @param id - The id of the cron job
-     */
-    function remove(id: string): void
-
-    /**
-     * Removes all cron jobs
-     */
-    function removeAll(): void
-
-    /**
-     * Gets the total number of cron jobs
-     * @returns The total number of cron jobs
-     */
-    function total(): number
-
-    /**
-     * Starts the cron jobs, can be paused by calling stop()
-     */
-    function start(): void
-
-    /**
-     * Stops the cron jobs, can be resumed by calling start()
-     */
-    function stop(): void
-
-    /**
-     * Checks if the cron jobs have started
-     * @returns True if the cron jobs have started, false otherwise
-     */
-    function hasStarted(): boolean
-}
-
-/**
  * Database
  */
 
@@ -2139,6 +2804,39 @@ declare namespace $database {
         /**
          * Deletes an auto downloader rule
          * @param id - The id of the auto downloader rule in the database
+         */
+        function remove(id: number): void
+    }
+
+    namespace autoDownloaderProfiles {
+        /**
+         * Gets all auto downloader profiles
+         */
+        function getAll(): $app.Anime_AutoDownloaderProfile[]
+
+        /**
+         * Gets an auto downloader profile by the database id
+         * @param id - The id of the auto downloader profile in the database
+         * @returns The auto downloader profile
+         */
+        function get(id: number): $app.Anime_AutoDownloaderProfile | undefined
+
+        /**
+         * Inserts an auto downloader profile
+         * @param profile - The auto downloader profile to insert
+         */
+        function insert(profile: Omit<$app.Anime_AutoDownloaderProfile, "dbId">): void
+
+        /**
+         * Updates an auto downloader profile
+         * @param id - The id of the auto downloader profile in the database
+         * @param profile - The auto downloader profile to update
+         */
+        function update(id: number, profile: Omit<$app.Anime_AutoDownloaderProfile, "dbId">): void
+
+        /**
+         * Deletes an auto downloader profile
+         * @param id - The id of the auto downloader profile in the database
          */
         function remove(id: number): void
     }
@@ -2568,6 +3266,20 @@ declare namespace $ui {
         playbackInfo: VideoPlaybackInfo
     }
 
+    interface SkipInterval {
+        startTime: number
+        endTime: number
+    }
+
+    interface SkipDataEntry {
+        interval: SkipInterval
+    }
+
+    interface SkipData {
+        op: SkipDataEntry | null
+        ed: SkipDataEntry | null
+    }
+
     interface VideoCore {
         /**
          * Adds an event listener for video-loaded events
@@ -2778,6 +3490,17 @@ declare namespace $ui {
          */
         showMessage(message: string, milliseconds?: number): void
 
+        /**
+         * Overrides the current playback skip data.
+         * pass null for op or ed to explicitly disable that range for this playback.
+         */
+        setSkipData(skipData: SkipData): void
+
+        /**
+         * Clears the current playback skip-data override.
+         */
+        clearSkipData(): void
+
         // Track control methods
 
         /**
@@ -2908,6 +3631,11 @@ declare namespace $ui {
         getCurrentClientId(): string
 
         /**
+         * Gets all connected player client IDs.
+         */
+        getClientIds(): string[]
+
+        /**
          * Gets the current player type
          * @returns The player type or empty string
          */
@@ -2918,6 +3646,55 @@ declare namespace $ui {
          * @returns The playback type or empty string
          */
         getCurrentPlaybackType(): PlaybackType | ""
+
+        /**
+         * Gets the current playback skip data from the active client.
+         * @returns A promise that resolves to the current skip data or undefined
+         */
+        getSkipData(): Promise<SkipData | undefined>
+
+        /**
+         * Start playback of a URL in the built-in player with progress tracking.
+         * The promise resolves once the stream has been initiated (not when playback completes).
+         * @param streamUrl - The URL to stream
+         * @param anidbEpisode - AniDB episode identifier (e.g. "1", "S1") - used for progress tracking
+         * @param media - The anime object - used for progress tracking
+         * @returns A promise that resolves when the stream has started
+         */
+        playStream(streamUrl: string, anidbEpisode: string, media: $app.AL_BaseAnime): Promise<void>
+
+        /**
+         * Start playback of a local file in the built-in player with progress tracking.
+         * The promise resolves once the stream has been initiated (not when playback completes).
+         * The file must be in the scanned library.
+         * @param path - Absolute path to the local file
+         * @returns A promise that resolves when the stream has started
+         */
+        playLocalFile(path: string): Promise<void>
     }
 }
 
+
+declare namespace $debug {
+    const enabled: boolean
+
+    function log(...values: any[]): void
+
+    function info(...values: any[]): void
+
+    function warn(...values: any[]): void
+
+    function error(...values: any[]): void
+
+    function debug(...values: any[]): void
+
+    function inspect(...values: any[]): void
+
+    function mark(...values: any[]): void
+
+    function time(label?: string): void
+
+    function timeEnd(label?: string): void
+
+    function clear(): void
+}
