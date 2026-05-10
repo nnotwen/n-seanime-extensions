@@ -191,7 +191,7 @@ function init() {
 				const btnALId = $(`[data-${data.type?.toLowerCase()}-meta-section-buttons-container] a`).attr("id");
 				for (const [key, value] of Object.entries(quicklinks).sort(
 					([A], [B]) =>
-						(priority.includes(A) ? priority.indexOf(A) : Infinity) - (priority.includes(B) ? priority.indexOf(B) : Infinity) || A.localeCompare(B),
+						-((priority.includes(A) ? priority.indexOf(A) : Infinity) - (priority.includes(B) ? priority.indexOf(B) : Infinity) || A.localeCompare(B)),
 				)) {
 					if (!mappingdata || value === false) continue;
 					// tempskip (no icon)
