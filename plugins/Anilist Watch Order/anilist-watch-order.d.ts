@@ -1,4 +1,4 @@
-/// <reference path="./app.d.ts" />
+/// <reference path="../../typings/app.d.ts" />
 
 declare namespace $awo {
 	type RateLimit =
@@ -62,10 +62,18 @@ declare namespace $awo {
 	interface RelationsTreeNode {
 		id: number;
 		label: string;
-		shape: string;
-		color: {
-			background: string;
-			border: string;
+		shape?: string;
+		color?: {
+			background?: string;
+			border?: string;
+		};
+		font?: {
+			color?: string;
+			size?: number; // in pixels
+			face?: string; // family
+			background?: string; // color, draws a rectangle behind the text
+			strokeWidth?: number; // thickness, creates an outline around the text
+			strokeColor?: string; // #FFFFFF
 		};
 	}
 

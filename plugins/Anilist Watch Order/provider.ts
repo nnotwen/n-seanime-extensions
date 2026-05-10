@@ -13,7 +13,7 @@ function init() {
 
 		const currentMediaId = ctx.state<number | null>(null);
 		const graphData = ctx.state<{
-			nodes: RelationsTreeNode[];
+			nodes: $awo.RelationsTreeNode[];
 			edges: RelationsTreeEdge[];
 			mediaId: number | null;
 			ready: boolean;
@@ -335,6 +335,19 @@ function init() {
 			return (await res.json()).data.Page.media;
 		}
 
+		function formatWacthed(nodes: $awo.RelationsTreeNode[]) {
+			const completedListData = $anilist.getAnimeCollection(false).MediaListCollection?.lists?.find((c) => c.status?.valueOf() === "COMPLETED");
+			if (!completedListData) return nodes;
+
+			return nodes.map((node) => {
+				const isWatched = !!completedListData.entries?.find((e) => e.media?.id.valueOf() === node.id);
+				if (isWatched) {
+					return { ...node, color: { ...node.color, background: "#222", border: "#333" }, font: { ...node.font, strokeWidth: 0, color: "#8a8a8a" } };
+				}
+				return node;
+			});
+		}
+
 		function addNode(media: MediaQueryResponse | $app.AL_BaseAnime) {
 			if (fetched.get().includes(media.id)) return false;
 			fetched.set([...fetched.get(), media.id]);
@@ -492,7 +505,7 @@ function init() {
 			if (cacheEntry) {
 				console.log("[Ext<AnilistWatchOrder>]: (log) Cache hit for media.id:", media.id);
 				graphData.set({
-					nodes: cacheEntry.nodes,
+					nodes: formatWacthed(cacheEntry.nodes),
 					edges: cacheEntry.edges,
 					mediaId: media.id,
 					ready: true,
@@ -559,6 +572,7 @@ function init() {
 			// Mark as ready and set final mediaId
 			graphData.set({
 				...finalData,
+				nodes: formatWacthed(finalData.nodes),
 				mediaId: currentMediaId.get(),
 				ready: true,
 			});
