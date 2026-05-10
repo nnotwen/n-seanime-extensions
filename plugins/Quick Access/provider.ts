@@ -2,11 +2,18 @@
 /// <reference path="../../typings/system.d.ts" />
 /// <reference path="../../typings/app.d.ts" />
 /// <reference path="../../typings/core.d.ts" />
+/// <reference path="./quick-access.d.ts" />
 
 // @ts-ignore
 function init() {
 	$ui.register((ctx) => {
+		const priority =
+			$getUserPreference("$order")
+				?.split(",")
+				.map((s) => s.trim()) ?? [];
+
 		const quicklinks = {
+			anidb: $getUserPreference("anidb") === "true",
 			ann: $getUserPreference("ann") === "true",
 			animeplanet: $getUserPreference("animeplanet") === "true",
 			anisearch: $getUserPreference("anisearch") === "true",
@@ -30,6 +37,7 @@ function init() {
 		};
 
 		const urlBuilders: Record<keyof typeof quicklinks, (data: $quickaccess.MappingData, type?: "ANIME" | "MANGA") => string | null> = {
+			anidb: (data) => (data.anidb ? `https://www.anidb.net/anime/${data.anidb}` : null),
 			ann: (data) => (data.animenewsnetwork ? `https://www.animenewsnetwork.com/encyclopedia/anime.php?id=${data.animenewsnetwork}` : null),
 			animeplanet: (data) => (data.animeplanet ? `https://www.anime-planet.com/anime/${data.animeplanet}` : null),
 			anisearch: (data) => (data.anisearch ? `https://www.anisearch.com/anime/${data.anisearch}` : null),
@@ -54,6 +62,11 @@ function init() {
 
 		const icons = {
 			html: {
+				anidb: /*html*/ `
+					<svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 180 180" fill="#cacaca">
+						<path d="M139.9 18.8c-1.3.2-1.6 1.4-1.5 5.5l.1 5.2h12l.1-5.3c0-2.8-.2-5.3-.5-5.3-1.6-.4-8.8-.4-10.2-.1M28 38.4v4.4l13.1.3c11.6.4 13.2.6 14.5 2.4 3.1 4.2 1.7 4.9-10.1 5-8.9.2-11.7.6-14.4 2.1-5.6 3.2-7.6 11.2-4.3 17.4 3.1 5.9 6.1 6.6 25 6.6l16.7-.1.3-15.5c.3-18-.6-21-7.3-24.7-3.6-2.1-5.3-2.3-18.7-2.3H28zm28.8 24.9-.3 4.2h-8.4c-7.5 0-8.5-.2-9.8-2.2-1.3-1.9-1.2-2.4.4-4 1.4-1.4 3.5-1.8 10.1-2l8.3-.1zm27.4-8.1.3 21.3 5.8.1H96V60.3c0-12.3.3-16.3 1.3-16.4 4.4-.3 12.4.4 13.1 1.2.5.5 1.1 7.5 1.2 15.6.1 8.2.2 15.1.3 15.4s2.7.5 5.9.5l5.7-.1-.1-16.7c-.1-18.1-.5-19.9-6.1-23.5-2.2-1.5-5.5-1.9-18-2.1L84 33.8zm54.7-21c-.4.8-.6 39.5-.3 41 .4 1.3 1.5 1.6 5.2 1.4 2.6-.1 5.2-.4 5.7-.8.6-.4 1-8.5 1-21V34.5l-5.7-.3c-3.2-.2-5.9-.2-5.9 0"/><path d="M13.6 38.6C12.2 40 12 46 12 90.4c0 37.7.3 50.5 1.2 51.4.7.7 3.9 1.1 8.2 1l7.1-.2-6.8-.3c-5.9-.4-6.9-.7-7.5-2.6-1.1-3.2-.7-99.6.4-100.7.5-.5 2.9-1 5.4-1.3l4.5-.4-4.7-.1c-3.1-.1-5.2.3-6.2 1.4m58.2-.9c1.7.2 4.7.2 6.5 0 1.7-.2.3-.4-3.3-.4s-5 .2-3.2.4m55 0c1.8.2 4.5.2 6 0s0-.4-3.3-.4-4.5.2-2.7.4m31.9 0c2.8.2 5.6 1 6.2 1.7.8.9 1 16.4.9 51.7l-.3 50.4-8 .6-8 .6 8.5-.1 8.5-.1.3-51.4c.1-37.1-.1-51.8-.9-52.7s-3-1.3-6.8-1.2l-5.6.2zM30.6 93c-.1.3-.2 13.1-.1 28.5v28l17.3.2c19.8.2 24-.7 29.6-6.7 5.3-5.6 6.6-10.3 6.3-22.7-.3-11.8-1.8-16.3-7.4-21.5-5.5-5.3-9.2-6.1-28.1-6.2-9.5-.1-17.4 0-17.6.4m33.9 11.4c5 3.3 6 6.2 5.9 17.1-.2 16-2.3 18.1-17.8 18.4l-9.6.2v-18.4c0-10.1.2-18.6.4-18.8.3-.2 4.5-.4 9.5-.3 6.5.1 9.7.6 11.6 1.8m33.9 16.9v28.9l21.3-.4 21.3-.3 4.2-4.2c3.9-3.9 4.1-4.5 4.2-10 0-6.2-2-10.5-5.6-12.4-1.9-1-1.9-1.2 1.3-4.5 2.8-2.9 3.3-4.3 3.7-9.3s0-6.6-1.8-9.7c-3.7-5.9-6.8-6.7-29.1-6.9l-19.5-.1zM134 105c1.1 1.1 2 3.1 2 4.5s-.9 3.4-2 4.5c-1.7 1.7-3.3 2-12.5 2H111v-13h10.5c9.2 0 10.8.3 12.5 2m-.1 23.4c2.6 2.4 2.7 7 .2 9.5-1.6 1.6-3.6 1.9-12.5 2l-10.6.2V126l10.4.3c8.6.2 10.8.6 12.5 2.1m-49.1 14.3c2.3.2 5.9.2 8 0 2-.2.1-.4-4.3-.4s-6.1.2-3.7.4"/>
+					</svg>
+				`,
 				ann: /*html*/ `
                     <svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 400 400" fill="#cacaca">
                         <path d="M113 .7c-1.9.2-8 1.3-13.5 2.5C48.2 13.9 9.3 55.3 1.6 107.3c-2 13.2-2 23.1 0 36.6 3.9 26.7 16 50.7 35.4 70.2 9 9 26.4 21.9 27.7 20.5.3-.3.1-3-.5-5.8-9.8-44.5 4.6-91.8 37.7-124.8 27-26.8 60-40.5 97.6-40.3 13.9 0 28.8 2.1 35.8 4.8 2.5 1 2.1-.4-1.9-7.1C208.5 19.9 160.6-4.3 113 .7"/><path d="M179.2 92.5c-22.1 4.2-42.1 14.6-57.6 30-21.3 21.1-32.6 47.7-32.7 77.1-.1 12.7.5 17.7 3.2 28.4 8.7 35.2 36 64.9 70.4 76.7C217 323.4 277 297.3 299.6 245c6.5-14.9 8.7-25.5 8.8-42.5.1-16.6-1-24.2-5.6-37.5-12.1-34.8-40.9-61.3-76.6-70.7-12.1-3.1-35.3-4-47-1.8"/><path d="M331 162.5c0 .4 1 5.3 2.2 10.8 2.9 13.7 3.2 40 .5 52.7-6.1 28.5-18.5 51.9-38.2 71.5-30.2 30.3-72.5 44.8-114 39.1-6.6-.9-13.3-1.9-14.9-2.3l-3-.6 2.8 4.9c7.9 13.7 24.1 30.9 37.5 39.8 32.8 21.8 74 27.4 110.8 15.1 33.9-11.4 62.6-38.2 76.2-71.3 5.8-14 8.3-26.2 8.8-43.4.8-22.4-2.3-38.3-11.3-57.6-8.7-19-26-39.2-43.4-50.9-6.9-4.6-14-8.6-14-7.8"/>
@@ -176,7 +189,10 @@ function init() {
 				if (mappingdata instanceof Error) return $debug.log(mappingdata);
 
 				const btnALId = $(`[data-${data.type?.toLowerCase()}-meta-section-buttons-container] a`).attr("id");
-				for (const [key, value] of Object.entries(quicklinks).sort(([A], [B]) => B.localeCompare(A))) {
+				for (const [key, value] of Object.entries(quicklinks).sort(
+					([A], [B]) =>
+						(priority.includes(A) ? priority.indexOf(A) : Infinity) - (priority.includes(B) ? priority.indexOf(B) : Infinity) || A.localeCompare(B),
+				)) {
 					if (!mappingdata || value === false) continue;
 					// tempskip (no icon)
 					if (key === "notify") continue;

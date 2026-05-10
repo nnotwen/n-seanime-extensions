@@ -1,7 +1,7 @@
 {
 	"id": "quick-access",
 	"name": "Quick Access",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Quick%20Access/quick-access.json",
 	"language": "typescript",
 	"type": "plugin",
@@ -25,125 +25,137 @@
 	},
 	"userConfig": {
 		"requiresConfig": true,
-		"version": 1,
+		"version": 2,
 		"fields": [
 			{
+				"name": "$order",
+				"label": "Button order (use the refcode, separated by comma)",
+				"type": "text",
+				"default": ""
+			},
+			{
+				"name": "anidb",
+				"label": "Display AniDB Quick button (refcode: anidb)",
+				"type": "switch",
+				"default": "true"
+			},
+			{
 				"name": "ann",
-				"label": "Display AnimeNewsNetwork Quick button",
+				"label": "Display AnimeNewsNetwork Quick button (refcode: ann)",
 				"type": "switch",
 				"default": "true"
 			},
 			{
 				"name": "animeplanet",
-				"label": "Display AnimePlanet Quick button",
+				"label": "Display AnimePlanet Quick button (refcode: animeplanet)",
 				"type": "switch",
 				"default": "true"
 			},
 			{
 				"name": "anisearch",
-				"label": "Display AniSearch Quick button",
+				"label": "Display AniSearch Quick button (refcode: anisearch)",
 				"type": "switch",
 				"default": "false"
 			},
 			{
 				"name": "annict",
-				"label": "Display Annict Quick button",
+				"label": "Display Annict Quick button (refcode: annict)",
 				"type": "switch",
 				"default": "false"
 			},
 			{
 				"name": "hikka",
-				"label": "Display Hikka Quick button",
+				"label": "Display Hikka Quick button (refcode: hikka)",
 				"type": "switch",
 				"default": "false"
 			},
 			{
 				"name": "imdb",
-				"label": "Display IMDB Quick button",
+				"label": "Display IMDB Quick button (refcode: imdb)",
 				"type": "switch",
 				"default": "true"
 			},
 			{
 				"name": "kaize",
-				"label": "Display Kaize Quick button",
+				"label": "Display Kaize Quick button (refcode: kaize)",
 				"type": "switch",
 				"default": "false"
 			},
 			{
 				"name": "kitsu",
-				"label": "Display Kitsu Quick button",
+				"label": "Display Kitsu Quick button (refcode: kitsu)",
 				"type": "switch",
 				"default": "true"
 			},
 			{
 				"name": "letterboxd",
-				"label": "Display Letterboxd Quick button",
+				"label": "Display Letterboxd Quick button (refcode: letterboxd)",
 				"type": "switch",
 				"default": "false"
 			},
 			{
 				"name": "livechart",
-				"label": "Display LiveChart Quick button",
+				"label": "Display LiveChart Quick button (refcode: livechart)",
 				"type": "switch",
 				"default": "true"
 			},
 			{
 				"name": "myanimelist",
-				"label": "Display MyAnimeList Quick button",
+				"label": "Display MyAnimeList Quick button (refcode: myanimelist)",
 				"type": "switch",
 				"default": "true"
 			},
 			{
 				"name": "nautiljon",
-				"label": "Display Nautiljon Quick button",
+				"label": "Display Nautiljon Quick button (refcode: nautiljon)",
 				"type": "switch",
 				"default": "false"
 			},
 			{
 				"name": "notify",
-				"label": "Display Notify Quick button",
+				"label": "Display Notify Quick button (refcode: notify)",
 				"type": "switch",
 				"default": "false"
 			},
 			{
 				"name": "otakotaku",
-				"label": "Display Otakotaku Quick button",
+				"label": "Display Otakotaku Quick button (refcode: otakotaku)",
 				"type": "switch",
 				"default": "false"
 			},
 			{
 				"name": "shikimori",
-				"label": "Display Shikimori Quick button",
+				"label": "Display Shikimori Quick button (refcode: shikimori)",
 				"type": "switch",
 				"default": "false"
 			},
 			{
 				"name": "shoboi",
-				"label": "Display Shoboi Quick button",
+				"label": "Display Shoboi Quick button (refcode: shoboi)",
 				"type": "switch",
 				"default": "false"
 			},
 			{
 				"name": "simkl",
-				"label": "Display SIMKL Quick button",
+				"label": "Display SIMKL Quick button (refcode: simkl)",
 				"type": "switch",
 				"default": "true"
 			},
 			{
 				"name": "tmdb",
-				"label": "Display TMDB Quick button",
+				"label": "Display TMDB Quick button (refcode: tmdb)",
 				"type": "switch",
 				"default": "true"
 			},
 			{
 				"name": "tvdb",
-				"label": "Display TVDB Quick button",
+				"label": "Display TVDB Quick button (refcode: tvdb)",
 				"type": "switch",
 				"default": "true"
 			},
 			{
 				"name": "trakt",
-				"label": "Display Trakt Quick button",
+				"label": "Display Trakt Quick button (refcode: trakt)",
 				"type": "switch",
 				"default": "true"
 			}
