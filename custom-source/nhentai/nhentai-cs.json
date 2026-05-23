@@ -2,7 +2,7 @@
 	"id": "nhentai-cs",
 	"name": "nhentai",
 	"version": "1.0.0",
-	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/custom-source/nhentai/nhentai-cs-dev.json",
+	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/custom-source/nhentai/nhentai-cs.json",
 	"language": "typescript",
 	"type": "custom-source",
 	"description": "Implements nhentai as a custom source.",
