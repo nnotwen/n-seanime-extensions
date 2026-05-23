@@ -1,0 +1,26 @@
+{
+	"id": "nhentai-cs",
+	"name": "nhentai",
+	"version": "1.0.0",
+	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/custom-source/nhentai/manifest.json",
+	"language": "typescript",
+	"type": "custom-source",
+	"description": "Implements nhentai as a custom source.",
+	"author": "nnotwen",
+	"icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/custom-source/nhentai/icon.ico",
+	"website": "",
+	"lang": "multi",
+	"payloadURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/custom-source/nhentai/provider.ts",
+	"userConfig": {
+		"requiresConfig": false,
+		"version": 1,
+		"fields": [
+			{
+				"name": "api-key",
+				"label": "API KEY",
+				"type": "text",
+				"default": ""
+			}
+		]
+	}
+}
