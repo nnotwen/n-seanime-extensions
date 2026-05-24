@@ -8,6 +8,7 @@
 	"description": "Implements nhentai as a custom source.",
 	"author": "nnotwen",
 	"icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/custom-source/nhentai/icon.png",
+	"note": "API KEY is not required, but recommended to increase the ratelimit allowance. You can use the same API Key with the manga-provider.",
 	"website": "",
 	"lang": "multi",
 	"payloadURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/custom-source/nhentai/provider.ts",

@@ -7,7 +7,6 @@ class Provider implements CustomSource {
 	BASE_URI = "https://nhentai.net/api/v2";
 	CACHE_KEY = "2f95b63e-85f3-4e8a-8687-a3f27ee09f73";
 	api_key = "{{api-key}}";
-	language = "{{language}}";
 
 	getSettings(): Settings {
 		return {
@@ -86,15 +85,15 @@ class Provider implements CustomSource {
 			// description: "";
 			// genres: [];
 			title: {
-				userPreferred: entry.english_title,
-				english: entry.english_title,
-				romaji: `#${entry.id.toString()}`,
+				userPreferred: `${entry.english_title} (#${entry.id})`,
+				english: `${entry.english_title} (#${entry.id})`,
+				romaji: `#${entry.id}`,
 				native: entry.japanese_title ?? undefined,
 			},
 			coverImage: {
-				extraLarge: `https://t1.nhentai.net/${entry.thumbnail}`,
-				large: `https://t1.nhentai.net/${entry.thumbnail}`,
-				medium: `https://t1.nhentai.net/${entry.thumbnail}`,
+				extraLarge: `https://t.nhentai.net/${entry.thumbnail}`,
+				large: `https://t.nhentai.net/${entry.thumbnail}`,
+				medium: `https://t.nhentai.net/${entry.thumbnail}`,
 				color: "",
 			},
 		}));
