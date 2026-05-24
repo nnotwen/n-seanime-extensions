@@ -17,7 +17,7 @@ class Provider implements CustomSource {
 
 	private getHeaders() {
 		return {
-			Authorization: `Key ${this.api_key}`,
+			...(!this.api_key.length ? { Authorization: `Key ${this.api_key}` } : {}),
 			"User-Agent": "nHentai for Seanime/v1.0.0 (github.com/nnotwen/n-seanime-extensions)",
 			"Content-Type": "application/json",
 		};
