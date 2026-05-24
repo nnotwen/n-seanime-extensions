@@ -7,6 +7,10 @@ class Provider implements CustomSource {
 	BASE_URI = "https://nhentai.net/api/v2";
 	CACHE_KEY = "2f95b63e-85f3-4e8a-8687-a3f27ee09f73";
 	api_key = "{{api-key}}";
+	language = "{{language}}";
+	incl_tags = "{{tags}}";
+	excl_tags = "{{-tags}}";
+	sort = "{{sort}}";
 
 	getSettings(): Settings {
 		return {
@@ -60,9 +64,27 @@ class Provider implements CustomSource {
 	 * @returns
 	 */
 	async listManga(search: string, page: number, perPage: number): Promise<ListResponse<$app.AL_BaseManga>> {
-		const endpoint = search.trim().length
-			? `search?query=${encodeURIComponent(search)}&sort=date&page=${page}`
+		const language = this.language.length ? `language:"${this.language}" ` : "";
+		const incl_tags = this.incl_tags
+			.split(",")
+			.map((t) => t.trim())
+			.filter((t) => t.length > 0)
+			.map((t) => `tag:"${t}"`)
+			.join(" ");
+		const excl_tags = this.excl_tags
+			.split(",")
+			.map((t) => t.trim())
+			.filter((t) => t.length > 0)
+			.map((t) => `-tag:"${t}"`)
+			.join(" ");
+
+		const query = [search, language, incl_tags, excl_tags].filter((q) => q.length > 0).join(" ");
+		const endpoint = query.trim().length
+			? `search?query=${encodeURIComponent(query)}&sort=${this.sort || "date"}&page=${page}`
 			: `galleries?page=${page}&per_page=${perPage}`;
+
+		console.log(`${this.BASE_URI}/${endpoint}`);
+
 		const res = await fetch(`${this.BASE_URI}/${endpoint}`, { headers: this.getHeaders() });
 
 		if (!res.ok) throw new Error(res.statusText);

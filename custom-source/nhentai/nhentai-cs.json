@@ -1,7 +1,7 @@
 {
 	"id": "nhentai-cs",
 	"name": "nhentai",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/custom-source/nhentai/nhentai-cs.json",
 	"language": "typescript",
 	"type": "custom-source",
@@ -14,13 +14,59 @@
 	"payloadURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/custom-source/nhentai/provider.ts",
 	"userConfig": {
 		"requiresConfig": false,
-		"version": 1,
+		"version": 2,
 		"fields": [
 			{
 				"name": "api-key",
 				"label": "API KEY",
 				"type": "text",
 				"default": ""
+			},
+			{
+				"name": "language",
+				"label": "Default language",
+				"type": "text",
+				"default": ""
+			},
+			{
+				"name": "tags",
+				"label": "Included tags (separated by comma)",
+				"type": "text",
+				"default": ""
+			},
+			{
+				"name": "-tags",
+				"label": "Excluded tags (separated by comma)",
+				"type": "text",
+				"default": ""
+			},
+			{
+				"name": "sort",
+				"label": "Sort by",
+				"type": "select",
+				"default": "date",
+				"options": [
+					{
+						"label": "Date uploaded",
+						"value": "date"
+					},
+					{
+						"label": "Popularity (All time)",
+						"value": "popular"
+					},
+					{
+						"label": "Popularity (Today)",
+						"value": "popular-today"
+					},
+					{
+						"label": "Popularity (This week)",
+						"value": "popular-week"
+					},
+					{
+						"label": "Popularity (This month)",
+						"value": "popular-month"
+					}
+				]
 			}
 		]
 	}
