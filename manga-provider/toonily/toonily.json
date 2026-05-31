@@ -7,7 +7,7 @@
 	"type": "manga-provider",
 	"description": "Manga provider for toonily.com.",
 	"author": "nnotwen",
-	"icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/manga-provider/toonily/icon.ico",
+	"icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/manga-provider/toonily/icon.png",
 	"website": "",
 	"lang": "multi",
 	"payloadURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/manga-provider/toonily/provider.ts"
