@@ -8,6 +8,7 @@ package-lock.json
 
 
 # ────────────── Development / environment files ──────────────
+*-dev
 *-dev.json
 *-dev.ts
 _*

@@ -83,8 +83,6 @@ class Provider implements CustomSource {
 			? `search?query=${encodeURIComponent(query)}&sort=${this.sort || "date"}&page=${page}`
 			: `galleries?page=${page}&per_page=${perPage}`;
 
-		console.log(`${this.BASE_URI}/${endpoint}`);
-
 		const res = await fetch(`${this.BASE_URI}/${endpoint}`, { headers: this.getHeaders() });
 
 		if (!res.ok) throw new Error(res.statusText);
