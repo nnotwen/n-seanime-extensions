@@ -121,6 +121,6 @@ class Provider implements CustomSource {
 		const prevcache = Object.entries($store.getOrSet<Record<number, $app.AL_BaseManga>>(this.CACHE_KEY, () => ({})));
 		$store.set(this.CACHE_KEY, Object.fromEntries([...prevcache, ...media.map((m) => [m.id, m])]));
 
-		return { media, total: media.length, page, totalPages: Math.ceil(data.total / (search.trim().length ? 25 : perPage)) };
+		return { media, total: media.length, page, totalPages: Math.ceil(data.total / data.per_page) };
 	}
 }
