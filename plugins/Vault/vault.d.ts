@@ -1,4 +1,9 @@
-/// <reference path="./app.d.ts" />
+/// <reference path="../../typings/app.d.ts" />
+
+declare namespace $vault {
+	type ShelfSort = "nameasc" | "namedesc" | "createasc" | "createdesc" | "updateasc" | "updatedesc";
+	type EntrySort = "nameasc" | "namedesc" | "idasc" | "iddesc" | "addedasc" | "addeddesc";
+}
 
 interface VaultItem {
 	name: string;
