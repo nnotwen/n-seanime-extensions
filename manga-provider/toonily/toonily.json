@@ -5,10 +5,10 @@
 	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/manga-provider/toonily/toonily.json",
 	"language": "typescript",
 	"type": "manga-provider",
-	"description": "Manga provider for toonily.com.",
+	"description": "Manga (Manhwa only) provider for toonily.com.",
 	"author": "nnotwen",
 	"icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/manga-provider/toonily/icon.png",
-	"website": "",
-	"lang": "multi",
+	"website": "https://toonily.com",
+	"lang": "en",
 	"payloadURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/manga-provider/toonily/provider.ts"
 }
