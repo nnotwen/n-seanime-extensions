@@ -10,5 +10,5 @@
 	"icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/manga-provider/toonily/icon.ico",
 	"website": "",
 	"lang": "multi",
-	"payloadURI": "C:/Users/wenbo/Dev/seanime-extensions/manga-provider/toonily/provider.ts"
+	"payloadURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/manga-provider/toonily/provider.ts"
 }
