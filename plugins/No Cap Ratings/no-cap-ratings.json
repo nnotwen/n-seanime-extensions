@@ -7,7 +7,7 @@
 	"type": "plugin",
 	"description": "View your ratings in your own tier",
 	"author": "nnotwen",
-	"icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/No%20Cap%20Ratings/jpg.png",
+	"icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/No%20Cap%20Ratings/icon.jpg",
 	"website": "https://github.com/nnotwen/n-seanime-extensions",
 	"lang": "en",
 	"payload": "",
