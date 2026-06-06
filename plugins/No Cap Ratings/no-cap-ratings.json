@@ -1,0 +1,93 @@
+{
+	"id": "no-cap-ratings",
+	"name": "No Cap Ratings",
+	"version": "1.0.0",
+	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/No%20Cap%20Ratings/no-cap-ratings.json",
+	"language": "typescript",
+	"type": "plugin",
+	"description": "View your ratings in your own tier",
+	"author": "nnotwen",
+	"icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/No%20Cap%20Ratings/jpg.png",
+	"website": "https://github.com/nnotwen/n-seanime-extensions",
+	"lang": "en",
+	"payload": "",
+	"payloadURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/No%20Cap%20Ratings/provider.ts",
+	"plugin": {
+		"version": "1",
+		"permissions": {
+			"scopes": []
+		}
+	},
+	"userConfig": {
+		"requiresConfig": true,
+		"version": 1,
+		"fields": [
+			{
+				"name": "format",
+				"label": "Format",
+				"type": "text",
+				"default": "{{SCORE}} - {{RATE}}"
+			},
+			{
+				"name": "rating-10",
+				"label": "10 Stars",
+				"type": "text",
+				"default": "Peak"
+			},
+			{
+				"name": "rating-9",
+				"label": "9 Stars",
+				"type": "text",
+				"default": "Amazing"
+			},
+			{
+				"name": "rating-8",
+				"label": "8 Stars",
+				"type": "text",
+				"default": "Great"
+			},
+			{
+				"name": "rating-7",
+				"label": "7 Stars",
+				"type": "text",
+				"default": "Alright"
+			},
+			{
+				"name": "rating-6",
+				"label": "6 Stars",
+				"type": "text",
+				"default": "Mid"
+			},
+			{
+				"name": "rating-5",
+				"label": "5 Stars",
+				"type": "text",
+				"default": "Okay"
+			},
+			{
+				"name": "rating-4",
+				"label": "4 Stars",
+				"type": "text",
+				"default": "Meh"
+			},
+			{
+				"name": "rating-3",
+				"label": "3 Stars",
+				"type": "text",
+				"default": "Ass"
+			},
+			{
+				"name": "rating-2",
+				"label": "2 Stars",
+				"type": "text",
+				"default": "Dogwater"
+			},
+			{
+				"name": "rating-1",
+				"label": "1 Star",
+				"type": "text",
+				"default": "Trash 💀"
+			}
+		]
+	}
+}
