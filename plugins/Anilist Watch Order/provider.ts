@@ -322,7 +322,7 @@ function init() {
 		}
 
 		async function fetchMediaBulk(ids: number[]): Promise<MediaQueryResponse[]> {
-			console.log("[Ext<AnilistWatchOrder>]: (log) fetchMediaBulk called for ", ids);
+			$debug.log("fetchMediaBulk called for ", ids);
 			// prettier-ignore
 			const QUERY = "query ($ids: [Int]) { Page { media(id_in: $ids, type: ANIME) { id title { userPreferred } startDate { year } type format status relations { edges { relationType node { id title { userPreferred } startDate { year } type format status relations { edges { relationType node { id title { userPreferred } startDate { year } type format status } } } } } } } } }"
 			const res = await fetch("https://graphql.anilist.co", {
@@ -490,7 +490,7 @@ function init() {
 
 		async function walkRelations(media: $app.AL_BaseAnime) {
 			if (fetching.get()) {
-				console.log("[Ext<AnilistWatchOrder>]: (log) Avoiding parallel call");
+				$debug.log("Avoiding parallel call");
 				return;
 			}
 
@@ -503,7 +503,7 @@ function init() {
 			const cacheEntry = cache.find((e) => e.family.includes(media.id));
 
 			if (cacheEntry) {
-				console.log("[Ext<AnilistWatchOrder>]: (log) Cache hit for media.id:", media.id);
+				$debug.log("Cache hit for media.id:", media.id);
 				graphData.set({
 					nodes: formatWacthed(cacheEntry.nodes),
 					edges: cacheEntry.edges,
@@ -533,7 +533,7 @@ function init() {
 					button.setStyle(buttonStyle);
 					ctx.toast.error(`An error occured while performing a recursive operation: ${list}`);
 					fetching.set(false);
-					return console.error(`[EXT<AnilistWatchOrder>]: (err) ${list}`);
+					return $debug.error(list);
 				}
 
 				queued.set([]);
@@ -554,7 +554,7 @@ function init() {
 
 			// Diagnostics (Monitor API Health)
 			const elapsed = ((Date.now() - $store.get("now")) / 1000).toFixed(2);
-			console.log(`Performed ${calls.get()} API calls in ${elapsed} seconds!`);
+			$debug.log(`Performed ${calls.get()} API calls in ${elapsed} seconds!`);
 
 			// Get final data
 			const finalData = graphData.get();
@@ -630,11 +630,11 @@ function init() {
 		});
 
 		ctx.dom.onReady(() => {
-			console.log(ctx.dom.viewport.getSize());
+			$debug.info(ctx.dom.viewport.getSize());
 		});
 
 		ctx.dom.viewport.onResize((v) => {
-			console.log("onResize", v);
+			$debug.info("onResize", v);
 		});
 
 		button.onClick(handleButtonPress);
