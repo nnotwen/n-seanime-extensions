@@ -155,6 +155,7 @@ function init() {
 			removeNonPlanningFromWatchlistOnLiveSync: ctx.fieldRef<boolean>(
 				$storage.get("trakt:options-removeNonPlanningFromWatchlistOnLiveSync")?.valueOf() ?? false,
 			),
+			manageListMediaType: ctx.fieldRef("Anime"),
 			suppressNotificationBadge: ctx.fieldRef<boolean>($storage.get("trakt:options-suppressnotificationbadge")?.valueOf() ?? false),
 			manageListJobtype: ctx.fieldRef<ManageListJobType>(ManageListJobType.Import),
 			manageListSyncType: ctx.fieldRef<ManageListSyncType>(ManageListSyncType.Post),
@@ -1352,7 +1353,7 @@ function init() {
 										tabs.select({
 											heading: "Media Type",
 											description: "Choose which type of media to sync",
-											fieldRef: ctx.fieldRef("Anime"),
+											fieldRef: fieldRefs.manageListMediaType,
 											disabled: state.syncing.get() || state.cancellingSync.get(),
 											options: [
 												{
