@@ -544,7 +544,7 @@ function init() {
 				state: ctx.state<$simkl.ApplicationPlaybackState | null>(null),
 				playing: ctx.state<boolean>(false),
 				async scrobble(action: "start" | "pause" | "stop", body: $simkl.ScrobbleRequestBody) {
-					return await application.fetch<$traktsync.ScrobbleResponseBody>(`/scrobble/${action}`, {
+					return await application.fetch(`/scrobble/${action}`, {
 						method: "POST",
 						headers: application.withAuthHeaders(),
 						body: JSON.stringify(body),
@@ -1328,6 +1328,33 @@ function init() {
 					progress: event.status.completionPercentage * 100,
 				});
 			}
+		});
+
+		// video-resumed always fires on playback start
+		ctx.videoCore.addEventListener("video-resumed", async (event) => {
+			application.playback.playing.set(true);
+			const ps = ctx.videoCore.getPlaybackState();
+			if (!ps) return log.sendError("videocore-video-resumed emitted but playback state was undefined");
+
+			const playbackState = {
+				anilistId: ps.playbackInfo.media?.id!,
+				progress: (event.currentTime / event.duration) * 100,
+				paused: false,
+				title: ps.playbackInfo.media?.title?.userPreferred!,
+				episode: ps.playbackInfo.episode?.episodeNumber!,
+				coverImage: ps.playbackInfo.media?.coverImage?.large!,
+			};
+
+			application.playback.state.set(playbackState);
+		});
+
+		// video-ended fires when playback reaches eof
+		ctx.videoCore.addEventListener("video-completed", async (event) => {
+			application.playback.playing.set(false);
+		});
+
+		ctx.videoCore.addEventListener("video-terminated", async (event) => {
+			application.playback.playing.set(false);
 		});
 
 		function $_wait(ms: number): Promise<void> {

@@ -1,3 +1,6 @@
+/// <reference path="../../typings/app.d.ts" />
+/// <reference path="../../typings/plugin.d.ts" />
+
 declare namespace $simkl {
 	interface AccessTokenExchangeCodeResponse {
 		access_token: string;
