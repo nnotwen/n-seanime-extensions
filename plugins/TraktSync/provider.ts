@@ -1623,7 +1623,7 @@ function init() {
 					if (state)
 						application.playback.state.set({
 							...state,
-							progress: state.progress + (3_000 / event.duration) * 100,
+							progress: state.progress + (3 / event.duration) * 100,
 						});
 				}, 3_000),
 			);
