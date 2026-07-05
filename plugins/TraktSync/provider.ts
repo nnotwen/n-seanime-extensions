@@ -768,6 +768,7 @@ function init() {
 				state: ctx.state<$traktsync.ApplicationPlaybackState | null>(null),
 				playing: ctx.state<boolean>(false),
 				currentIntervalCancelFunction: ctx.state<Function>(() => 0),
+				videoCoreCompletionPercentageCancelFunction: ctx.state<Function>(() => 0),
 				async scrobble(action: "start" | "pause" | "stop", payload: $traktsync.ScrobbleRequestBody) {
 					const res = await application.fetch(`/scrobble/${action}`, {
 						method: "POST",
@@ -1527,11 +1528,13 @@ function init() {
 				if (!state) {
 					log.sendWarning("scrobbler > start signal received but playback state was null.");
 				} else {
-					log.send(`scrobbler > scrobbling ${state.title} type="${state.type}" episode="${state.episode ?? "N/A"}" season=${state.season ?? "N/A"}`);
+					log.send(
+						`scrobbler > scrobbling ${state.title} type="${state.type}" episode="${state.episode ?? "N/A"}" season=${state.season ?? "N/A"} poll=30.00s`,
+					);
 				}
 
 				application.playback.currentIntervalCancelFunction.set(
-					// Polling function for the scrobbler / executes every 10 seconds
+					// Polling function for the scrobbler / executes every 30 seconds
 					() =>
 						ctx.setInterval(() => {
 							const state = application.playback.state.get();
@@ -1551,7 +1554,7 @@ function init() {
 								.scrobble(action, payload)
 								.then(() => log.sendSuccess("scrobbler > request accepted"))
 								.catch((err) => log.sendError(`scrobbler > ${err.message}`));
-						}, 10_000),
+						}, 30_000),
 				);
 			}
 		}, [application.playback.playing]);
@@ -1593,7 +1596,6 @@ function init() {
 
 		// video-resumed always fires on playback start
 		ctx.videoCore.addEventListener("video-resumed", async (event) => {
-			application.playback.playing.set(true);
 			const ps = ctx.videoCore.getPlaybackState();
 			if (!ps) return log.sendError("videocore-video-resumed emitted but playback state was undefined");
 
@@ -1612,15 +1614,30 @@ function init() {
 				coverImage: ps.playbackInfo.media?.coverImage?.large!,
 				...(traktIds.season && { season: traktIds.season }),
 			});
+
+			application.playback.playing.set(true);
+
+			application.playback.videoCoreCompletionPercentageCancelFunction.set(() =>
+				ctx.setInterval(() => {
+					const state = application.playback.state.get();
+					if (state)
+						application.playback.state.set({
+							...state,
+							progress: state.progress + (3_000 / event.duration) * 100,
+						});
+				}, 3_000),
+			);
 		});
 
 		// video-ended fires when playback reaches eof
 		ctx.videoCore.addEventListener("video-completed", async (event) => {
 			application.playback.playing.set(false);
+			application.playback.videoCoreCompletionPercentageCancelFunction.get()();
 		});
 
 		ctx.videoCore.addEventListener("video-terminated", async (event) => {
 			application.playback.playing.set(false);
+			application.playback.videoCoreCompletionPercentageCancelFunction.get()();
 		});
 
 		function $_wait(ms: number): Promise<void> {
