@@ -206,5 +206,38 @@
 			"mobile": ""
 		},
 		"link": "https://discord.com/channels/1224767201551192224/1446383540823658628"
+	},
+	{
+		"name": "Centered Toast",
+		"author": "Faddix",
+		"uuid": "bbbddef8-da7c-4b6f-b7a6-14d6c47c4f74",
+		"enabled": true,
+		"style": {
+			"desktop": "ol.group.toaster {\n    place-self: center;\n    --offset-right: unset !important;\n}",
+			"mobile": ""
+		},
+		"link": "https://discord.com/channels/1224767201551192224/1446383540823658628"
+	},
+	{
+		"name": "Corner Fill Buttons",
+		"author": "Faddix",
+		"uuid": "bc17b263-8f60-4dee-8511-ec654056e8a6",
+		"enabled": true,
+		"style": {
+			"desktop": "html, body {\n  scrollbar-width: none !important;\n}\n\n.__electron-window-title-bar > div:last-child {\n  margin-right: 0 !important;\n  gap: 0 !important;\n}\n\n.__electron-window-title-bar > div:last-child > button {\n  width: 46px !important;\n  min-width: 46px !important;\n  height: 40px !important;\n  border-radius: 0 !important;\n  padding: 0 !important;\n  margin: 0 !important;\n}",
+			"mobile": ""
+		},
+		"link": "https://discord.com/channels/1224767201551192224/1446383540823658628"
+	},
+	{
+		"name": "True Black for OLED",
+		"author": "Kaktus",
+		"uuid": "175ceebf-30ee-4a3e-bcbe-5b258ba785ad",
+		"enabled": true,
+		"style": {
+			"desktop": "html, body, #root {\n    background-color: #000 !important;\n}\nmain,\n[class*=\"layout\"],\n[class*=\"page-content\"],\n[class*=\"main-content\"] {\n    background-color: #000 !important;\n}",
+			"mobile": ""
+		},
+		"link": "https://discord.com/channels/1224767201551192224/1446383540823658628"
 	}
 ]
