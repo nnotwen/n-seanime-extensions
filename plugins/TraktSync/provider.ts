@@ -1640,6 +1640,10 @@ function init() {
 			application.playback.videoCoreCompletionPercentageCancelFunction.get()();
 		});
 
+		ctx.videoCore.addEventListener("video-paused", async (event) => {
+			application.playback.videoCoreCompletionPercentageCancelFunction.get()();
+		});
+
 		function $_wait(ms: number): Promise<void> {
 			return new Promise((resolve) => ctx.setTimeout(resolve, ms));
 		}
