@@ -1591,6 +1591,38 @@ function init() {
 			}
 		});
 
+		// video-resumed always fires on playback start
+		ctx.videoCore.addEventListener("video-resumed", async (event) => {
+			application.playback.playing.set(true);
+			const ps = ctx.videoCore.getPlaybackState();
+			if (!ps) return log.sendError("videocore-video-resumed emitted but playback state was undefined");
+
+			application.playback.fetchingTraktId.set(true);
+			const traktIds = await application.list.getTraktId(ps.playbackInfo.media?.id!).catch((e) => e as Error);
+			application.playback.fetchingTraktId.set(false);
+			if (traktIds instanceof Error) return log.sendError(`scrobbler > mapping error for anilist/${ps.playbackInfo.media?.id}: ${traktIds.message}`);
+
+			application.playback.state.set({
+				traktId: traktIds.id ?? null,
+				type: traktIds.type === "movies" ? "movie" : "show",
+				progress: (event.currentTime / event.duration) * 100,
+				paused: false,
+				title: ps.playbackInfo.media?.title?.userPreferred!,
+				episode: ps.playbackInfo.episode?.episodeNumber!,
+				coverImage: ps.playbackInfo.media?.coverImage?.large!,
+				...(traktIds.season && { season: traktIds.season }),
+			});
+		});
+
+		// video-ended fires when playback reaches eof
+		ctx.videoCore.addEventListener("video-completed", async (event) => {
+			application.playback.playing.set(false);
+		});
+
+		ctx.videoCore.addEventListener("video-terminated", async (event) => {
+			application.playback.playing.set(false);
+		});
+
 		function $_wait(ms: number): Promise<void> {
 			return new Promise((resolve) => ctx.setTimeout(resolve, ms));
 		}
