@@ -150,12 +150,12 @@ function init() {
 
 		const fieldRefs = {
 			authCode: ctx.fieldRef<string>(""),
-			disableSyncing: ctx.fieldRef<boolean>($storage.get("simkl.disableSyncing") ?? false),
+			disableSyncing: ctx.fieldRef<boolean>(false),
 			manageListJobType: ctx.fieldRef<ManageListJobType>(ManageListJobType.Import),
 			manageListSyncType: ctx.fieldRef<ManageListSyncType>(ManageListSyncType.Post),
 			manageListMediaType: ctx.fieldRef("Anime"),
-			suppressNotificationBadge: ctx.fieldRef<boolean>($storage.get("simkl:options-suppressnotificationbadge")?.valueOf() ?? false),
-			skipAdult: ctx.fieldRef<boolean>($storage.get("simkl:options-skipAdult")?.valueOf() ?? false),
+			suppressNotificationBadge: ctx.fieldRef<boolean>($storage.get("simklsync:options-suppressnotificationbadge")?.valueOf() ?? false),
+			skipAdult: ctx.fieldRef<boolean>($storage.get("simklsync:options-skipAdult")?.valueOf() ?? false),
 		};
 
 		const state = {

@@ -150,13 +150,13 @@ function init() {
 
 		const fieldRefs = {
 			traktAuthCode: ctx.fieldRef<string>(""),
-			disableSyncing: ctx.fieldRef<boolean>($storage.get("trakt:options-disableSync")?.valueOf() ?? false),
-			skipAdult: ctx.fieldRef<boolean>($storage.get("trakt:options-skipAdult")?.valueOf() ?? false),
+			disableSyncing: ctx.fieldRef<boolean>(false),
+			skipAdult: ctx.fieldRef<boolean>($storage.get("traktsync:options-skipAdult")?.valueOf() ?? false),
 			removeNonPlanningFromWatchlistOnLiveSync: ctx.fieldRef<boolean>(
 				$storage.get("trakt:options-removeNonPlanningFromWatchlistOnLiveSync")?.valueOf() ?? false,
 			),
 			manageListMediaType: ctx.fieldRef("Anime"),
-			suppressNotificationBadge: ctx.fieldRef<boolean>($storage.get("trakt:options-suppressnotificationbadge")?.valueOf() ?? false),
+			suppressNotificationBadge: ctx.fieldRef<boolean>($storage.get("traktsync:options-suppressnotificationbadge")?.valueOf() ?? false),
 			manageListJobtype: ctx.fieldRef<ManageListJobType>(ManageListJobType.Import),
 			manageListSyncType: ctx.fieldRef<ManageListSyncType>(ManageListSyncType.Post),
 		};
