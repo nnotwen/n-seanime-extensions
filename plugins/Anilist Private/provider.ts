@@ -98,6 +98,10 @@ function init() {
 			);
 		}
 
+		function isCustomSource(mediaId?: number) {
+			return (mediaId ?? 0) >= 2 ** 31;
+		}
+
 		const animeButton = ctx.action.newAnimePageButton({ label: "\u200b", intent: "gray-subtle", style: btnIconStyles });
 		const mangaButton = ctx.action.newMangaPageButton({ label: "\u200b", intent: "gray-subtle", style: btnIconStyles });
 
@@ -127,6 +131,7 @@ function init() {
 			const updating = isUpdating.get();
 			const button = mediaType === "ANIME" ? animeButton : mangaButton;
 
+			button[isCustomSource(mediaId) ? "unmount" : "mount"]();
 			button.setStyle({ ...btnIconStyles, ...(updating ? { backgroundImage: "" } : {}) });
 			button.setLoading(updating);
 			button.setIntent(Private.has(mediaId) ? "alert" : "gray-subtle");
