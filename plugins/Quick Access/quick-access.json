@@ -1,7 +1,7 @@
 {
 	"id": "quick-access",
 	"name": "Quick Access",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Quick%20Access/quick-access.json",
 	"language": "typescript",
 	"type": "plugin",

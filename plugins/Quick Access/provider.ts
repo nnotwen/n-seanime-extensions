@@ -164,7 +164,9 @@ function init() {
 
 		async function getMapping(id: string) {
 			const res = await ctx.fetch("https://animeapi.my.id/anilist/" + id);
-			if (!res.ok) throw new Error(res.statusText);
+			if (!res.ok) {
+				throw new Error(res.statusText);
+			}
 
 			const data: $quickaccess.MappingData = res.json();
 			$store.set(`md:${id}`, data);
@@ -175,6 +177,8 @@ function init() {
 		ctx.dom.observe(
 			"[data-anime-entry-page], [data-manga-entry-page]",
 			async (els) => {
+				await ctx.dom.query("[data-quickaccess-key]").then((e) => e.forEach((el) => el.remove()));
+
 				const el = els[0];
 				if (!el) return;
 
@@ -193,30 +197,30 @@ function init() {
 					([A], [B]) =>
 						-((priority.includes(A) ? priority.indexOf(A) : Infinity) - (priority.includes(B) ? priority.indexOf(B) : Infinity) || A.localeCompare(B)),
 				)) {
-					if (!mappingdata || value === false) continue;
-					// tempskip (no icon)
-					if (key === "notify") continue;
+					try {
+						if (!mappingdata || value === false) continue;
+						// tempskip (no icon)
+						if (key === "notify") continue;
 
-					const href = urlBuilders[key as keyof typeof quicklinks](mappingdata) ?? "";
-					const btnKeyId = $(`[data-${data.type?.toLowerCase()}-meta-section-buttons-container] [data-quickaccess-key="${key}"]`).attr("id");
-					const icon = icons.get(key as keyof typeof quicklinks, { raw: true });
+						const href = urlBuilders[key as keyof typeof quicklinks](mappingdata) ?? "";
+						const icon = icons.get(key as keyof typeof quicklinks, { raw: true });
 
-					if (!btnKeyId) {
 						const el = await ctx.dom.createElement("a");
 						el.setAttribute("href", href);
 						el.setAttribute("target", "_blank");
 						el.setAttribute("data-quickaccess-key", key);
-						el.setProperty("className", ["cursor-pointer"]);
 						el.setInnerHTML(/*html*/ `
-                            <button type="button" class="UI-Button_root whitespace-nowrap font-semibold rounded-lg inline-flex items-center transition ease-in text-center justify-center focus-visible:outline-none focus-visible:ring-2 ring-offset-1 ring-offset-[--background] focus-visible:ring-[--ring] disabled:opacity-50 disabled:pointer-events-none shadow-none text-[--gray] border border-transparent bg-transparent hover:underline active:text-gray-700 dark:text-gray-300 dark:active:text-gray-200 UI-IconButton_root p-0 flex-none text-xl h-8 w-8 px-0">
-                                <span class="md:inline-block ${href.length ? "" : "opacity-20 pointer-events-none"}">
+                            <button type="button" class="UI-Button_root whitespace-nowrap font-semibold rounded-lg inline-flex items-center transition ease-in text-center justify-center focus-visible:outline-none focus-visible:ring-2 ring-offset-1 ring-offset-[--background] focus-visible:ring-[--ring] disabled:opacity-50 disabled:pointer-events-none shadow-none text-[--gray] border border-transparent bg-transparent hover:underline active:text-gray-700 dark:text-gray-300 dark:active:text-gray-200 UI-IconButton_root p-0 flex-none text-xl h-8 w-8 px-0"${href.length ? "" : " disabled"}>
+                                <span class="md:inline-block">
                                     <div class="${key === "myanimelist" ? "" : "w-5 h-5"}">${icon}</div>
                                 </span>
                             </button>
                         `);
+
+						if (!href.length) el.setProperty("className", ["cursor-not-allowed pointer-events-none"]);
 						ctx.dom.asElement(btnALId!).after(el);
-					} else {
-						ctx.dom.asElement(btnKeyId).setAttribute("href", href);
+					} catch (error) {
+						$debug.error((error as Error).message);
 					}
 				}
 			},
