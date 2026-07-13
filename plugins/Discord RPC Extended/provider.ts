@@ -8,7 +8,7 @@
 function init() {
 	$shared.define("validate_presence_hook", function () {
 		function validate<T extends $app.AL_MediaType>(
-			_: T,
+			type: T,
 			e: T extends "ANIME" ? $app.DiscordPresenceAnimeActivityRequestedEvent : $app.DiscordPresenceMangaActivityRequestedEvent,
 		) {
 			let defaultPrevented = false;
@@ -45,8 +45,17 @@ function init() {
 				e.smallImage = "https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/AniList_logo.svg/250px-AniList_logo.svg.png";
 			}
 
+			if ($getUserPreference("hide_private") == "true") {
+				const mediaId = "animeActivity" in e ? e.animeActivity?.id : "mangaActivity" in e ? e.mangaActivity?.id : undefined;
+				const isMediaPrivate = ($anilist[type === "ANIME" ? "getAnimeCollection" : "getMangaCollection"](false).MediaListCollection?.lists ?? [])
+					.flatMap((list) => list.entries)
+					.filter((entry) => Boolean(entry?.private?.valueOf()))
+					.some((entry) => entry?.media?.id === mediaId);
+				if (isMediaPrivate) defaultPrevented = true;
+			}
+
 			// Hide Adult Entries
-			if ($getUserPreference("hide_adult")) {
+			if ($getUserPreference("hide_adult") == "true") {
 				if ("animeActivity" in e && $anilist.getAnime(e.animeActivity?.id ?? NaN).isAdult?.valueOf()) {
 					defaultPrevented = true;
 				}
@@ -153,7 +162,7 @@ function init() {
 				if (pathname === "/manga/entry") {
 					const manga = await ctx.manga.getMangaEntry(Number(searchParams.id));
 					state = manga.media?.title?.[t_lang] ?? manga.media?.title?.userPreferred ?? "Manga";
-					if (manga.media?.isAdult?.valueOf() || manga.media?.genres?.some((g) => genres.includes(g.valueOf()))) return;
+					if (manga.media?.isAdult?.valueOf() || manga.media?.genres?.some((g) => genres.includes(g.valueOf().toLowerCase()))) return;
 				}
 
 				// custom status here
