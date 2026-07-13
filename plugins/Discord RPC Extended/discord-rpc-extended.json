@@ -1,0 +1,74 @@
+{
+	"id": "discord-rpc-extended",
+	"name": "Discord RPC Extended",
+	"version": "1.0.0",
+	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Discord%20RPC%20Extended/discord-rpc-extended.json",
+	"language": "typescript",
+	"type": "plugin",
+	"description": "Provide more info for Discord RPC.",
+	"author": "nnotwen",
+	"icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Discord%20RPC%20Extended/icon.png",
+	"website": "https://github.com/nnotwen/n-seanime-extensions",
+	"lang": "en",
+	"payloadURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Discord%20RPC%20Extended/provider.ts",
+	"plugin": {
+		"version": "1",
+		"permissions": {
+			"scopes": ["anilist", "discord", "database"]
+		}
+	},
+	"userConfig": {
+		"requiresConfig": true,
+		"version": 1,
+		"fields": [
+			{
+				"name": "episode_format",
+				"label": "Episode formatting",
+				"type": "text",
+				"default": "Episode {{EP_NUM}}: {{EP_TITLE}}"
+			},
+			{
+				"name": "episode_paused_format",
+				"label": "Episode formatting when media is paused",
+				"type": "text",
+				"default": "Paused Episode {{EP_NUM}}"
+			},
+			{
+				"name": "chapter_format",
+				"label": "Chapter formatting",
+				"type": "text",
+				"default": "Reading Chapter {{CH_NUM}}"
+			},
+			{
+				"name": "disable_media_link",
+				"label": "Disable url/link on Anime/Manga titles.",
+				"type": "switch",
+				"default": "false"
+			},
+			{
+				"name": "disable_rpc_navigation",
+				"label": "Disable RPC when navigating through the app.",
+				"type": "switch",
+				"default": "false"
+			},
+			{
+				"name": "display_profile_on_tooltip",
+				"label": "Display your AniList Profile on the tooltip.",
+				"type": "switch",
+				"default": "true"
+			},
+			{
+				"name": "hide_adult",
+				"label": "Never display adult content.",
+				"type": "switch",
+				"default": "true"
+			},
+			{
+				"name": "hide_genre_in",
+				"label": "Never display media that has one of the following genres. (list of genre, separated by comma)",
+				"type": "text",
+				"default": ""
+			}
+		]
+	}
+}
