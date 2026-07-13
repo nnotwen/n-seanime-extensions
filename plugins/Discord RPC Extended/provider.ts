@@ -24,7 +24,7 @@ function init() {
 			}
 
 			// Hide Media Link
-			if ($getUserPreference("disable_media_link")) {
+			if ($getUserPreference("disable_media_link") == "true") {
 				e.detailsUrl = "";
 			}
 
