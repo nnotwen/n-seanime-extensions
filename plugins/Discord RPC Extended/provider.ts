@@ -13,6 +13,15 @@ function init() {
 		) {
 			let defaultPrevented = false;
 
+			// Title language
+			const t_lang = $getUserPreference("media_title_lang") as "userPreferred" | "english" | "romaji" | "native";
+			if ("animeActivity" in e) {
+				e.details = $anilist.getAnime(e.animeActivity?.id ?? NaN)?.title?.[t_lang] ?? e.details;
+			}
+			if ("mangaActivity" in e) {
+				e.details = $anilist.getManga(e.mangaActivity?.id ?? NaN)?.title?.[t_lang] ?? e.details;
+			}
+
 			// Episode/Chapter formatting
 			if ("animeActivity" in e && e.animeActivity?.episodeTitle)
 				e.state = ($getUserPreference("episode_format") ?? "")
@@ -129,19 +138,21 @@ function init() {
 					?.split(",")
 					.map((g) => g.toLowerCase()) ?? [];
 
+			const t_lang = $getUserPreference("media_title_lang") as "userPreferred" | "english" | "romaji" | "native";
+
 			try {
 				let title = pnames[pathname as $drp.PathNames] ?? "Browsing";
 				let state = snames[pathname as $drp.PathNames] ?? "";
 
 				if (pathname === "/entry") {
 					const anime = await ctx.anime.getAnimeEntry(Number(searchParams.id));
-					state = anime.media?.title?.userPreferred ?? "";
+					state = anime.media?.title?.[t_lang] ?? anime.media?.title?.userPreferred ?? "";
 					if (anime.media?.isAdult?.valueOf() || anime.media?.genres?.some((g) => genres.includes(g.valueOf().toLowerCase()))) return;
 				}
 
 				if (pathname === "/manga/entry") {
 					const manga = await ctx.manga.getMangaEntry(Number(searchParams.id));
-					state = manga.media?.title?.userPreferred ?? "Manga";
+					state = manga.media?.title?.[t_lang] ?? manga.media?.title?.userPreferred ?? "Manga";
 					if (manga.media?.isAdult?.valueOf() || manga.media?.genres?.some((g) => genres.includes(g.valueOf()))) return;
 				}
 
