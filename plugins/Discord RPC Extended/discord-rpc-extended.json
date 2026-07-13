@@ -1,7 +1,7 @@
 {
 	"id": "discord-rpc-extended",
 	"name": "Discord RPC Extended",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Discord%20RPC%20Extended/discord-rpc-extended.json",
 	"language": "typescript",
 	"type": "plugin",

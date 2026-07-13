@@ -38,7 +38,7 @@ function init() {
 			}
 
 			// Displaying profile on tooltip
-			if ($getUserPreference("display_profile_on_tooltip")) {
+			if ($getUserPreference("display_profile_on_tooltip") == "true") {
 				e.smallText = $database.anilist.getUsername();
 				e.smallUrl = `https://anilist.co/user/${e.smallText}`;
 				// Temporary, wait on $database.anilist.getAvatarURL()
@@ -159,7 +159,7 @@ function init() {
 				// custom status here
 
 				// // Displaying profile on tooltip
-				// if ($getUserPreference("display_profile_on_tooltip")) {
+				// if ($getUserPreference("display_profile_on_tooltip") == "true") {
 				// 	e.smallText = $database.anilist.getUsername();
 				// 	e.smallUrl = `https://anilist.co/user/${e.smallText}`;
 				// 	e.smallImage = ""; // wait on $database.anilist.getAvatarURL()
