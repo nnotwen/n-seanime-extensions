@@ -17,6 +17,8 @@ interface FetchOptions {
     body?: any
     /** Whether to bypass cloudflare */
     noCloudflareBypass?: boolean
+    /** Redirect behavior, defaults to follow */
+    redirect?: "follow" | "manual" | "error"
     /** Timeout in seconds, defaults to 35 */
     timeout?: number
 }
@@ -599,6 +601,26 @@ declare interface ChromeBrowser {
      * @param milliseconds - Duration in milliseconds
      */
     sleep(milliseconds: number): Promise<void>;
+
+    /**
+     * Listen to browser-level events
+     * @param callback - Event handler callback
+     */
+    listenBrowser(callback: (event: { method: string, params: any }) => void): void;
+
+    /**
+     * Listen to target-level events
+     * @param callback - Event handler callback
+     */
+    listenTarget(callback: (event: { method: string, params: any }) => void): void;
+
+    /**
+     * Execute an arbitrary CDP command
+     * @param method - CDP method name
+     * @param params - Method parameters
+     * @returns Promise resolving to the command result
+     */
+    executeCDP(method: string, params?: any): Promise<any>;
 
     /**
      * Close the browser instance
