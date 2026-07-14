@@ -42,6 +42,8 @@ function init() {
 			keyboardShortcut: "alt+r",
 		});
 
+		const includeAdultContent = ctx.fieldRef<boolean>(false);
+
 		// Create separate options for anime and manga
 		const animeOptions = {
 			genres: ctx.state<typeof GENRES>([]),
@@ -334,6 +336,7 @@ function init() {
 					],
 					{ className: "items-center" },
 				),
+				tray.switch({ label: "Include adult content", fieldRef: includeAdultContent }),
 				tray.text("You can press Alt+R to open the command palette", { className: "text-sm text-center text-[--muted]" }),
 			]),
 		);
@@ -351,20 +354,24 @@ function init() {
 		]);
 
 		// Create dropdown items for both anime and manga
-		const animeDropdownEntry = ctx.action.newAnimeLibraryDropdownItem({
-			label: "Open Random Anime",
-			style: {
-				backgroundImage: `url(${icons.get("dice")})`,
-				backgroundSize: "1.5rem",
-				backgroundPosition: "0.3rem center",
-				backgroundRepeat: "no-repeat",
-				paddingInlineStart: "2.15rem",
-			},
-		});
+		for (const [type, fn] of [
+			["Anime", "newAnimeLibraryDropdownItem"],
+			["Manga", "newMangaLibraryDropdownItem"],
+		] as const) {
+			const dropdownItem = ctx.action[fn]({
+				label: `Open Random ${type}`,
+				style: {
+					backgroundImage: `url(${icons.get("dice")})`,
+					backgroundSize: "1.5rem",
+					backgroundPosition: "0.3rem center",
+					backgroundRepeat: "no-repeat",
+					paddingInlineStart: "2.15rem",
+				},
+			});
 
-		animeDropdownEntry.mount();
-
-		animeDropdownEntry.onClick(() => navigateRandomMedia("Anime"));
+			dropdownItem.mount();
+			dropdownItem.onClick(() => navigateRandomMedia(type));
+		}
 
 		function getRandomMedia<T extends "Anime" | "Manga">(type: T, options: typeof animeOptions, bypassCache: boolean = false) {
 			const { lists } = $anilist[`get${type}Collection`](bypassCache).MediaListCollection ?? {};
@@ -396,6 +403,10 @@ function init() {
 					if (fr && !to) return sy >= fr;
 					if (to && !fr) return sy <= to;
 					return true;
+				})
+				.filter((e) => {
+					if (includeAdultContent.current) return true;
+					return e.media.isAdult !== true;
 				});
 
 			// Using Fischer-Yates for better-less biased randomness
