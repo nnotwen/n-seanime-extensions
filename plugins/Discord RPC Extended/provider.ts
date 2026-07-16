@@ -109,6 +109,7 @@ function init() {
 		// Never register ui context if not required by the current runtime
 		if ($getUserPreference("disable_rpc_navigation") == "true") return;
 
+		const t_lang = $getUserPreference("media_title_lang") as "userPreferred" | "english" | "romaji" | "native";
 		const pnames: Record<$drp.PathNames, string> = {
 			"/": "On the Homepage",
 			"/custom-sources": "Browsing Custom Source",
@@ -123,6 +124,7 @@ function init() {
 			"/settings": "Checking the Settings",
 			"/sync": "",
 			"/torrent-list": "",
+			"/schedule": "Viewing release schedules",
 		};
 
 		const snames: Record<$drp.PathNames, string> = {
@@ -139,45 +141,49 @@ function init() {
 			"/settings": "",
 			"/sync": "",
 			"/torrent-list": "",
+			"/schedule": "",
 		};
 
+		function isGenreIn(genre: string) {
+			const genres = $getUserPreference("hide_genre_in")?.split(", ") ?? [];
+			return genres.map((g) => g.toLowerCase()).some((g) => genre.toLowerCase() === g);
+		}
+
 		ctx.screen.onNavigate(async ({ pathname, searchParams }) => {
-			const genres =
-				$getUserPreference("hide_genre_in")
-					?.split(",")
-					.map((g) => g.toLowerCase()) ?? [];
-
-			const t_lang = $getUserPreference("media_title_lang") as "userPreferred" | "english" | "romaji" | "native";
-
+			const e: $drp.DiscordRPC_CustomActivity = {
+				details: pnames[pathname as $drp.PathNames] || "Browsing",
+				state: snames[pathname as $drp.PathNames] || "",
+			};
 			try {
-				let title = pnames[pathname as $drp.PathNames] ?? "Browsing";
-				let state = snames[pathname as $drp.PathNames] ?? "";
-
 				if (pathname === "/entry") {
 					const anime = await ctx.anime.getAnimeEntry(Number(searchParams.id));
-					state = anime.media?.title?.[t_lang] ?? anime.media?.title?.userPreferred ?? "";
-					if (anime.media?.isAdult?.valueOf() || anime.media?.genres?.some((g) => genres.includes(g.valueOf().toLowerCase()))) return;
+					e.state = anime.media?.title?.[t_lang] ?? anime.media?.title?.userPreferred ?? "";
+
+					if ($getUserPreference("hide_adult") == "true" && anime.media?.isAdult?.valueOf()) return;
+					if (anime.media?.genres?.some((g) => isGenreIn(g))) return;
 				}
 
 				if (pathname === "/manga/entry") {
 					const manga = await ctx.manga.getMangaEntry(Number(searchParams.id));
-					state = manga.media?.title?.[t_lang] ?? manga.media?.title?.userPreferred ?? "Manga";
-					if (manga.media?.isAdult?.valueOf() || manga.media?.genres?.some((g) => genres.includes(g.valueOf().toLowerCase()))) return;
+					e.state = manga.media?.title?.[t_lang] ?? manga.media?.title?.userPreferred ?? "Manga";
+
+					if ($getUserPreference("hide_adult") == "true" && manga.media?.isAdult?.valueOf()) return;
+					if (manga.media?.genres?.some((g) => isGenreIn(g))) return;
 				}
 
-				// custom status here
+				if ($getUserPreference("display_profile_on_tooltip") == "true") {
+					e.smallImageText = $database.anilist.getUsername();
+					e.smallImageKey = "";
+				}
 
-				// // Displaying profile on tooltip
-				// if ($getUserPreference("display_profile_on_tooltip") == "true") {
-				// 	e.smallText = $database.anilist.getUsername();
-				// 	e.smallUrl = `https://anilist.co/user/${e.smallText}`;
-				// 	e.smallImage = ""; // wait on $database.anilist.getAvatarURL()
-				// }
+				ctx.discord.setCustomActivity(e);
 			} catch (error) {
-				ctx.toast.error((error as Error).message);
+				ctx.toast.error(`Discord RPC Extended: ${(error as Error).message}`);
 			}
 		});
 
+		// Emit onNavigate event to refresh the RPC Status
+		$store.watch("DISCORD_PRESENCE_CLIENT_CLOSED", () => ctx.screen.loadCurrent());
 		ctx.screen.loadCurrent();
 	});
 
@@ -195,7 +201,5 @@ function init() {
 		e.next();
 	});
 
-	$app.onDiscordPresenceClientClosed((e) => {
-		e.next();
-	});
+	$app.onDiscordPresenceClientClosed((e) => $store.set("DISCORD_PRESENCE_CLIENT_CLOSED", undefined));
 }

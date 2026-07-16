@@ -1,3 +1,5 @@
+/// <reference path="../../typings/app.d.ts" />
+
 declare namespace $drp {
 	type PathNames =
 		| "/" // Homepage
@@ -12,5 +14,19 @@ declare namespace $drp {
 		| "/sync" // Offline Page
 		| "/discover" // Discover Page
 		| "/torrent-list" // Torrent Page
-		| "/scan-summaries"; // Scan summaries Page
+		| "/scan-summaries" // Scan summaries Page
+		| "/schedule";
+
+	interface DiscordRPC_CustomActivity {
+		type?: number;
+		details: string;
+		state?: string;
+		largeImageKey?: string;
+		largeImageText?: string;
+		smallImageKey?: string;
+		smallImageText?: string;
+		buttons?: Array<$app.DiscordRPC_Button>;
+		startTimestamp?: number;
+		endTimestamp?: number;
+	}
 }
