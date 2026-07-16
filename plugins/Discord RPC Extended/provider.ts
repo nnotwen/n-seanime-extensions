@@ -41,8 +41,7 @@ function init() {
 			if ($getUserPreference("display_profile_on_tooltip") == "true") {
 				e.smallText = $database.anilist.getUsername();
 				e.smallUrl = `https://anilist.co/user/${e.smallText}`;
-				// Temporary, wait on $database.anilist.getAvatarURL()
-				e.smallImage = "https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/AniList_logo.svg/250px-AniList_logo.svg.png";
+				e.smallImage = $database.anilist.getAvatarUrl();
 			}
 
 			if ($getUserPreference("hide_private") == "true") {
@@ -150,10 +149,19 @@ function init() {
 		}
 
 		ctx.screen.onNavigate(async ({ pathname, searchParams }) => {
-			const e: $drp.DiscordRPC_CustomActivity = {
+			const e: Required<$app.DiscordRPC_CustomActivity> = {
+				type: 3,
 				details: pnames[pathname as $drp.PathNames] || "Browsing",
 				state: snames[pathname as $drp.PathNames] || "",
+				largeImageKey: "",
+				largeImageText: "",
+				smallImageKey: "",
+				smallImageText: "",
+				buttons: [],
+				startTimestamp: NaN,
+				endTimestamp: NaN,
 			};
+
 			try {
 				if (pathname === "/entry") {
 					const anime = await ctx.anime.getAnimeEntry(Number(searchParams.id));
@@ -171,7 +179,7 @@ function init() {
 					if (manga.media?.genres?.some((g) => isGenreIn(g))) return;
 				}
 
-				if ($getUserPreference("display_profile_on_tooltip") == "true") {
+				if ($getUserPreference("display_profile_on_tooltip") == "true" && $getUserPreference("disable_tooltip_on_navigation") != "true") {
 					e.smallImageText = $database.anilist.getUsername();
 					e.smallImageKey = $database.anilist.getAvatarUrl();
 				}

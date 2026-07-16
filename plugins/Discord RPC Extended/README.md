@@ -104,8 +104,21 @@ Choose which title language to display in your Discord status.
 **Type:** Switch  
 **Default:** `true`
 
-**ON:** (Default) Shows your AniList username when hovering over the Discord icon  
+**ON:** (Default) Shows your AniList profile on the tooltip  
 **OFF:** Hides profile info
+
+---
+
+---
+
+### Disable tooltip on navigation
+
+**Field:** `disable_tooltip_on_navigation`  
+**Type:** Switch  
+**Default:** `true`
+
+**ON:** (Default) Hides your AniList profile on the tooltip when only navigating the app  
+**OFF:** Display profile tooltip
 
 ---
 
