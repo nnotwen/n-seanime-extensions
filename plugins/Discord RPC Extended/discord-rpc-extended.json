@@ -1,7 +1,7 @@
 {
 	"id": "discord-rpc-extended",
 	"name": "Discord RPC Extended",
-	"version": "1.0.6",
+	"version": "1.0.7",
 	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Discord%20RPC%20Extended/discord-rpc-extended.json",
 	"language": "typescript",
 	"type": "plugin",
@@ -19,7 +19,7 @@
 	},
 	"userConfig": {
 		"requiresConfig": true,
-		"version": 3,
+		"version": 4,
 		"fields": [
 			{
 				"name": "episode_format",
@@ -66,6 +66,12 @@
 			{
 				"name": "display_profile_on_tooltip",
 				"label": "Display your AniList Profile on the tooltip.",
+				"type": "switch",
+				"default": "true"
+			},
+			{
+				"name": "disable_tooltip_on_navigation",
+				"label": "Disable the tooltip from showing when navigating the app.",
 				"type": "switch",
 				"default": "true"
 			},

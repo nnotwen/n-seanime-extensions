@@ -41,8 +41,7 @@ function init() {
 			if ($getUserPreference("display_profile_on_tooltip") == "true") {
 				e.smallText = $database.anilist.getUsername();
 				e.smallUrl = `https://anilist.co/user/${e.smallText}`;
-				// Temporary, wait on $database.anilist.getAvatarURL()
-				e.smallImage = "https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/AniList_logo.svg/250px-AniList_logo.svg.png";
+				e.smallImage = $database.anilist.getAvatarUrl();
 			}
 
 			if ($getUserPreference("hide_private") == "true") {
@@ -171,7 +170,7 @@ function init() {
 					if (manga.media?.genres?.some((g) => isGenreIn(g))) return;
 				}
 
-				if ($getUserPreference("display_profile_on_tooltip") == "true") {
+				if ($getUserPreference("display_profile_on_tooltip") == "true" && $getUserPreference("disable_tooltip_on_navigation") != "true") {
 					e.smallImageText = $database.anilist.getUsername();
 					e.smallImageKey = $database.anilist.getAvatarUrl();
 				}
