@@ -173,7 +173,7 @@ function init() {
 
 				if ($getUserPreference("display_profile_on_tooltip") == "true") {
 					e.smallImageText = $database.anilist.getUsername();
-					e.smallImageKey = "";
+					e.smallImageKey = $database.anilist.getAvatarUrl();
 				}
 
 				ctx.discord.setCustomActivity(e);
