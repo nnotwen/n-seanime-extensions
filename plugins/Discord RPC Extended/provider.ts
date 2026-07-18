@@ -88,6 +88,8 @@ function init() {
 						.replace(/{{EP_NUM}}/g, e.animeActivity.episodeNumber.toString())
 						.replace(/{{EP_TITLE}}/g, (e.animeActivity.episodeTitle ?? "").toString());
 				}
+				e.smallText = "Paused";
+				e.smallImage = "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Discord%20RPC%20Extended/pause-icon.png";
 			}
 
 			const { next, preventDefault, ...newVal } = e;
