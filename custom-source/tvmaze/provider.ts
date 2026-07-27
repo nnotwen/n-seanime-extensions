@@ -42,9 +42,9 @@ class Provider implements CustomSource {
 					name: {
 						full: c.character.name,
 					},
-					siteUrl: c.character._links.self.href,
+					siteUrl: c.character.url,
 					image: {
-						large: c.character.image?.original ?? c.character.image?.medium,
+						large: c.character.image?.original ?? c.character.image?.medium ?? "https://s4.anilist.co/file/anilistcdn/character/large/default.jpg",
 					},
 				},
 				role: c.voice ? "MAIN" : "SUPPORTING",
@@ -84,7 +84,8 @@ class Provider implements CustomSource {
 			},
 		]);
 
-		return { episodeCount: 1, specialCount: 0, episodes: Object.fromEntries(episodeEntries) };
+		const isFinished = episodeData[0].show.status === "Ended";
+		return { episodeCount: isFinished ? episodeEntries.length : 1, specialCount: 0, episodes: Object.fromEntries(episodeEntries) };
 	}
 
 	async getAnimeWithRelations(id: number): Promise<$app.AL_CompleteAnime> {
