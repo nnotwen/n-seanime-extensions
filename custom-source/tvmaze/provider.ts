@@ -84,7 +84,8 @@ class Provider implements CustomSource {
 			},
 		]);
 
-		const isFinished = episodeData[0].show.status === "Ended";
+		const show = $store.get<Record<number, $app.AL_BaseAnime>>(this.CACHE_KEY)[id];
+		const isFinished = show?.status === "FINISHED";
 		return { episodeCount: isFinished ? episodeEntries.length : 1, specialCount: 0, episodes: Object.fromEntries(episodeEntries) };
 	}
 
