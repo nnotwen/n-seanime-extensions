@@ -1215,8 +1215,8 @@ declare namespace $ui {
     } & ComponentProps
 
     type DivComponentFunction = {
-        (props: { items: any[] } & ComponentProps): void
-        (items: any[], props?: ComponentProps): void
+        (props: { items: any[] } & ComponentProps & { onClick?: string}): void
+        (items: any[], props?: ComponentProps & { onClick?: string}): void
     }
     type CSSComponentFunction = {
         (props: { css: string }): void
