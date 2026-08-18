@@ -582,6 +582,10 @@ function init() {
 			fetching.set(false);
 		}
 
+		function isCustomSource(mediaId?: number) {
+			return (mediaId ?? 0) >= 2 ** 31;
+		}
+
 		async function handleButtonPress(e: { media: $app.AL_BaseAnime }) {
 			currentMediaId.set(e.media.id);
 			isOpen.set(true);
@@ -612,6 +616,15 @@ function init() {
 				const previousMediaId = currentMediaId.get();
 
 				if (newMediaId && newMediaId !== previousMediaId) {
+					if (isCustomSource(newMediaId || 0)) {
+						isOpen.set(false);
+						currentMediaId.set(null);
+						button.unmount();
+						return;
+					} else {
+						button.mount();
+					}
+
 					currentMediaId.set(newMediaId);
 
 					// devnote: won't happen
