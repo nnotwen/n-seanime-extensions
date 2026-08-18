@@ -1229,6 +1229,10 @@ function init() {
 			return `${month}/${day}/${year} ${hours}:${minutes} ${ampm}`;
 		}
 
+		function isCustomSource(mediaId?: number) {
+			return (mediaId ?? 0) >= 2 ** 31;
+		}
+
 		const animePageButton = ctx.action.newAnimePageButton({ label: "\u200b" });
 		const mangaPageButton = ctx.action.newMangaPageButton({ label: "\u200b" });
 		for (const button of [animePageButton, mangaPageButton]) {
@@ -1257,6 +1261,14 @@ function init() {
 			style.setText(
 				".vault-shelf-entry-card-background, .vault-shelf-entry-card-media-background { transition: transform ease-in-out 0.2s;  } .vault-shelf-entry-card-container:hover .vault-shelf-entry-card-background { transform: scale(1.1); mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, transparent 100%)!important } .vault-shelf-entry-card-media-container:hover .vault-shelf-entry-card-media-background { transform: scale(1.1); }",
 			);
+		});
+
+		ctx.screen.onNavigate(({ pathname, searchParams }) => {
+			if (pathname === "/entry" || pathname === "/entry/manga") {
+				const mediaId = Number(searchParams.id);
+				if (!mediaId) return;
+				(pathname === "/entry" ? animePageButton : mangaPageButton)[isCustomSource(mediaId) ? "unmount" : "mount"]();
+			}
 		});
 
 		tray.render(() => tabs.get());
