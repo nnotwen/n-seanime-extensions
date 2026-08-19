@@ -12,29 +12,32 @@ function init() {
 				?.split(",")
 				.map((s) => s.trim()) ?? [];
 
-		const quicklinks = {
-			anidb: $getUserPreference("anidb") === "true",
-			ann: $getUserPreference("ann") === "true",
-			animeplanet: $getUserPreference("animeplanet") === "true",
-			anisearch: $getUserPreference("anisearch") === "true",
-			annict: $getUserPreference("annict") === "true",
-			hikka: $getUserPreference("hikka") === "true",
-			imdb: $getUserPreference("imdb") === "true",
-			kaize: $getUserPreference("kaize") === "true",
-			kitsu: $getUserPreference("kitsu") === "true",
-			letterboxd: $getUserPreference("letterboxd") === "true",
-			livechart: $getUserPreference("livechart") === "true",
-			myanimelist: $getUserPreference("myanimelist") === "true",
-			nautiljon: $getUserPreference("nautiljon") === "true",
-			notify: $getUserPreference("notify") === "true",
-			otakotaku: $getUserPreference("otakotaku") === "true",
-			shikimori: $getUserPreference("shikimori") === "true",
-			shoboi: $getUserPreference("shoboi") === "true",
-			simkl: $getUserPreference("simkl") === "true",
-			tmdb: $getUserPreference("tmdb") === "true",
-			tvdb: $getUserPreference("tvdb") === "true",
-			trakt: $getUserPreference("trakt") === "true",
-		};
+		const keys = [
+			"anidb",
+			"ann",
+			"animeplanet",
+			"anisearch",
+			"annict",
+			"hikka",
+			"imdb",
+			"kaize",
+			"kitsu",
+			"letterboxd",
+			"livechart",
+			"myanimelist",
+			"nautiljon",
+			"notify",
+			"otakotaku",
+			"shikimori",
+			"shoboi",
+			"simkl",
+			"tmdb",
+			"tvdb",
+			"trakt",
+		] as const;
+
+		const quicklinks = Object.fromEntries(keys.map((key) => [key, $getUserPreference(key) === "true"])) as Record<(typeof keys)[number], boolean>;
+		const quicklinkDomIds = Object.fromEntries(keys.map((key) => [key, ""])) as Record<(typeof keys)[number], string | null>;
 
 		const urlBuilders: Record<keyof typeof quicklinks, (data: $quickaccess.MappingData, type?: "ANIME" | "MANGA") => string | null> = {
 			anidb: (data) => (data.anidb ? `https://www.anidb.net/anime/${data.anidb}` : null),
@@ -177,8 +180,6 @@ function init() {
 		ctx.dom.observe(
 			"[data-anime-entry-page], [data-manga-entry-page]",
 			async (els) => {
-				await ctx.dom.query("[data-quickaccess-key]").then((e) => e.forEach((el) => el.remove()));
-
 				const el = els[0];
 				if (!el) return;
 
@@ -204,6 +205,14 @@ function init() {
 
 						const href = urlBuilders[key as keyof typeof quicklinks](mappingdata) ?? "";
 						const icon = icons.get(key as keyof typeof quicklinks, { raw: true });
+						const elId = quicklinkDomIds[key as keyof typeof quicklinks];
+						const existingElId = $(`#${elId}`).attr("id");
+
+						if (existingElId) {
+							ctx.dom.asElement(existingElId).setAttribute("href", href);
+							ctx.dom.asElement(existingElId).setProperty("className", href.length ? [] : ["cursor-not-allowed pointer-events-none"]);
+							continue;
+						}
 
 						const el = await ctx.dom.createElement("a");
 						el.setAttribute("href", href);
@@ -218,6 +227,7 @@ function init() {
                         `);
 
 						if (!href.length) el.setProperty("className", ["cursor-not-allowed pointer-events-none"]);
+						quicklinkDomIds[key as keyof typeof quicklinks] = (await el.getAttribute("id")) ?? "";
 						ctx.dom.asElement(btnALId!).after(el);
 					} catch (error) {
 						$debug.error((error as Error).message);
