@@ -26,6 +26,7 @@ function init() {
 
 		const order = $getUserPreference("order") as Order;
 		const includeSynonyms = $getUserPreference("synonyms") === "true";
+		let includedSynonymId = "";
 
 		ctx.dom.observe(
 			"[data-anime-entry-page], [data-manga-entry-page]",
@@ -49,13 +50,19 @@ function init() {
 				if (titleIdSub && titles.second) ctx.dom.asElement(titleIdSub).setInnerHTML(titles.second);
 
 				if (includeSynonyms) {
-					const oid = await ctx.dom.query("[data-media-page-header-entry-details-title-container] .synonyms");
-					oid.forEach((e) => e.remove());
+					const existingSynonymId = $(`#${includedSynonymId}`).attr("id");
+					const className = "synonyms text-sm italic text-[--muted] font-semibold line-clamp-2 text-center lg:text-left xl:max-w-[50vw]";
+
+					if (existingSynonymId) {
+						ctx.dom.asElement(existingSynonymId).setText([titles.third, ...(data.synonyms ?? [])].filter(Boolean).join(", "));
+						ctx.dom.asElement(existingSynonymId).setProperty("className", className.split(/\+/));
+						return;
+					}
 
 					const el = await ctx.dom.createElement("p");
-					const className = "synonyms text-sm italic text-[--muted] font-semibold line-clamp-2 text-center lg:text-left xl:max-w-[50vw]";
 					el.setProperty("className", className.split(/\+/));
 					el.setText([titles.third, ...(data.synonyms ?? [])].filter(Boolean).join(", "));
+					includedSynonymId = (await el.getAttribute("id")) ?? "";
 
 					ctx.dom.asElement(titleIdSub ?? titleIdMain!).after(el);
 				}
