@@ -15,37 +15,31 @@ function init() {
 
 		// Register currently watching media to the storage
 		// Does not override previous entry
-		function populateLastWatchedStore(bypassCache: boolean) {
-			cleanupLastWatchedStore(bypassCache);
+		function populateLastWatchedStore(bypassCache: boolean, type: $app.AL_MediaType = "MANGA") {
+			cleanupLastWatchedStore(bypassCache, type);
 
-			const MLC = $anilist.getAnimeCollection(bypassCache).MediaListCollection;
+			const fnName = type === "ANIME" ? "getAnimeCollection" : "getMangaCollection";
+			const MLC = $anilist[fnName](bypassCache).MediaListCollection;
 			if (!MLC?.lists) return;
+			if (!$storage.has(storageId)) $storage.set(storageId, []);
 
-			if (!$storage.has(storageId)) {
-				$storage.set(storageId, []);
-			}
-
-			// prettier-ignore
-			const watching = MLC.lists.find((li) => li.name?.trim().toLowerCase() === "watching");
+			const current = MLC.lists.find((li) => li.name?.trim().toLowerCase() === (type === "ANIME" ? "watching" : "reading"));
 			const localStore: Map<string, number> = new Map($storage.get(storageId));
 			const today = Date.now();
 
-			if (!watching?.entries?.length) {
-				// prettier-ignore
-				console.log(`<populate-watched-store> -> status:WATCHING entries size is 0`);
+			if (!current?.entries?.length) {
+				$debug.log(`status:${type === "ANIME" ? "WATCHING" : "READING"} entries size is 0`);
 				return;
 			}
 
-			for (const entry of watching.entries) {
+			for (const entry of current.entries) {
 				if (!entry.media) continue;
 				if (localStore.has(entry.media.id.toString())) {
-					// prettier-ignore
-					console.log(`<populate-watched-store> -> [${entry.media.id}] -> baseline already exists (skipped)`);
-					continue;
+					$debug.log(`[${entry.media.id}] -> baseline already exists (skipped)`);
+				} else {
+					$debug.log(`[${entry.media.id}] -> set baseline to ${today}`);
+					localStore.set(entry.media.id.toString(), today);
 				}
-				// prettier-ignore
-				console.log(`<populate-watched-store> -> [${entry.media.id}] -> set baseline to ${today}`);
-				localStore.set(entry.media.id.toString(), today);
 			}
 
 			$storage.set(storageId, Array.from(localStore.entries()));
@@ -53,9 +47,7 @@ function init() {
 
 		// Update the last watch of the specific media to today
 		function updateLastWatchedStore(mediaId: number) {
-			if (!$storage.has(storageId)) {
-				$storage.set(storageId, []);
-			}
+			if (!$storage.has(storageId)) $storage.set(storageId, []);
 
 			const today = Date.now();
 			const localStore: Map<string, number> = new Map($storage.get(storageId));
@@ -63,49 +55,39 @@ function init() {
 
 			// Store as array of entries for consistency
 			$storage.set(storageId, Array.from(localStore.entries()));
-
-			// prettier-ignore
-			console.log(`<update-watched-store> -> [${mediaId}] -> set baseline to ${today}`);
+			$debug.log(`[${mediaId}] -> set baseline to ${today}`);
 		}
 
 		// Prune store with non-completed/invalid entries
-		function cleanupLastWatchedStore(bypassCache: boolean) {
-			if (!$storage.has(storageId)) {
-				$storage.set(storageId, []);
-			}
+		function cleanupLastWatchedStore(bypassCache: boolean, type: $app.AL_MediaType = "MANGA") {
+			if (!$storage.has(storageId)) $storage.set(storageId, []);
 
-			const MLC = $anilist.getAnimeCollection(bypassCache).MediaListCollection;
+			const fnName = type === "ANIME" ? "getAnimeCollection" : "getMangaCollection";
+			const MLC = $anilist[fnName](bypassCache).MediaListCollection;
 			if (!MLC?.lists) return;
 
-			// prettier-ignore
-			const watching = MLC.lists.find((li) => li.name?.trim().toLowerCase() === "watching");
-			if (!watching?.entries?.length) return;
+			const current = MLC.lists.find((li) => li.name?.trim().toLowerCase() === (type === "ANIME" ? "watching" : "reading"));
+			if (!current?.entries?.length) return;
 
 			const localStore: Map<string, number> = new Map($storage.get(storageId));
 
 			for (const mediaId of localStore.keys()) {
-				if (!watching.entries.some((x) => x.media?.id.toString() === mediaId)) {
+				if (!current.entries.some((x) => x.media?.id.toString() === mediaId)) {
 					localStore.delete(mediaId);
-					// prettier-ignore
-					console.log(`<cleanup-watched-store> -> [${mediaId}] -> status no longer WATCHING (removed)`);
+					$debug.log(`[${mediaId}] -> status no longer ${type === "ANIME" ? "WATCHING" : "READING"} (removed)`);
 				}
 			}
 
 			$storage.set(storageId, Array.from(localStore.entries()));
 		}
 
-		async function isAnime(mediaId: number) {
-			try {
-				await ctx.anime.getAnimeEntry(mediaId);
-				return true;
-			} catch {
-				return false;
-			}
+		function isCustomSource(mediaId?: number) {
+			return (mediaId ?? 0) >= 2 ** 31;
 		}
 
 		// prettier-ignore
 		$store.watch("entry-preupdate", async (e: $app.PreUpdateEntryEvent) => {
-			if (e.status?.toLowerCase() === "current" && e.mediaId && (await isAnime(e.mediaId))){
+			if (e.status?.toLowerCase() === "current" && e.mediaId && (isCustomSource(e.mediaId))){
                 updateLastWatchedStore(e.mediaId);
                 return;
             }
@@ -113,7 +95,7 @@ function init() {
 
 		// prettier-ignore
 		$store.watch("entry-preupdate-progress",async (e: $app.PreUpdateEntryProgressEvent) => {
-            if (e.status?.toLowerCase() === "current" && e.mediaId && (await isAnime(e.mediaId))){
+            if (e.status?.toLowerCase() === "current" && e.mediaId && (isCustomSource(e.mediaId))){
                 updateLastWatchedStore(e.mediaId);
                 return;
             }
@@ -122,16 +104,14 @@ function init() {
 		// prettier-ignore
 		const query = "mutation ($mediaId: Int!) { SaveMediaListEntry(mediaId: $mediaId, status: PAUSED) { id status media { id title { userPreferred } } } }";
 		const isUpdated = ctx.state<boolean>(false);
+
 		ctx.setInterval(
 			async () => {
 				// Do a cleanup first to prevent finished media from being updated to PAUSED
 				cleanupLastWatchedStore(false);
 
 				isUpdated.set(false);
-
-				if (!$storage.has(storageId)) {
-					$storage.set(storageId, []);
-				}
+				if (!$storage.has(storageId)) $storage.set(storageId, []);
 
 				const duration = $getUserPreference("duration");
 				if (!duration) return;
@@ -141,26 +121,20 @@ function init() {
 				for (const [mediaId, timestamp] of localStore) {
 					if (timestamp + threshold > Date.now()) continue;
 					await $_wait(2_500); // prevents hitting the rate limit
-					// prettier-ignore
-					console.log(`[${mediaId}] has reached it's update threshold. Updating to status:PAUSED`);
+					$debug.log(`[${mediaId}] has reached it's update threshold. Updating to status:PAUSED`);
 
 					if (!$database.anilist.getToken()) {
-						// prettier-ignore
-						console.log(`[${mediaId}] was not updated -> Not logged in to Anilist.`)
-						// prettier-ignore
+						$debug.log(`[${mediaId}] was not updated -> Not logged in to Anilist.`);
 						ctx.toast.error(`Cannot update [${mediaId}] status to PAUSED. Not logged in to Anilist`);
 						return;
 					}
 
 					const res = await $anilist.customQuery({ query, variables: { mediaId } }, $database.anilist.getToken());
-
 					isUpdated.set(true);
 
 					if (res.errors?.length) {
-						// prettier-ignore
-						console.log(`[${mediaId}] was not updated -> ${res}`);
-						// prettier-ignore
-						ctx.toast.error(`Failed updating [${mediaId}] status to PAUSED: ${res.errors.map((e: { message: string }) => e.message).join()}`)
+						$debug.log(`[${mediaId}] was not updated -> ${res}`);
+						ctx.toast.error(`Failed updating [${mediaId}] status to PAUSED: ${res.errors.map((e: { message: string }) => e.message).join()}`);
 					}
 				}
 
