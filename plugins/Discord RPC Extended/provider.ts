@@ -12,6 +12,8 @@ function init() {
 			e: T extends "ANIME" ? $app.DiscordPresenceAnimeActivityRequestedEvent : $app.DiscordPresenceMangaActivityRequestedEvent,
 		) {
 			let defaultPrevented = false;
+			// Reset mini icon
+			e.smallImage = "";
 
 			// Title language
 			const t_lang = $getUserPreference("media_title_lang") as "userPreferred" | "english" | "romaji" | "native";
