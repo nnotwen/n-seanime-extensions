@@ -7,7 +7,7 @@
 // @ts-ignore
 function init() {
 	$ui.register((ctx) => {
-		const iconUrl = "https://shikimori.io/favicons/favicon-96x96.png";
+		const iconUrl = "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/ShikimoriSync/icon.png";
 		const tray = ctx.newTray({
 			iconUrl,
 			withContent: true,
