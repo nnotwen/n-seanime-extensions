@@ -1,0 +1,38 @@
+{
+	"id": "score-extended",
+	"name": "Score Extended",
+	"version": "1.0.0",
+	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Score%20Extended/manifest.json",
+	"language": "typescript",
+	"type": "plugin",
+	"description": "Extended scoring functionality.",
+	"author": "nnotwen",
+	"icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Score%20Extended/icon.png",
+	"website": "https://github.com/nnotwen/n-seanime-extensions",
+	"lang": "en",
+	"payloadURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Score%20Extended/provider.ts",
+	"plugin": {
+		"version": "1",
+		"permissions": {
+			"scopes": ["storage", "anilist", "database", "anilist-token"]
+		}
+	},
+	"userConfig": {
+		"requiresConfig": true,
+		"version": 1,
+		"fields": [
+			{
+				"name": "refresh-on-save",
+				"label": "Refresh Media Collection upon saving to anilist",
+				"type": "switch",
+				"default": "false"
+			},
+			{
+				"name": "custom-fields",
+				"label": "Add recommended fields (format: name=weight \"name with space\"=weight)",
+				"type": "text",
+				"default": ""
+			}
+		]
+	}
+}
