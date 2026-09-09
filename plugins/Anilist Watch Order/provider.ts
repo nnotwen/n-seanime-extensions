@@ -325,9 +325,13 @@ function init() {
 			$debug.log("fetchMediaBulk called for ", ids);
 			// prettier-ignore
 			const QUERY = "query ($ids: [Int]) { Page { media(id_in: $ids, type: ANIME) { id title { userPreferred } startDate { year } type format status relations { edges { relationType node { id title { userPreferred } startDate { year } type format status relations { edges { relationType node { id title { userPreferred } startDate { year } type format status } } } } } } } } }"
+			const token = $database.anilist.getToken();
 			const res = await fetch("https://graphql.anilist.co", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: {
+					"Content-Type": "application/json",
+					...(token?.length && { Authorization: `Bearer ${token}` }),
+				},
 				body: JSON.stringify({ query: QUERY, variables: { ids } }),
 			});
 
