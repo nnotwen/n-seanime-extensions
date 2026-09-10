@@ -318,7 +318,7 @@ function init(): void {
 																	if (movie.runtime) fieldRefs.data.length.setValue(movie.runtime.toString());
 																	if (movie.release_date) fieldRefs.data.airDate.setValue(movie.release_date);
 																	if (movie.overview) fieldRefs.data.overview.setValue(movie.overview);
-																	if (movie.backdrop_path) fieldRefs.data.image.setValue(movie.backdrop_path);
+																	if (movie.backdrop_path) fieldRefs.data.image.setValue(`https://image.tmdb.org/t/p/${stillImageSize}${movie.backdrop_path}`);
 
 																	return;
 																} else {
