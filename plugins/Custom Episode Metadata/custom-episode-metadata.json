@@ -1,7 +1,7 @@
 {
 	"id": "custom-episode-metadata",
 	"name": "Custom Episode Metadata",
-	"version": "1.0.7",
+	"version": "1.1.0",
 	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Custom%20Episode%20Metadata/custom-episode-metadata.json",
 	"language": "typescript",
 	"type": "plugin",
@@ -14,7 +14,49 @@
 	"plugin": {
 		"version": "1",
 		"permissions": {
-			"scopes": ["storage"]
+			"scopes": ["storage"],
+			"allow": {
+				"networkAccess": {
+					"allowedDomains": ["api.themoviedb.org", "animeapi.my.id"],
+					"reasoning": "Used for accessing the tmdb API"
+				}
+			}
 		}
+	},
+	"userConfig": {
+		"requiresConfig": false,
+		"version": 1,
+		"fields": [
+			{
+				"name": "tmdb-api",
+				"label": "TMDB API KEY",
+				"type": "text",
+				"default": ""
+			},
+			{
+				"name": "image-size",
+				"label": "TMDB Image Sizes",
+				"type": "select",
+				"default": "w300",
+				"options": [
+					{
+						"label": "92 Pixels wide",
+						"value": "w92"
+					},
+					{
+						"label": "185 Pixels wide",
+						"value": "w185"
+					},
+					{
+						"label": "300 Pixels wide",
+						"value": "w300"
+					},
+					{
+						"label": "Original",
+						"value": "original"
+					}
+				]
+			}
+		]
 	}
 }
