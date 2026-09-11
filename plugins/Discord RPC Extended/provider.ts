@@ -92,6 +92,7 @@ function init() {
 				}
 				e.smallText = "Paused";
 				e.smallImage = "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/Discord%20RPC%20Extended/pause-icon.png";
+				e.startTimestamp = Date.now();
 			}
 
 			const { next, preventDefault, ...newVal } = e;
