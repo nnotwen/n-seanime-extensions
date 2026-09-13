@@ -536,7 +536,7 @@ function init() {
 					const res = await ctx.fetch("https://api.trakt.tv/oauth/token", {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
-						body: new URLSearchParams({
+						body: JSON.stringify({
 							refresh_token: this.refreshToken.get()!,
 							client_id: application.clientId,
 							grant_type: "refresh_token",
