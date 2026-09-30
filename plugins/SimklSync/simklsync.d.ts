@@ -4,8 +4,10 @@
 declare namespace $simkl {
 	interface AccessTokenExchangeCodeResponse {
 		access_token: string;
-		token_type: "bearer";
-		scope: "public";
+		token_type: "Bearer";
+		expires_in: number;
+		refresh_token: string;
+		scope: "media:read" | "media:read media:write";
 	}
 
 	interface SimklUserInfo {
@@ -58,6 +60,7 @@ declare namespace $simkl {
 		watched_at?: string;
 		added_at?: string;
 		is_rewatch?: boolean;
+		memo?: { text: string; private?: boolean };
 	}
 
 	interface UpdatePayload {
@@ -69,21 +72,58 @@ declare namespace $simkl {
 	interface UpdateResponseObjects {
 		to: SimklStatus;
 		ids: {
-			mal?: number;
 			simkl?: number;
+			slug: string;
+			imdb?: string;
+			tvdb?: string;
+			tmdb?: string;
+			mal?: string;
+			anidb?: string;
+			anilist?: string;
 		};
+		anime_type?: "movie" | "show";
 	}
 
 	interface UpdateResponse {
 		added: {
+			episodes?: UpdateResponseObjects[];
+			movies: UpdateResponseObjects[];
+			shows: UpdateResponseObjects[];
+		};
+		not_found: {
+			episodes?: UpdateResponseObjects[];
+			movies: UpdateResponseObjects[];
+			shows: UpdateResponseObjects[];
+		};
+	}
+
+	interface StatusEntry {
+		request: {
+			ids: { anilist: number };
+			rating?: number;
+			status: SimklStatus;
+			type: "show" | "movie";
+			watched_at?: string;
+			memo?: { text: string };
+		};
+		response: {
+			anime_type: "tv" | "movie" | "ova" | "ona" | "special";
+			simkl_type: "anime";
+			status: string;
+		};
+	}
+
+	interface HistoryUpdateResponse {
+		added: {
 			episodes: number;
 			movies: number;
 			shows: number;
+			statuses: StatusEntry[];
 		};
 		not_found: {
+			episodes: UpdateResponseObjects[];
 			movies: UpdateResponseObjects[];
 			shows: UpdateResponseObjects[];
-			episodes: UpdateResponseObjects[];
 		};
 	}
 
@@ -91,12 +131,11 @@ declare namespace $simkl {
 		deleted: {
 			movies: number;
 			shows: number;
-			anime: number;
+			episodes: number;
 		};
 		not_found: {
 			movies: UpdateResponseObjects[];
 			shows: UpdateResponseObjects[];
-			anime: UpdateResponseObjects[];
 		};
 	}
 
@@ -113,6 +152,34 @@ declare namespace $simkl {
 		total_episodes?: number;
 		anime_type: "tv" | "movie" | "special" | "ova" | "ona" | "music video";
 	}
+
+	interface NotificationManagerV2 {
+		id: string;
+		unreads: $ui.State<number>;
+		modalOpened: $ui.State<boolean>;
+		entries: NotificationV2[];
+	}
+
+	interface NotificationV2 {
+		timestamp: number;
+		unread: boolean;
+		title: string;
+		thumbnail?: string;
+		description?: string;
+		accentColor?: string;
+		fields?: {
+			name: string;
+			value: string;
+		}[];
+
+		// Helpful in collapsing multiple progress notifications
+		custom_data?: {
+			mediaId: number;
+			episode: number;
+			type: $app.AL_MediaType;
+		};
+	}
+
 	interface NotificationManager {
 		id: string;
 		unreads: $ui.State<number>; // Updated when notification is added or a notification is clicked (unread -> read)
@@ -162,5 +229,61 @@ declare namespace $simkl {
 		episode: {
 			number: number;
 		};
+	}
+
+	interface MediaListCollection {
+		last_sync: Activities | null;
+		anime: {
+			added_to_watchlist_at: string | null;
+			last_watched_at: string | null;
+			user_rated_at: string | null;
+			user_rating: number | null;
+			status: SimklStatus;
+			last_watched: string | null;
+			next_to_watch: string | null;
+			watched_episodes_count: number;
+			total_episodes_count: number;
+			not_aired_episodes_count: number;
+			show: {
+				title: string;
+				poster: string;
+				year: number;
+				ids: {
+					simkl: number;
+					slug: string;
+					imdb?: string;
+					tvdb?: string;
+					tmdb?: string;
+					mal?: string;
+					anidb?: string;
+					anilist?: string;
+				};
+			};
+			anime_type?: "tv" | "movie" | "ova" | "ona" | "special" | "music video" | null;
+			memo?: { text?: string; isPrivate?: boolean };
+		}[];
+	}
+
+	interface Activities {
+		anime: {
+			all: string;
+			removed_from_list: string;
+		};
+	}
+
+	interface ScrobleResponseShape {
+		action: "start" | "pause" | "stop" | "scrobble";
+		progress: number;
+		id: number;
+	}
+
+	interface OverrideData {
+		mediaId: number; // Custom ID,
+		simklId: number;
+		type: "show" | "movie";
+		seasons: {
+			number: number;
+			episodes: [];
+		}[];
 	}
 }
