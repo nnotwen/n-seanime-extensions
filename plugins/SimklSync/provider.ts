@@ -2286,7 +2286,7 @@ function init() {
 							item === "separator"
 								? tray.span("|")
 								: tray.anchor(item.name, {
-										href: `https://github.com/nnotwen/n-seanime-extensions/blob/master/plugins/simklsync/${item.slug}.md`,
+										href: `https://github.com/nnotwen/n-seanime-extensions/blob/master/plugins/SimklSync/${item.slug}.md`,
 										className: "no-underline hover:underline",
 									}),
 						),
