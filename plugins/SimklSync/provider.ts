@@ -301,9 +301,15 @@ function init() {
 				);
 			}
 
+			function partition<T>(arr: T[], pred: (x: T) => boolean){
+				const pass: T[] = [], fail: T[] = [];
+				for (const x of arr) (pred(x) ? pass : fail).push(x);
+				return [pass, fail]
+			} // prettier-ignore
+
 			const components = { button, select, groupedCheckbox, nativeSelect };
 
-			return { components, unwrap, chunk, pageRange, formatTimestamp, wait: $_wait, generateRandomUUID };
+			return { components, unwrap, chunk, pageRange, partition, formatTimestamp, wait: $_wait, generateRandomUUID };
 		})();
 
 		/**
@@ -1317,27 +1323,26 @@ function init() {
 				if (aborted.get()) throw new Error("Operation aborted by <User>");
 				const simklCollection = await application.list.getMediaListCollection();
 
+				/** May contain duplicates */
+				const forFullSyncDeletion: number[] = [];
 				const validate = (listEntries: $app.AL_AnimeCollection_MediaListCollection_Lists_Entries[], type: "Watchlist" | "History") => {
 					if (!a) {
-						const o_l = listEntries.length;
-						log.send(`synclist > [${type}] Pruning adult entries from the payload...`);
-						listEntries = listEntries.filter((x) => !utils.unwrap(x.media?.isAdult));
-						log.send(`synclist > [${type}] Removed ${o_l - listEntries.length} adult only entries!`);
+						const [nonAdults, adults] = utils.partition(listEntries, (l) => !utils.unwrap(l.media?.isAdult));
+						if (t === "fullsync") forFullSyncDeletion.push(...adults.map((e) => Number(e.media?.id)).filter(Number.isFinite));
+						listEntries = nonAdults;
+						log.send(`synclist > [${type}] includeAdult="false" | Pruned [${adults.length}] adult entries from the payload${ t === "fullsync" ? " and added to queue for deletion..." : "..."}`); // prettier-ignore
 					}
 
 					if (!p) {
-						const o_l = listEntries.length;
-						log.send(`synclist > [${type}] Pruning private entries from the payload...`);
-						listEntries = listEntries.filter((x) => !utils.unwrap(x.private));
-						log.send(`synclist > [${type}] Removed ${o_l - listEntries.length} private entries!`);
+						const [nonPriv, priv] = utils.partition(listEntries, (l) => !utils.unwrap(l.private));
+						if (t === "fullsync") forFullSyncDeletion.push(...priv.map((e) => Number(e.media?.id)).filter(Number.isFinite));
+						listEntries = nonPriv;
+						log.send(`synclist > [${type}] includePrivate="false" | Pruned [${priv.length}] private entries from the payload${ t === "fullsync" ? " and added to queue for deletion..." : "..."}`); // prettier-ignore
 					}
 
-					if (listEntries.some((x) => Custom.match(x.media?.id!))) {
-						const o_l = listEntries.length;
-						log.send(`synclist > [${type}] Pruning custom entries with no id overrides`);
-						listEntries = listEntries.filter((x) => !Custom.match(Custom.getAbsoluteId(x.media?.id!)));
-						log.send(`synclist > [${type}] Removed ${o_l - listEntries.length} custom entries!`);
-					}
+					const [nonCustom, custom] = utils.partition(listEntries, (l) => !Custom.match(Custom.getAbsoluteId(l.media?.id!)));
+					listEntries = nonCustom;
+					if (custom.length) log.send(`synclist > [${type}] Pruned [${custom.length}] custom entries with no id overrides`);
 
 					return listEntries;
 				};
@@ -1451,8 +1456,15 @@ function init() {
 							})
 							.map((x) => ({ ids: { anilist: Number(x.show.ids.anilist) } }));
 
-						const shows = [...histNotInAL, ...ep_del_queue];
-						log.info(`synclist > Detected [${histNotInAL.length}] entries not in AniList and [${ep_del_queue.length}] episodes queued for deletion.`);
+						const uniqueFullSyncIds = [...new Set(forFullSyncDeletion)].map((id) => ({ ids: { anilist: id } }));
+						const parts = [
+   							histNotInAL.length ? `[${histNotInAL.length}] entries not in AniList` : null,
+							uniqueFullSyncIds.length ? `[${uniqueFullSyncIds.length}] excluded ${[!a ? "adult" : undefined, !p ? "private" : undefined].filter(Boolean).join(" and ")} entries` : null,
+							ep_del_queue.length ? `[${ep_del_queue.length}] episodes queued for deletion` : null,
+						].filter(Boolean); // prettier-ignore
+
+						const shows = [...histNotInAL, ...ep_del_queue, ...uniqueFullSyncIds];
+						log.info(`synclist > ${parts.length ? "Detected " + parts.join(", ") + "." : "Nothing to delete."}`);
 
 						if (aborted.get()) throw new Error("Operation aborted by <User>");
 						log.send(`synclist > [DeletionQueue] applying changes...`);
@@ -1868,7 +1880,7 @@ function init() {
 						return log.error("scrobbler > request aborted. LiveSync is currently disabled"); // prettier-ignore
 
 					scrobble(action, payload)
-						.then((data) => log.success(`scrobbler > request accepted action="${data.action}" progress="${data.progress}"`))
+						.then((data) => log.success(`scrobbler > request accepted episode="${episode}" action="${data.action}" progress="${data.progress}"`))
 						.catch((err) => log.error(`scrobbler > ${err.message}`));
 				}
 			}, [application.playback.playing]);
@@ -1914,7 +1926,7 @@ function init() {
 
 			// VideoCore.VideoEnded - fires when playback reaches eof for videocore player (excl. mpvcore)
 			for (const evt of ["video-completed", "video-terminated"] as $ui.VideoEventType[]) {
-				ctx.videoCore.addEventListener(evt, () => application.playback.playing.set(false));
+				ctx.videoCore.addEventListener(evt, (e) => application.playback.playing.set(false));
 			}
 		})();
 
