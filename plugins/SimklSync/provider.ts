@@ -1857,12 +1857,11 @@ function init() {
 
 				if (!isPlaying) {
 					log.send(`scrobbler > stopping playback scrobbler | request="POST" @api/scrobble/stop payload="${JSON.stringify(payload)}"`);
-					state.set(null);
 
 					if (sync.liveSync.disabled.current) return log.warn("scrobbler > LiveSync is currently disabled. Only stop is allowed on this endpoint.");
 					scrobble("stop", payload)
 						.then(data => {
-							log.success(`scrobbler > request accepted action="${data.action}" progress="${data.progress}"`);
+							log.success(`scrobbler > request accepted episode="${payload.episode.number ?? "N/A"}" action="${data.action}" progress="${data.progress}"`);
 							if (data.action === "scrobble") notifications.add({
 								title: `Watched episode ${playbackState.episode} of ${playbackState.title}`,
 								thumbnail: playbackState.coverImage,
@@ -1887,47 +1886,62 @@ function init() {
 
 			// Playback (automatic handling of playback state, EXTERNAL PLAYERS)
 			ctx.playback.registerEventListener(async (e) => {
-				if (e.isVideoCompleted || e.isVideoStopped || e.isStreamCompleted || e.isStreamStopped) {
-					application.playback.playing.set(false);
-				}
-
-				const currState = application.playback.state.get();
-				if (!currState) {
-					const { mediaId: anilistId, mediaTitle: title, episodeNumber: episode, mediaCoverImage: coverImage } = e.state; // prettier-ignore
-					const { completionPercentage: progress, paused } = e.status;
-					application.playback.state.set({ anilistId, title, episode, coverImage, progress: progress * 100, paused }); // prettier-ignore
-					// Start scrobbler with slight debounce
-					ctx.setTimeout(() => application.playback.playing.set(true), 500);
-				} else {
-					application.playback.state.set({ ...currState, progress: e.status.completionPercentage * 100 });
-				}
+				const stopped = e.isVideoCompleted || e.isVideoStopped || e.isStreamCompleted || e.isStreamStopped;
+				const { mediaId: anilistId, mediaTitle: title, episodeNumber: episode, mediaCoverImage: coverImage } = e.state; // prettier-ignore
+				const { completionPercentage: progress, paused } = e.status;
+				application.playback.state.set({ anilistId, title, episode, coverImage, progress: progress * 100, paused }); // prettier-ignore
+				application.playback.playing.set(!stopped);
 			});
 
-			// VideoCore (automatic handling of playback state, VideoCore)
-			// VideoCore.VideoResumed - always fires on playback start
-			ctx.videoCore.addEventListener("video-resumed", async (e) => {
-				application.playback.playing.set(true);
-				const playbackState = ctx.videoCore.getPlaybackState();
-				if (!playbackState) {
-					log.error(`scrobble > videocore-video-resumed emitted but playback state was undefined or null.`);
-					return;
-				}
+			// VIDEOCORE //
+			let lastVideoStatus: $ui.VideoStatusEvent | null = null;
+			ctx.videoCore.addEventListener("video-status", (e) => (lastVideoStatus = e));
 
-				const { playbackInfo: { media, episode }} = playbackState; // prettier-ignore
+			// Fires when the user presses next or is terminating the player
+			ctx.videoCore.addEventListener("video-terminated", (e) => {
+				ctx.jobs.cancel("videocore-start");
+				const state = application.playback.state.get();
+				if (!state || !lastVideoStatus) return log.error(`scrobble > VideoCorePlayer terminated without a state.`);
+				const progress = (lastVideoStatus.currentTime / lastVideoStatus.duration) * 100;
+				application.playback.state.set({ ...state, progress });
+				application.playback.playing.set(false);
+			});
+
+			// Fires when the user reaches the end-of-file (wait out the video until it finishes)
+			ctx.videoCore.addEventListener("video-ended", (e) => {
+				ctx.jobs.cancel("videocore-start");
+				const state = application.playback.state.get();
+				if (!state || !lastVideoStatus) return log.error(`scrobble > VideoCorePlayer terminated without a state.`);
+				application.playback.state.set({ ...state, progress: 100 });
+				application.playback.playing.set(false);
+			});
+
+			// Fires when the playback reaches 80%
+			ctx.videoCore.addEventListener("video-completed", (e) => {
+				ctx.jobs.cancel("videocore-start");
+				const state = application.playback.state.get();
+				if (!state || !lastVideoStatus) return log.error(`scrobble > VideoCorePlayer terminated without a state.`);
+				application.playback.state.set({ ...state, progress: 80 });
+				application.playback.playing.set(false);
+			});
+
+			// Fires everytime the video starts to load
+			ctx.videoCore.addEventListener("video-can-play", () => ctx.jobs.debounce("videocore-start", () => {
+				const state = ctx.videoCore.getPlaybackState();
+				if (!state || !lastVideoStatus) return log.error(`scrobble > videocore-video-can-play emitted but playback state was undefined or null.`);
+
+				const { playbackInfo: { media, episode }} = state; // prettier-ignore
+				if (!media) return log.error(`scrobble > videocore-video-can-play emitted but media metadata was undefined or null.`);
 				application.playback.state.set({
-					anilistId: media?.id!,
-					progress: (e.currentTime / e.duration) * 100,
-					paused: false,
-					title: media?.title?.userPreferred!,
+					anilistId: media.id,
+					title: media.title?.userPreferred ?? "Untitled",
 					episode: episode?.episodeNumber,
-					coverImage: media?.coverImage?.large,
+					coverImage: media.coverImage?.large,
+					paused: lastVideoStatus.paused,
+					progress: (lastVideoStatus.currentTime / lastVideoStatus.duration) * 100,
 				});
-			});
-
-			// VideoCore.VideoEnded - fires when playback reaches eof for videocore player (excl. mpvcore)
-			for (const evt of ["video-completed", "video-terminated"] as $ui.VideoEventType[]) {
-				ctx.videoCore.addEventListener(evt, (e) => application.playback.playing.set(false));
-			}
+				application.playback.playing.set(true);
+			}, 5_000)); // prettier-ignore
 		})();
 
 		const tabs = (() => {
