@@ -1897,33 +1897,20 @@ function init() {
 			let lastVideoStatus: $ui.VideoStatusEvent | null = null;
 			ctx.videoCore.addEventListener("video-status", (e) => (lastVideoStatus = e));
 
+			const onVideoEnd = (progressOverride?: number) => {
+				ctx.jobs.cancel("videocore-start");
+				const state = application.playback.state.get();
+				if (!state || !lastVideoStatus) return log.error(`scrobble > VideoCorePlayer terminated without a state.`);
+				application.playback.state.set({ ...state, progress: progressOverride ?? (lastVideoStatus.currentTime / lastVideoStatus.duration) * 100 });
+				application.playback.playing.set(false);
+			};
+
 			// Fires when the user presses next or is terminating the player
-			ctx.videoCore.addEventListener("video-terminated", (e) => {
-				ctx.jobs.cancel("videocore-start");
-				const state = application.playback.state.get();
-				if (!state || !lastVideoStatus) return log.error(`scrobble > VideoCorePlayer terminated without a state.`);
-				const progress = (lastVideoStatus.currentTime / lastVideoStatus.duration) * 100;
-				application.playback.state.set({ ...state, progress });
-				application.playback.playing.set(false);
-			});
-
+			ctx.videoCore.addEventListener("video-terminated", () => onVideoEnd());
 			// Fires when the user reaches the end-of-file (wait out the video until it finishes)
-			ctx.videoCore.addEventListener("video-ended", (e) => {
-				ctx.jobs.cancel("videocore-start");
-				const state = application.playback.state.get();
-				if (!state || !lastVideoStatus) return log.error(`scrobble > VideoCorePlayer terminated without a state.`);
-				application.playback.state.set({ ...state, progress: 100 });
-				application.playback.playing.set(false);
-			});
-
+			ctx.videoCore.addEventListener("video-ended", () => onVideoEnd(100));
 			// Fires when the playback reaches 80%
-			ctx.videoCore.addEventListener("video-completed", (e) => {
-				ctx.jobs.cancel("videocore-start");
-				const state = application.playback.state.get();
-				if (!state || !lastVideoStatus) return log.error(`scrobble > VideoCorePlayer terminated without a state.`);
-				application.playback.state.set({ ...state, progress: 80 });
-				application.playback.playing.set(false);
-			});
+			ctx.videoCore.addEventListener("video-completed", () => onVideoEnd(80));
 
 			// Fires everytime the video starts to load
 			ctx.videoCore.addEventListener("video-can-play", () => ctx.jobs.debounce("videocore-start", () => {
