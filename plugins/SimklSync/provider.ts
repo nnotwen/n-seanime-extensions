@@ -1848,9 +1848,11 @@ function init() {
 
 				if (!playbackState) return log.warn(`scrobbler > ${isPlaying ? "start" : "stop"} signal received but playback state was null.`);
 				if (typeof playbackState.episode !== "number") return log.warn(`scrobbler > ${isPlaying ? "start" : "stop"} signal received but invalid episode type. Expected 'number' received '${typeof playbackState.episode}'`); //prettier-ignore
+				if (sync.customsource.match(sync.customsource.getAbsoluteId(playbackState.anilistId))) return log.warn(`scrobbler > current media (${playbackState.title}) is from a custom source with no override. Aborting scrobble.`); // prettier-ignore
 
+				// Custom media will probably not use the anime field, but show or movie
 				const payload: $simkl.ScrobbleRequestBody = {
-					anime: { ids: { anilist: playbackState.anilistId } },
+					anime: { ids: { anilist: sync.customsource.getAbsoluteId(playbackState.anilistId) } },
 					progress: playbackState.progress,
 					episode: { number: playbackState.episode },
 				};
@@ -1858,7 +1860,7 @@ function init() {
 				if (!isPlaying) {
 					log.send(`scrobbler > stopping playback scrobbler | request="POST" @api/scrobble/stop payload="${JSON.stringify(payload)}"`);
 
-					if (sync.liveSync.disabled.current) return log.warn("scrobbler > LiveSync is currently disabled. Only stop is allowed on this endpoint.");
+					if (sync.liveSync.disabled.current) return log.warn("scrobbler > LiveSync is currently disabled.");
 					scrobble("stop", payload)
 						.then(data => {
 							log.success(`scrobbler > request accepted episode="${payload.episode.number ?? "N/A"}" action="${data.action}" progress="${data.progress}"`);
