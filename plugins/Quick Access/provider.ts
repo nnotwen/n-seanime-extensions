@@ -37,7 +37,6 @@ function init() {
 		] as const;
 
 		const quicklinks = Object.fromEntries(keys.map((key) => [key, $getUserPreference(key) === "true"])) as Record<(typeof keys)[number], boolean>;
-		const quicklinkDomIds = Object.fromEntries(keys.map((key) => [key, ""])) as Record<(typeof keys)[number], string | null>;
 
 		const urlBuilders: Record<keyof typeof quicklinks, (data: $quickaccess.MappingData, type?: "ANIME" | "MANGA") => string | null> = {
 			anidb: (data) => (data.anidb ? `https://www.anidb.net/anime/${data.anidb}` : null),
@@ -177,9 +176,31 @@ function init() {
 			return data;
 		}
 
+		const sorted = Object.entries(quicklinks).sort(
+			([A], [B]) => -((priority.includes(A) ? priority.indexOf(A) : Infinity) - (priority.includes(B) ? priority.indexOf(B) : Infinity) || A.localeCompare(B)),
+		);
+
+		// The observer re-fires on our own inserts and while the page renders; run one at a time (latest wins).
+		let running = false;
+		let queued: $ui.DOMElement[] | null = null;
+		const serialize = (fn: (els: $ui.DOMElement[]) => Promise<void>) => async (els: $ui.DOMElement[]) => {
+			if (running) return void (queued = els);
+			running = true;
+			try {
+				for (let next: $ui.DOMElement[] | null = els; next; next = queued) {
+					queued = null;
+					await fn(next);
+				}
+			} catch (error) {
+				$debug.error((error as Error).message);
+			} finally {
+				running = false;
+			}
+		};
+
 		ctx.dom.observe(
 			"[data-anime-entry-page], [data-manga-entry-page]",
-			async (els) => {
+			serialize(async (els) => {
 				const el = els[0];
 				if (!el) return;
 
@@ -194,10 +215,16 @@ function init() {
 				if (mappingdata instanceof Error) return $debug.log(mappingdata);
 
 				const btnALId = $(`[data-${data.type?.toLowerCase()}-meta-section-buttons-container] a`).attr("id");
-				for (const [key, value] of Object.entries(quicklinks).sort(
-					([A], [B]) =>
-						-((priority.includes(A) ? priority.indexOf(A) : Infinity) - (priority.includes(B) ? priority.indexOf(B) : Infinity) || A.localeCompare(B)),
-				)) {
+				if (!btnALId) return;
+
+				// nothing to do if the right buttons are already there
+				const html = el.innerHTML ?? "";
+				const wanted = mappingdata ? sorted.filter(([key, value]) => value && key !== "notify").map(([key]) => key) : [];
+				const present = [...html.matchAll(/data-quickaccess-key="([^"]*)"/g)].map((m) => m[1]);
+				if (wanted.length === present.length && wanted.every((k, i) => k === present[i]) && (!wanted.length || html.includes(`data-quickaccess-media="${mediaId}"`))) return;
+
+				const built: $ui.DOMElement[] = [];
+				for (const [key, value] of sorted) {
 					try {
 						if (!mappingdata || value === false) continue;
 						// tempskip (no icon)
@@ -205,19 +232,12 @@ function init() {
 
 						const href = urlBuilders[key as keyof typeof quicklinks](mappingdata) ?? "";
 						const icon = icons.get(key as keyof typeof quicklinks, { raw: true });
-						const elId = quicklinkDomIds[key as keyof typeof quicklinks];
-						const existingElId = $(`#${elId}`).attr("id");
-
-						if (existingElId) {
-							ctx.dom.asElement(existingElId).setAttribute("href", href);
-							ctx.dom.asElement(existingElId).setProperty("className", href.length ? [] : ["cursor-not-allowed pointer-events-none"]);
-							continue;
-						}
 
 						const el = await ctx.dom.createElement("a");
 						el.setAttribute("href", href);
 						el.setAttribute("target", "_blank");
 						el.setAttribute("data-quickaccess-key", key);
+						el.setAttribute("data-quickaccess-media", mediaId.toString());
 						el.setInnerHTML(/*html*/ `
                             <button type="button" class="UI-Button_root whitespace-nowrap font-semibold rounded-lg inline-flex items-center transition ease-in text-center justify-center focus-visible:outline-none focus-visible:ring-2 ring-offset-1 ring-offset-[--background] focus-visible:ring-[--ring] disabled:opacity-50 disabled:pointer-events-none shadow-none text-[--gray] border border-transparent bg-transparent hover:underline active:text-gray-700 dark:text-gray-300 dark:active:text-gray-200 UI-IconButton_root p-0 flex-none text-xl h-8 w-8 px-0"${href.length ? "" : " disabled"}>
                                 <span class="md:inline-block">
@@ -227,13 +247,19 @@ function init() {
                         `);
 
 						if (!href.length) el.setProperty("className", ["cursor-not-allowed pointer-events-none"]);
-						quicklinkDomIds[key as keyof typeof quicklinks] = (await el.getAttribute("id")) ?? "";
-						ctx.dom.asElement(btnALId!).after(el);
+						built.push(el);
 					} catch (error) {
 						$debug.error((error as Error).message);
 					}
 				}
-			},
+
+				// re-query live and swap back to back, scoped to the container
+				const container = await ctx.dom.queryOne(`[data-${data.type?.toLowerCase()}-meta-section-buttons-container]`);
+				const [anchor, old] = await Promise.all([container?.queryOne("a:not([data-quickaccess-key])"), container?.query("[data-quickaccess-key]")]);
+				if (!anchor) return;
+				for (const o of old ?? []) o.remove();
+				for (const b of built) anchor.after(b);
+			}),
 			{
 				withInnerHTML: true,
 				identifyChildren: true,
