@@ -37,10 +37,5 @@ interface Shelf {
 	}[];
 	createdAt: string;
 	lastUpdateAt: string;
-}
-
-interface ImportData {
-	name: string;
-	type: $app.AL_MediaType;
-	entries: number[];
+	tag?: string;
 }
