@@ -138,6 +138,7 @@ declare namespace $malsync {
 			medium?: string;
 			large?: string;
 		};
+		nsfw: "white" | "gray" | "black";
 	}
 
 	interface AnimeListEntryWrapper {
@@ -155,13 +156,19 @@ declare namespace $malsync {
 	interface AnilistSaveMediaListEntryVariables {
 		mediaId: number;
 		status?: $app.AL_MediaListStatus;
-		progress?: number;
-		progressVolumes?: number;
-		score?: number;
-		repeat?: number;
-		notes?: string;
-		startedAt?: $app.AL_FuzzyDateInput;
-		completedAt?: $app.AL_FuzzyDateInput;
+		score?: number | null;
+		scoreRaw?: number | null;
+		progress?: number | null;
+		progressVolumes?: number | null;
+		repeat?: number | null;
+		priority?: number | null;
+		private?: number | null;
+		notes?: string | null;
+		hiddenFromStatusLists?: boolean | null;
+		customLists?: string[] | null;
+		advancedScores?: number[] | null;
+		startedAt?: $app.AL_FuzzyDateInput | null;
+		completedAt?: $app.AL_FuzzyDateInput | null;
 	}
 
 	interface NotificationManager {
@@ -187,5 +194,37 @@ declare namespace $malsync {
 			  }
 			| { entries: number; errors: number; skips: number; updates: number; remarks: string; job_type: string; media_type: string; sync_type: string };
 		timestamp: number;
+	}
+
+	interface NotificationManagerV2 {
+		id: string;
+		unreads: $ui.State<number>;
+		modalOpened: $ui.State<boolean>;
+		entries: NotificationV2[];
+	}
+
+	interface NotificationV2 {
+		timestamp: number;
+		unread: boolean;
+		title: string;
+		thumbnail?: string;
+		description?: string;
+		accentColor?: string;
+		fields?: {
+			name: string;
+			value: string;
+		}[];
+
+		// Helpful in collapsing multiple progress notifications
+		custom_data?: {
+			mediaId?: number;
+			episode?: number;
+			type?: $app.AL_MediaType;
+		};
+	}
+
+	interface AnilistError {
+		data: null;
+		errors: { message: string; locations: { line: number; column: number }[]; validation: { field: string }[] }[];
 	}
 }
