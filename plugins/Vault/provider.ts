@@ -317,6 +317,23 @@ function init() {
 		(() => {
 			const animePB = ctx.action.newAnimePageButton({ label: "\u200b" });
 			const mangaPB = ctx.action.newMangaPageButton({ label: "\u200b" });
+			const mediaCM = ctx.action.newMediaCardContextMenuItem({
+				label: "Add to Shelf",
+				for: "both",
+				style: {
+					backgroundImage: `url(${icons.get("addShelf")})`,
+					backgroundRepeat: "no-repeat",
+					backgroundSize: "1.2rem",
+					backgroundPosition: "0.45em center",
+					textIndent: "1.8em",
+				},
+			});
+
+			mediaCM.mount();
+			mediaCM.onClick(({ media }) => {
+				vault.currentMedia.set(media);
+				modal.open();
+			});
 
 			for (const btn of [animePB, mangaPB]) {
 				btn.setStyle({
