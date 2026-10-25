@@ -1,4 +1,5 @@
 /// <reference path="../../typings/plugin.d.ts" />
+/// <reference path="./shikimori.graphql.schema.d.ts" />
 
 declare namespace $shikimorisync {
 	type UserRateStatus = "planned" | "watching" | "rewatching" | "completed" | "on_hold" | "dropped";
@@ -104,12 +105,96 @@ declare namespace $shikimorisync {
 	interface AnilistSaveMediaListEntryVariables {
 		mediaId: number;
 		status?: $app.AL_MediaListStatus;
-		progress?: number;
-		progressVolumes?: number;
-		score?: number;
-		repeat?: number;
-		notes?: string;
-		startedAt?: $app.AL_FuzzyDateInput;
-		completedAt?: $app.AL_FuzzyDateInput;
+		score?: number | null;
+		scoreRaw?: number | null;
+		progress?: number | null;
+		progressVolumes?: number | null;
+		repeat?: number | null;
+		priority?: number | null;
+		private?: number | null;
+		notes?: string | null;
+		hiddenFromStatusLists?: boolean | null;
+		customLists?: string[] | null;
+		advancedScores?: number[] | null;
+		startedAt?: $app.AL_FuzzyDateInput | null;
+		completedAt?: $app.AL_FuzzyDateInput | null;
 	}
+
+	interface NotificationManagerV2 {
+		id: string;
+		unreads: $ui.State<number>;
+		modalOpened: $ui.State<boolean>;
+		entries: NotificationV2[];
+	}
+
+	interface NotificationV2 {
+		timestamp: number;
+		unread: boolean;
+		title: string;
+		thumbnail?: string;
+		description?: string;
+		accentColor?: string;
+		fields?: {
+			name: string;
+			value: string;
+		}[];
+
+		// Helpful in collapsing multiple progress notifications
+		custom_data?: {
+			mediaId?: number;
+			episode?: number;
+			type?: $app.AL_MediaType;
+		};
+	}
+
+	interface AnilistError {
+		data: null;
+		errors: { message: string; locations: { line: number; column: number }[]; validation: { field: string }[] }[];
+	}
+
+	type AnimeSelection = Pick<
+		$shikigpql.Anime,
+		| "id"
+		| "name"
+		| "russian"
+		| "kind"
+		| "status"
+		| "score"
+		| "episodes"
+		| "episodesAired"
+		| "duration"
+		| "isCensored"
+		| "airedOn"
+		| "poster"
+		| "genres"
+		| "url"
+	>;
+
+	type MangaSelection = Pick<
+		$shikigpql.Manga,
+		| "id"
+		| "name"
+		| "russian"
+		| "kind"
+		| "status"
+		| "score"
+		| "chapters"
+		| "volumes"
+		| "isCensored"
+		| "airedOn"
+		| "releasedOn"
+		| "poster"
+		| "genres"
+		| "url"
+	>;
+
+	type AnimeUserRate = Omit<$shikigpql.UserRate, "anime" | "manga" | "chapters" | "volumes"> & {
+		anime: AnimeSelection;
+		manga: null;
+	};
+
+	type MangaUserRate = Omit<$shikigpql.UserRate, "anime" | "manga" | "episodes"> & {
+		anime: null;
+		manga: MangaSelection;
+	};
 }

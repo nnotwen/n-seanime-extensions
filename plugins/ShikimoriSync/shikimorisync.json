@@ -1,7 +1,7 @@
 {
 	"id": "shikimorisync",
 	"name": "ShikimoriSync",
-	"version": "1.3.1",
+	"version": "2.0.0",
 	"manifestURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/ShikimoriSync/shikimorisync.json",
 	"language": "typescript",
 	"type": "plugin",
@@ -10,6 +10,7 @@
 	"icon": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/ShikimoriSync/icon.png",
 	"website": "https://github.com/nnotwen/n-seanime-extensions",
 	"lang": "ru",
+	"notes": "Вы должны войти в AniList и включить «Автоматически обновлять прогресс» в настройках приложения, чтобы это расширение работало.",
 	"payloadURI": "https://raw.githubusercontent.com/nnotwen/n-seanime-extensions/master/plugins/ShikimoriSync/provider.ts",
 	"plugin": {
 		"version": "1",
