@@ -659,11 +659,6 @@ function init() {
 						});
 					};
 
-                    ctx.effect(() => {
-                        const v = isModalOpen.get();
-                        console.log("The modal is now", v ? "open" : "close");
-                    }, [isModalOpen])
-
 					const modal = (trigger: any, eventId?: string) => {
 						const { last_sync, data } = $storage.get<{ last_sync: number | null, data: (( $malsync.AnimeListEntryWrapper | $malsync.MangaListEntryWrapper) & { idMal: number })[]}>(`${id}:${type}`) ?? { last_sync: null, data: [] };
 						const pre = [...data]
